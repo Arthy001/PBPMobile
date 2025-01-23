@@ -27,12 +27,17 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.uhf_bt.fragment.BTRenameFragment;
 import com.example.uhf_bt.fragment.BarcodeFragment;
+import com.example.uhf_bt.fragment.MoveOrderFragment;
+import com.example.uhf_bt.fragment.PickingOrderFragment;
 import com.example.uhf_bt.fragment.UHFEraseFragment;
 import com.example.uhf_bt.fragment.UHFKillFragment;
 import com.example.uhf_bt.fragment.UHFLocationFragment;
@@ -44,6 +49,7 @@ import com.example.uhf_bt.fragment.UHFUpdataFragment;
 import com.example.uhf_bt.fragment.UHFWriteFragment;
 import com.example.uhf_bt.tool.CwLog;
 import com.example.uhf_bt.tool.ExcelUtils;
+import com.google.android.material.button.MaterialButton;
 import com.rscja.deviceapi.RFIDWithUHFBLE;
 import com.rscja.deviceapi.VersionInfo;
 import com.rscja.deviceapi.interfaces.ConnectionStatus;
@@ -72,6 +78,14 @@ import no.nordicsemi.android.dfu.BuildConfig;
 
 public class MainActivity extends BaseActivity implements View.OnClickListener {
 
+    private View viewMenu;
+    private View viewTabhost;
+    private LinearLayout mainContent;
+    private LinearLayout viewLogin;
+    private MaterialButton btnLogin;
+    private EditText etUsername, etPassword;
+    private TextView tvDeviceId;
+    private FrameLayout loadingOverlay;
     private static final int PERMISSION_REQUEST_CODE = 1;
 
     public boolean isScanning = false;
@@ -104,7 +118,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     private boolean mIsActiveDisconnect = true; // 是否主动断开连接
     private static final int RECONNECT_NUM = Integer.MAX_VALUE; // 重连次数
     private int mReConnectCount = RECONNECT_NUM; // 重新连接次数
-
     private Timer mDisconnectTimer = new Timer();
     private DisconnectTimerTask timerTask;
     private long timeCountCur; // 断开时间选择
@@ -129,12 +142,34 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+
         if (BuildConfig.DEBUG) {
             setTitle(String.format("%s(v%s-debug)", getString(R.string.app_name), getVerName()));
         } else {
             setTitle(String.format("%s(v%s)", getString(R.string.app_name), getVerName() ));
         }
-        initUI();
+
+        initViews();
+        setupLoginButton();
+        setupMenuButtons();
+
+
+//        mainContent = findViewById(R.id.mainContent);
+//        viewLogin = findViewById(R.id.view_login);
+//        loadingOverlay = findViewById(R.id.loadingOverlay);
+//        btnLogin = findViewById(R.id.btnLogin);
+//        etUsername = findViewById(R.id.etUsername);
+//        etPassword = findViewById(R.id.etPassword);
+//        tvDeviceId = findViewById(R.id.tvDeviceId);
+//
+//
+//        // Hide main content initially
+//        mainContent.setVisibility(View.GONE);
+//        viewLogin.setVisibility(View.VISIBLE);
+
+        //setupLoginButton();
+        //initUI();
         checkReadWritePermission();
         checkLocationEnable();
         uhf.init(getApplicationContext());
@@ -145,6 +180,8 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         } else {
             requestPermission();
         }
+
+
     }
 
     @Override
@@ -157,6 +194,87 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         android.os.Process.killProcess(Process.myPid());
     }
 
+    private void setupMenuButtons() {
+        MaterialButton btnMoveOrder = findViewById(R.id.btnMoveOrder);
+        MaterialButton btnPickingOrder = findViewById(R.id.btnPickingOrder);
+
+        btnMoveOrder.setOnClickListener(v -> {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(android.R.id.content, new MoveOrderFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        btnPickingOrder.setOnClickListener(v -> {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(android.R.id.content, new PickingOrderFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        getSupportFragmentManager().addOnBackStackChangedListener(() -> {
+            if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
+                // Return to menu when back stack is empty
+                mainContent.setVisibility(View.VISIBLE);
+                viewMenu.setVisibility(View.VISIBLE);
+                viewTabhost.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    // Add in MainActivity.java after initUI()
+
+    private boolean validateLogin(String username, String password) {
+        if (username.isEmpty()) {
+            etUsername.setError("Username required");
+            return false;
+        }
+        if (password.isEmpty()) {
+            etPassword.setError("Password required");
+            return false;
+        }
+        return true;
+    }
+
+    private void initViews() {
+        mainContent = findViewById(R.id.mainContent);
+        viewMenu = findViewById(R.id.view_menu);
+        viewTabhost = findViewById(R.id.view_tabhost);
+        viewLogin = findViewById(R.id.view_login);
+        loadingOverlay = findViewById(R.id.loadingOverlay);
+        btnLogin = findViewById(R.id.btnLogin);
+        etUsername = findViewById(R.id.etUsername);
+        etPassword = findViewById(R.id.etPassword);
+        tvDeviceId = findViewById(R.id.tvDeviceId);
+        btn_connect = findViewById(R.id.btn_connect);
+        btn_search = findViewById(R.id.btn_search);
+        tvAddress = findViewById(R.id.tvAddress);
+        mTabHost = findViewById(android.R.id.tabhost);
+
+        btn_connect = (Button) findViewById(R.id.btn_connect);
+        btn_connect.setOnClickListener(this);
+        btn_search = (Button) findViewById(R.id.btn_search);
+        btn_search.setOnClickListener(this);
+
+        initTabHost();
+    }
+
+
+    private void setupLoginButton() {
+        btnLogin.setOnClickListener(v -> {
+            String username = etUsername.getText().toString();
+            String password = etPassword.getText().toString();
+
+            if (validateLogin(username, password)) {
+                loadingOverlay.setVisibility(View.VISIBLE);
+                new Handler().postDelayed(() -> {
+                    loadingOverlay.setVisibility(View.GONE);
+                    viewLogin.setVisibility(View.GONE);
+                    mainContent.setVisibility(View.VISIBLE);
+                }, 1500);
+            }
+        });
+    }
 
     @Override
     public void onClick(View view) {
@@ -474,42 +592,50 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         FileUtils.saveXmlList(list);
     }
 
-    protected void initUI() {
-        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        tvAddress = (TextView) findViewById(R.id.tvAddress);
-        btn_connect = (Button) findViewById(R.id.btn_connect);
-        btn_connect.setOnClickListener(this);
-        btn_search = (Button) findViewById(R.id.btn_search);
-        btn_search.setOnClickListener(this);
-
+    private void initTabHost() {
         fm = getSupportFragmentManager();
-        mTabHost = (FragmentTabHost) findViewById(android.R.id.tabhost);
         mTabHost.setup(this, fm, R.id.realtabcontent);
 
         mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory)).setIndicator(getString(R.string.title_inventory)), UHFReadTagFragment.class, null);
-       // mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory2)).setIndicator(getString(R.string.title_inventory2)), UHFNewReadTagFragment.class, null);
         mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_2d_Scan)).setIndicator(getString(R.string.title_2d_Scan)), BarcodeFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_set)).setIndicator(getString(R.string.uhf_msg_tab_set)), UHFSetFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.location)).setIndicator(getString(R.string.location)),
-                UHFLocationFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_read)).setIndicator(getString(R.string.uhf_msg_tab_read)), UHFReadFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_write)).setIndicator(getString(R.string.uhf_msg_tab_write)), UHFWriteFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_lock)).setIndicator(getString(R.string.uhf_msg_tab_lock)), UHFLockFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_kill)).setIndicator(getString(R.string.uhf_msg_tab_kill)), UHFKillFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_erase)).setIndicator(getString(R.string.uhf_msg_tab_erase)), UHFEraseFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_update)).setIndicator(getString(R.string.title_update)), UHFUpdataFragment.class, null);
-
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_bt_rename)).setIndicator(getString(R.string.title_bt_rename)), BTRenameFragment.class, null);
+        // Add other tabs...
     }
+
+
+
+//    protected void initUI() {
+//        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+//
+//        tvAddress = (TextView) findViewById(R.id.tvAddress);
+//
+//        fm = getSupportFragmentManager();
+//        mTabHost = (FragmentTabHost) findViewById(android.R.id.tabhost);
+//        mTabHost.setup(this, fm, R.id.realtabcontent);
+//
+//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory)).setIndicator(getString(R.string.title_inventory)), UHFReadTagFragment.class, null);
+//       // mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory2)).setIndicator(getString(R.string.title_inventory2)), UHFNewReadTagFragment.class, null);
+//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_2d_Scan)).setIndicator(getString(R.string.title_2d_Scan)), BarcodeFragment.class, null);
+//
+//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_set)).setIndicator(getString(R.string.uhf_msg_tab_set)), UHFSetFragment.class, null);
+//
+//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.location)).setIndicator(getString(R.string.location)),
+//                UHFLocationFragment.class, null);
+//
+//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_read)).setIndicator(getString(R.string.uhf_msg_tab_read)), UHFReadFragment.class, null);
+//
+//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_write)).setIndicator(getString(R.string.uhf_msg_tab_write)), UHFWriteFragment.class, null);
+//
+//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_lock)).setIndicator(getString(R.string.uhf_msg_tab_lock)), UHFLockFragment.class, null);
+//
+//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_kill)).setIndicator(getString(R.string.uhf_msg_tab_kill)), UHFKillFragment.class, null);
+//
+//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_erase)).setIndicator(getString(R.string.uhf_msg_tab_erase)), UHFEraseFragment.class, null);
+//
+//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_update)).setIndicator(getString(R.string.title_update)), UHFUpdataFragment.class, null);
+//
+//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_bt_rename)).setIndicator(getString(R.string.title_bt_rename)), BTRenameFragment.class, null);
+//    }
 
     public void updateConnectMessage(String oldName, String newName) {
         if (!TextUtils.isEmpty(oldName) && !TextUtils.isEmpty(newName)) {
