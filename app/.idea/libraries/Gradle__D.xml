@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: D" external-system-id="GRADLE">
+    <CLASSES>
+      <root url="jar://$APPLICATION_HOME_DIR$/jbr/caches/transforms-3/c8f43b1bc540585a9fddecc8784cadf3/transformed/jetified-DeviceAPI_ver20231208_release/jars/classes.jar!/" />
+      <root url="file://$APPLICATION_HOME_DIR$/jbr/caches/transforms-3/c8f43b1bc540585a9fddecc8784cadf3/transformed/jetified-DeviceAPI_ver20231208_release/res" />
+      <root url="file://$APPLICATION_HOME_DIR$/jbr/caches/transforms-3/c8f43b1bc540585a9fddecc8784cadf3/transformed/jetified-DeviceAPI_ver20231208_release/AndroidManifest.xml" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

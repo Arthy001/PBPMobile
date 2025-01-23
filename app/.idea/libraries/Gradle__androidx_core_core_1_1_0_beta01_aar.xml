@@ -1,0 +1,18 @@
+<component name="libraryTable">
+  <library name="Gradle: androidx.core:core:1.1.0-beta01@aar" external-system-id="GRADLE">
+    <ANNOTATIONS>
+      <root url="jar://$APPLICATION_HOME_DIR$/jbr/caches/transforms-3/5e06487b195b8a0910c793154f3390b6/transformed/core-1.1.0-beta01/annotations.zip!/" />
+    </ANNOTATIONS>
+    <CLASSES>
+      <root url="jar://$APPLICATION_HOME_DIR$/jbr/caches/transforms-3/5e06487b195b8a0910c793154f3390b6/transformed/core-1.1.0-beta01/jars/classes.jar!/" />
+      <root url="file://$APPLICATION_HOME_DIR$/jbr/caches/transforms-3/5e06487b195b8a0910c793154f3390b6/transformed/core-1.1.0-beta01/res" />
+      <root url="file://$APPLICATION_HOME_DIR$/jbr/caches/transforms-3/5e06487b195b8a0910c793154f3390b6/transformed/core-1.1.0-beta01/AndroidManifest.xml" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$APPLICATION_HOME_DIR$/jbr/caches/transforms-3/56ccc0a1914745a50f11a4a67870dfed/transformed/core-1.1.0-beta01/jars/classes.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$APPLICATION_HOME_DIR$/jbr/caches/modules-2/files-2.1/androidx.core/core/1.1.0-beta01/3a0032a9f17b3df2499719730f00a4d28990adf8/core-1.1.0-beta01-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="Gradle: androidx.lifecycle:lifecycle-runtime:2.2.0-alpha01@aar" external-system-id="GRADLE">
+    <CLASSES>
+      <root url="file://$APPLICATION_HOME_DIR$/jbr/caches/transforms-3/5cc85632a2674060613eb626ab844293/transformed/lifecycle-runtime-2.2.0-alpha01/AndroidManifest.xml" />
+      <root url="jar://$APPLICATION_HOME_DIR$/jbr/caches/transforms-3/5cc85632a2674060613eb626ab844293/transformed/lifecycle-runtime-2.2.0-alpha01/jars/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$APPLICATION_HOME_DIR$/jbr/caches/transforms-3/d2e425f76876e63f63064361424a0197/transformed/lifecycle-runtime-2.2.0-alpha01/jars/classes.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$APPLICATION_HOME_DIR$/jbr/caches/modules-2/files-2.1/androidx.lifecycle/lifecycle-runtime/2.2.0-alpha01/533a0cd1a095abbdfd08a49c4d34bd0713977034/lifecycle-runtime-2.2.0-alpha01-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
