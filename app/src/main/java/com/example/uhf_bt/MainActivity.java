@@ -34,28 +34,16 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.uhf_bt.fragment.BTRenameFragment;
 import com.example.uhf_bt.fragment.BarcodeFragment;
 import com.example.uhf_bt.fragment.MoveOrderFragment;
 import com.example.uhf_bt.fragment.PickingOrderFragment;
-import com.example.uhf_bt.fragment.UHFEraseFragment;
-import com.example.uhf_bt.fragment.UHFKillFragment;
-import com.example.uhf_bt.fragment.UHFLocationFragment;
-import com.example.uhf_bt.fragment.UHFLockFragment;
-import com.example.uhf_bt.fragment.UHFReadFragment;
 import com.example.uhf_bt.fragment.UHFReadTagFragment;
-import com.example.uhf_bt.fragment.UHFSetFragment;
-import com.example.uhf_bt.fragment.UHFUpdataFragment;
-import com.example.uhf_bt.fragment.UHFWriteFragment;
-import com.example.uhf_bt.tool.CwLog;
 import com.example.uhf_bt.tool.ExcelUtils;
 import com.google.android.material.button.MaterialButton;
 import com.rscja.deviceapi.RFIDWithUHFBLE;
-import com.rscja.deviceapi.VersionInfo;
 import com.rscja.deviceapi.interfaces.ConnectionStatus;
 import com.rscja.deviceapi.interfaces.ConnectionStatusCallback;
 import com.rscja.deviceapi.interfaces.ScanBTCallback;
-import com.rscja.team.qcom.utility.LogUtility_qcom;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -125,6 +113,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     private long lastTouchTime = System.currentTimeMillis(); // 上次接触屏幕操作的时间戳
     public static boolean isKeyDownUP=false;
     private static final int RUNNING_DISCONNECT_TIMER = 10;
+
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -142,6 +131,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
 
         if (BuildConfig.DEBUG) {
@@ -199,6 +189,9 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         MaterialButton btnPickingOrder = findViewById(R.id.btnPickingOrder);
 
         btnMoveOrder.setOnClickListener(v -> {
+            viewMenu.setVisibility(View.GONE);
+            mainContent.setVisibility(View.GONE);
+            hideNavigationBar();
             getSupportFragmentManager().beginTransaction()
                     .replace(android.R.id.content, new MoveOrderFragment())
                     .addToBackStack(null)
@@ -206,6 +199,9 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         });
 
         btnPickingOrder.setOnClickListener(v -> {
+            viewMenu.setVisibility(View.GONE);
+            mainContent.setVisibility(View.GONE);
+            hideNavigationBar();
             getSupportFragmentManager().beginTransaction()
                     .replace(android.R.id.content, new PickingOrderFragment())
                     .addToBackStack(null)
@@ -214,13 +210,27 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
         getSupportFragmentManager().addOnBackStackChangedListener(() -> {
             if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
-                // Return to menu when back stack is empty
                 mainContent.setVisibility(View.VISIBLE);
                 viewMenu.setVisibility(View.VISIBLE);
                 viewTabhost.setVisibility(View.GONE);
+                showNavigationBar();
             }
         });
     }
+
+    private void hideNavigationBar() {
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().hide();
+        }
+    }
+
+    private void showNavigationBar() {
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().show();
+        }
+    }
+
+
 
     // Add in MainActivity.java after initUI()
 

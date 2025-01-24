@@ -12,6 +12,19 @@
         android:orientation="vertical"
         android:visibility="gone">
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMoveOrder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Move Order"
+            android:layout_marginBottom="8dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPickingOrder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Picking Order"/>
+
         <!-- View Menu -->
         <LinearLayout
             android:id="@+id/view_menu"
@@ -54,18 +67,7 @@
                 android:gravity="center_vertical"
                 android:layout_marginBottom="16dp"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnMoveOrder"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Move Order"
-                android:layout_marginBottom="8dp"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPickingOrder"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Picking Order"/>
         </LinearLayout>
 
         <!-- TabHost View -->
@@ -154,6 +156,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Username or Email"
+                android:text="admin@gmail.com"
                 android:inputType="textEmailAddress"/>
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -167,6 +170,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Password"
+                android:text="123456"
                 android:inputType="textPassword"/>
         </com.google.android.material.textfield.TextInputLayout>
 

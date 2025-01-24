@@ -55,4 +55,15 @@
         <item name="android:windowEnterAnimation">@anim/usuallib_top_dialog_enter</item>
         <item name="android:windowExitAnimation">@anim/usuallib_top_dialog_exit</item>
     </style>
+
+    <style name="SearchViewStyle" parent="Widget.AppCompat.SearchView">
+        <!-- Background for the search view -->
+        <item name="android:background">@android:color/transparent</item>
+        <!-- Text color -->
+        <item name="android:textColor">@android:color/white</item>
+        <!-- Hint text color -->
+        <item name="android:textColorHint">@android:color/white</item>
+        <!-- Search icon color -->
+        <item name="android:tint">@android:color/white</item>
+    </style>
 </resources>
