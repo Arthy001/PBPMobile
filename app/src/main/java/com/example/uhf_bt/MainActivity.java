@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -38,6 +39,11 @@ import com.example.uhf_bt.fragment.BarcodeFragment;
 import com.example.uhf_bt.fragment.MoveOrderFragment;
 import com.example.uhf_bt.fragment.PickingOrderFragment;
 import com.example.uhf_bt.fragment.UHFReadTagFragment;
+import com.example.uhf_bt.models.UserProfile;
+import com.example.uhf_bt.request.LoginRequest;
+import com.example.uhf_bt.response.LoginResponse;
+import com.example.uhf_bt.services.ApiService;
+import com.example.uhf_bt.services.RetrofitClient;
 import com.example.uhf_bt.tool.ExcelUtils;
 import com.google.android.material.button.MaterialButton;
 import com.rscja.deviceapi.RFIDWithUHFBLE;
@@ -63,19 +69,21 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTabHost;
 
 import no.nordicsemi.android.dfu.BuildConfig;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MainActivity extends BaseActivity implements View.OnClickListener {
 
-    private View viewMenu;
-    private View viewTabhost;
-    private LinearLayout mainContent;
-    private LinearLayout viewLogin;
+    private SharedPreferences sharedPreferences;
+    private ApiService apiService;
+    private View viewMenu, viewTabhost;
+    private LinearLayout mainContent,viewLogin;
     private MaterialButton btnLogin;
     private EditText etUsername, etPassword;
     private TextView tvDeviceId;
     private FrameLayout loadingOverlay;
     private static final int PERMISSION_REQUEST_CODE = 1;
-
     public boolean isScanning = false;
     public String remoteBTName = "";
     public String remoteBTAdd = "";
@@ -84,7 +92,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     private static final int REQUEST_SELECT_DEVICE = 1;
     public ArrayList<HashMap<String, String>> tagList;
     public String selectEPC=null;
-
     public BluetoothDevice mDevice = null;
     private FragmentTabHost mTabHost;
     private FragmentManager fm;
@@ -113,6 +120,11 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     private long lastTouchTime = System.currentTimeMillis(); // 上次接触屏幕操作的时间戳
     public static boolean isKeyDownUP=false;
     private static final int RUNNING_DISCONNECT_TIMER = 10;
+
+    private static final long SESSION_TIMEOUT = 10 * 60 * 1000; // 30 minutes in milliseconds
+    private Handler sessionTimeoutHandler = new Handler();
+    private Runnable sessionTimeoutRunnable;
+    private long lastActivityTime;
 
     private Handler mHandler = new Handler() {
         @Override
@@ -144,22 +156,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         setupLoginButton();
         setupMenuButtons();
 
-
-//        mainContent = findViewById(R.id.mainContent);
-//        viewLogin = findViewById(R.id.view_login);
-//        loadingOverlay = findViewById(R.id.loadingOverlay);
-//        btnLogin = findViewById(R.id.btnLogin);
-//        etUsername = findViewById(R.id.etUsername);
-//        etPassword = findViewById(R.id.etPassword);
-//        tvDeviceId = findViewById(R.id.tvDeviceId);
-//
-//
-//        // Hide main content initially
-//        mainContent.setVisibility(View.GONE);
-//        viewLogin.setVisibility(View.VISIBLE);
-
-        //setupLoginButton();
-        //initUI();
         checkReadWritePermission();
         checkLocationEnable();
         uhf.init(getApplicationContext());
@@ -172,6 +168,67 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         }
 
 
+        sharedPreferences = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+
+        if (sharedPreferences.getBoolean("isLoggedIn", false)) {
+            String plant_name = sharedPreferences.getString("plant_name", "-");
+
+            RetrofitClient.ipAddress =  sharedPreferences.getString("ip_address", "").toString();
+            RetrofitClient.token =  sharedPreferences.getString("token", "").toString();
+            viewLogin.setVisibility(View.GONE);
+            mainContent.setVisibility(View.VISIBLE);
+            mTabHost.setVisibility(View.GONE);
+
+
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().show();
+            }
+
+            resetSessionTimer();
+        }
+        else
+        {
+
+            viewLogin.setVisibility(View.VISIBLE);
+            mainContent.setVisibility(View.GONE);
+            mTabHost.setVisibility(View.GONE);
+
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().hide();
+            }
+            //return;
+        }
+
+
+        apiService = RetrofitClient.getClient().create(ApiService.class);
+
+
+    }
+
+    private void resetSessionTimer() {
+        lastActivityTime = System.currentTimeMillis();
+        if (sessionTimeoutRunnable != null) {
+            sessionTimeoutHandler.removeCallbacks(sessionTimeoutRunnable);
+        }
+
+        sessionTimeoutRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (System.currentTimeMillis() - lastActivityTime >= SESSION_TIMEOUT) {
+                    // Session timeout occurred, perform logout
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            handleSessionTimeout();
+                        }
+                    });
+                } else {
+                    // Check again after some time
+                    sessionTimeoutHandler.postDelayed(this, 60000); // Check every minute
+                }
+            }
+        };
+        sessionTimeoutHandler.postDelayed(sessionTimeoutRunnable, 60000);
     }
 
     @Override
@@ -229,9 +286,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
             getSupportActionBar().show();
         }
     }
-
-
-
     // Add in MainActivity.java after initUI()
 
     private boolean validateLogin(String username, String password) {
@@ -471,6 +525,114 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
             default:
                 break;
         }
+    }
+
+
+    private void attemptLogin() {
+        String username = etUsername.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
+
+        if (username.isEmpty() || password.isEmpty()) {
+            Toast.makeText(MainActivity.this, "Please enter both username and password", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        loadingOverlay.setVisibility(View.GONE);
+
+        LoginRequest loginRequest = new LoginRequest(username, password);
+
+        apiService.login(loginRequest).enqueue(new Callback<UserProfile>() {
+            @Override
+            public void onResponse(Call<UserProfile> call, Response<UserProfile> response) {
+                loadingOverlay.setVisibility(View.GONE);
+
+                if (response.isSuccessful() && response.body() != null) {
+                    UserProfile userProfile = response.body();
+                    LoginResponse loginResponse = new LoginResponse();
+                    loginResponse.setUser(userProfile.getFullName());
+
+                    handleSuccessfulLogin(loginResponse);
+                } else {
+                    Log.e(TAG, "Login failed with code: " + response.code());
+                    String errorMessage = "Invalid email or password";
+                    if (response.code() == 401) {
+                        errorMessage = "Invalid email or password";
+                    } else {
+                        errorMessage = "Login failed. Please try again.";
+                    }
+                    Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
+
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.putBoolean("isLoggedIn", false);
+                    editor.apply();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<UserProfile> call, Throwable t) {
+                loadingOverlay.setVisibility(View.GONE);
+                Log.e(TAG, "Network error during login: " + t.getMessage());
+                Toast.makeText(MainActivity.this,
+                        "Network error: " + t.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putBoolean("isLoggedIn", false);
+                editor.apply();
+            }
+        });
+    }
+
+
+    private void handleSuccessfulLogin(LoginResponse loginResponse) {
+        Log.d(TAG, "Login successful");
+
+        if (loginResponse.getUser() != null && !loginResponse.getUser().isEmpty()) {
+            Log.d(TAG, "Logged in user: " + loginResponse.getUser());
+
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean("isLoggedIn", true);
+            editor.putString("username", loginResponse.getUser());
+            editor.putString("ip_address", "");
+            editor.putString("token", "");
+            editor.apply();
+
+            viewMenu.setVisibility(View.GONE);
+            mainContent.setVisibility(View.VISIBLE);
+            mTabHost.setVisibility(View.GONE);
+
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().show();
+            }
+
+            resetSessionTimer();
+
+        } else {
+            Log.e(TAG, "Login successful but user information is missing");
+            Toast.makeText(MainActivity.this, "Login successful but user information is missing", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    // Add this method to handle session timeout
+    private void handleSessionTimeout() {
+        // Clear login state
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear();
+        editor.apply();
+
+        // Update UI
+        viewMenu.setVisibility(View.VISIBLE);
+        mainContent.setVisibility(View.GONE);
+        mTabHost.setVisibility(View.GONE);
+
+        // Hide toolbar
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().hide();
+        }
+
+        // Show timeout message
+        Toast.makeText(MainActivity.this, "Session expired. Please login again.", Toast.LENGTH_LONG).show();
     }
 
     private void showBluetoothDevice(boolean isHistory) {
