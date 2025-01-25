@@ -328,15 +328,15 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         btnLogin.setOnClickListener(v -> {
             String username = etUsername.getText().toString();
             String password = etPassword.getText().toString();
-
-            if (validateLogin(username, password)) {
-                loadingOverlay.setVisibility(View.VISIBLE);
-                new Handler().postDelayed(() -> {
-                    loadingOverlay.setVisibility(View.GONE);
-                    viewLogin.setVisibility(View.GONE);
-                    mainContent.setVisibility(View.VISIBLE);
-                }, 1500);
-            }
+            attemptLogin();
+//            if (validateLogin(username, password)) {
+//                loadingOverlay.setVisibility(View.VISIBLE);
+//                new Handler().postDelayed(() -> {
+//                    loadingOverlay.setVisibility(View.GONE);
+//                    viewLogin.setVisibility(View.GONE);
+//                    mainContent.setVisibility(View.VISIBLE);
+//                }, 1500);
+//            }
         });
     }
 
@@ -482,6 +482,25 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
                Intent intent = new Intent(MainActivity.this,ExtractDataActivity.class);
                startActivity(intent);
             }
+            else if (item.getItemId() == R.id.action_logout) {
+                // Clear login state
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.clear();
+                editor.apply();
+
+                // Update UI
+                viewLogin.setVisibility(View.VISIBLE);
+                mainContent.setVisibility(View.GONE);
+                mTabHost.setVisibility(View.GONE);
+
+                // Hide toolbar
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().hide();
+                }
+
+                Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
+                return true;
+            }
         } else {
             showToast(R.string.title_stop_read_card);
         }
@@ -597,9 +616,9 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
             editor.putString("token", "");
             editor.apply();
 
-            viewMenu.setVisibility(View.GONE);
+            loadingOverlay.setVisibility(View.GONE);
+            viewLogin.setVisibility(View.GONE);
             mainContent.setVisibility(View.VISIBLE);
-            mTabHost.setVisibility(View.GONE);
 
             if (getSupportActionBar() != null) {
                 getSupportActionBar().show();

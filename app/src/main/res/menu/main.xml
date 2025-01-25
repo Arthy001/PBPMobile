@@ -2,6 +2,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" >
 
+
     <item
         android:id="@+id/UHF_Battery"
         android:title="@string/obtain_electricity"
@@ -36,4 +37,9 @@
         android:id="@+id/r2_extract_data"
         android:title="@string/R2_extract_data"
         app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_logout"
+        android:title="Logout"
+        app:showAsAction="never"/>
 </menu>

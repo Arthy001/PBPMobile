@@ -14,7 +14,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.widget.SearchView;
+import androidx.appcompat.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -68,7 +68,7 @@ public class PickingOrderFragment extends Fragment {
 
         initViews(view);
         setupBackButton();
-        //setupSearchView();
+        setupSearchView();
         setupListView();
 
         apiService = RetrofitClient.getClient().create(ApiService.class);
@@ -82,7 +82,7 @@ public class PickingOrderFragment extends Fragment {
         progressBar = view.findViewById(R.id.progressBar);
         emptyView = view.findViewById(R.id.emptyView);
         toolbar_title = view.findViewById(R.id.toolbar_title);
-        //searchView = view.findViewById(R.id.searchView);
+        searchView = view.findViewById(R.id.searchView);
     }
 
     private void setupBackButton() {

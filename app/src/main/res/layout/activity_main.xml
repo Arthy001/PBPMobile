@@ -25,6 +25,13 @@
             android:layout_height="wrap_content"
             android:text="Picking Order"/>
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Settings"/>
+
+
         <!-- View Menu -->
         <LinearLayout
             android:id="@+id/view_menu"
