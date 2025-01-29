@@ -5,6 +5,7 @@ import com.example.uhf_bt.models.MoveOrder;
 import com.example.uhf_bt.models.MoveOrderItem;
 import com.example.uhf_bt.models.PickingOrder;
 import com.example.uhf_bt.models.PickingOrderItem;
+import com.example.uhf_bt.models.ProductItem;
 import com.example.uhf_bt.models.UserProfile;
 import com.example.uhf_bt.request.LoginRequest;
 import com.example.uhf_bt.response.LoginResponse;
@@ -34,11 +35,21 @@ public interface ApiService {
 
     @GET("api/moveordertransaction/by-move-order/{id}")
     Call<List<MoveOrderItem>> getMoveOrderTransactions(@Path("id") String moveOrderId);
+
+    @GET("api/productitem/by-status/{status}")
+    Call<List<ProductItem>> getProductItemsByStatus(@Path("status") int status);
     @POST("api/MoveOrderTransactionChild")
     Call<List<MoveOrderItem>> createMoveOrderTransaction(
             @Header("ParentId") String parentId,
             @Body List<MoveOrderItem> items
     );
+
+    @POST("api/PickingOrderTransactionChild")
+    Call<List<PickingOrderItem>> createPickingOrderTransaction(
+            @Header("ParentId") String parentId,
+            @Body List<PickingOrderItem> items
+    );
+
 
 
     @GET("api/pickingorder")

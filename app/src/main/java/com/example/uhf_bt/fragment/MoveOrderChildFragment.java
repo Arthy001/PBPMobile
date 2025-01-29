@@ -57,7 +57,7 @@ public class MoveOrderChildFragment extends Fragment {
     private List<MoveOrderItem> scannedTags = new ArrayList<>();
     private TextView tvOrderNo,tvSourceWarehouse, tvDestinationWarehouse;
     private ListView listView;
-    private Button btnScanRFID, btStop, btClear, btnConfirm ;
+
     private ProgressBar progressBar;
     private View emptyView;
     private MoveOrderChildAdapter adapter;
@@ -74,7 +74,7 @@ public class MoveOrderChildFragment extends Fragment {
 
     private MainActivity mContext;
 
-
+    private Button btnScanRFID, btStop, btClear, btnConfirm ;
 
 
     public static MoveOrderChildFragment newInstance(String moveOrderId) {
@@ -947,7 +947,7 @@ public class MoveOrderChildFragment extends Fragment {
 
         // Create Retrofit service or similar HTTP client
         Call<List<MoveOrderItem>> call = apiService.createMoveOrderTransaction(
-                "17", // Replace with actual parent ID
+                moveOrderId, // Replace with actual parent ID
                 scannedTags
         );
 

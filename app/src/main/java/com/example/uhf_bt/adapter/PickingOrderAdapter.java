@@ -86,7 +86,6 @@ public class PickingOrderAdapter extends BaseAdapter implements Filterable {
             holder.numberText = convertView.findViewById(R.id.numberText);
             holder.dateText = convertView.findViewById(R.id.dateText);
             holder.customerText = convertView.findViewById(R.id.customerText);
-            holder.amountText = convertView.findViewById(R.id.amountText);
             holder.statusText = convertView.findViewById(R.id.statusText);
             convertView.setTag(holder);
         } else {
@@ -102,7 +101,7 @@ public class PickingOrderAdapter extends BaseAdapter implements Filterable {
         holder.numberText.setText("Order: " + pickingOrder.getNumber());
         holder.dateText.setText("Date: " + formattedDate);
         holder.customerText.setText("Customer: " + pickingOrder.getCustomer());
-        holder.amountText.setText(String.format("Amount: ฿%.2f", pickingOrder.getAfterTaxAmount()));
+
 
         // Set status with color
         setStatus(holder.statusText, pickingOrder.getOrderStatus());
@@ -124,20 +123,28 @@ public class PickingOrderAdapter extends BaseAdapter implements Filterable {
         int textColor;
 
         switch (status) {
-            case 1:
+            case 0:
                 statusStr = "New";
                 textColor = context.getResources().getColor(android.R.color.holo_blue_dark);
                 break;
-            case 2:
-                statusStr = "In Progress";
+            case 1:
+                statusStr = "Packed";
                 textColor = context.getResources().getColor(android.R.color.holo_orange_dark);
                 break;
-            case 3:
-                statusStr = "Completed";
+            case 2:
+                statusStr = "Picked";
                 textColor = context.getResources().getColor(android.R.color.holo_green_dark);
                 break;
+            case 3:
+                statusStr = "รับเข้าจัดส่ง";
+                textColor = context.getResources().getColor(android.R.color.holo_red_dark);
+                break;
             case 4:
-                statusStr = "Cancelled";
+                statusStr = "จัดส่งแล้ว";
+                textColor = context.getResources().getColor(android.R.color.holo_red_dark);
+                break;
+            case -1:
+                statusStr = "Cancel";
                 textColor = context.getResources().getColor(android.R.color.holo_red_dark);
                 break;
             default:
@@ -198,7 +205,6 @@ public class PickingOrderAdapter extends BaseAdapter implements Filterable {
         TextView numberText;
         TextView dateText;
         TextView customerText;
-        TextView amountText;
         TextView statusText;
     }
 

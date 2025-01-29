@@ -12,6 +12,14 @@
         android:orientation="vertical">
 
         <TextView
+            android:id="@+id/tvItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
             android:id="@+id/tvProduct"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -19,32 +27,21 @@
             android:textStyle="bold"
             android:layout_marginBottom="4dp"/>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/tvQuantity"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"/>
-
-            <TextView
-                android:id="@+id/tvLot"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:layout_marginStart="16dp"/>
-        </LinearLayout>
-
         <TextView
-            android:id="@+id/tvTotal"
+            android:id="@+id/tvQuantity"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginTop="4dp"/>
+            android:textSize="14sp"/>
+        <TextView
+            android:id="@+id/tvQuantitySuccess"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"/>
+        <TextView
+            android:id="@+id/tvQuantityScan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"/>
     </LinearLayout>
 
     <ImageView

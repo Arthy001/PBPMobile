@@ -53,9 +53,11 @@ public class PickingOrderChildAdapter extends BaseAdapter implements Filterable 
         if (convertView == null) {
             convertView = inflater.inflate(R.layout.item_picking_order_child, parent, false);
             holder = new ViewHolder();
+            holder.tvItem = convertView.findViewById(R.id.tvItem);
             holder.tvProduct = convertView.findViewById(R.id.tvProduct);
-            holder.tvLot = convertView.findViewById(R.id.tvLot);
             holder.tvQuantity = convertView.findViewById(R.id.tvQuantity);
+            holder.tvQuantitySuccess = convertView.findViewById(R.id.tvQuantitySuccess);
+            holder.tvQuantityScan = convertView.findViewById(R.id.tvQuantityScan);
             holder.ivStatus = convertView.findViewById(R.id.ivStatus);
             convertView.setTag(holder);
         } else {
@@ -63,33 +65,22 @@ public class PickingOrderChildAdapter extends BaseAdapter implements Filterable 
         }
 
         PickingOrderItem item = getItem(position);
-
+        holder.tvItem.setText("Item : " + item.getProductNumber());
         holder.tvProduct.setText(item.getProduct());
-        holder.tvLot.setText("Lot: " + item.getLotNumber());
-        holder.tvQuantity.setText(String.format("Quantity: %d", item.getQuantity()));
-
-        // Set status icon based on status
-//        int statusIcon;
-//        switch(item.getPickingTransStatus()) {
-//            case 1: // Completed
-//                statusIcon = R.drawable.ic_check_circle;
-//                break;
-//            case 2: // In Progress
-//                statusIcon = R.drawable.ic_pending;
-//                break;
-//            default: // Not Started
-//                statusIcon = R.drawable.ic_not_started;
-//                break;
-//        }
-//        holder.ivStatus.setImageResource(statusIcon);
+        holder.tvQuantity.setText(String.format("Quantity: %.0f", item.getQuantity()));
+        holder.tvQuantitySuccess.setText(String.format("Success: %.0f", item.getQuantitySuccess()));
+        holder.tvQuantityScan.setText(String.format("Scan: %.0f", item.getQuantityScan()));
 
         return convertView;
     }
 
     private static class ViewHolder {
+        TextView tvItem;
         TextView tvProduct;
-        TextView tvLot;
         TextView tvQuantity;
+
+        TextView tvQuantitySuccess;
+        TextView tvQuantityScan;
         ImageView ivStatus;
     }
 
