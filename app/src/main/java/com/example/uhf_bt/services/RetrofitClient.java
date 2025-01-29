@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 public class RetrofitClient {
     private static final String TAG = "RetrofitClient";
 
-    private static final String BASE_URL = "http://192.168.1.34:5240/"; // Make sure this matches your API
+    private static final String BASE_URL = "http://192.168.110.79:5240/"; // Make sure this matches your API
     public static String ipAddress = ""; // You might want to get this dynamically
     public static String token = ""; // This should be securely stored
     private static Retrofit retrofit = null;

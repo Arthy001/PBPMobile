@@ -8,10 +8,15 @@ public class MoveOrderItem {
     private String warehouseSourceName;
     private String warehouseDestinationName;
     private String orderDate;
+    private int productId;
     private String product;
+    private String barcode;
+    private String productNumber;
     private String summary;
     private double unitPrice;
-    private int quantity;
+    private double quantity;
+    private double quantitySuccess ;
+    private double quantityScan;
     private double total;
     private int quantityItem;
     private String tagId;
@@ -46,18 +51,30 @@ public class MoveOrderItem {
     public String getOrderDate() { return orderDate; }
     public void setOrderDate(String orderDate) { this.orderDate = orderDate; }
 
+    public String getProductNumber() { return productNumber; }
+    public void setProductNumber(String productNumber) { this.productNumber = productNumber; }
+
     public String getProduct() { return product; }
     public void setProduct(String product) { this.product = product; }
 
+    public int getProductId() { return productId; }
+    public void setProductId(int productId) { this.productId = productId; }
+    public String getBarcode() { return barcode; }
+    public void setBarcode(String barcode) { this.barcode = barcode; }
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }
 
     public double getUnitPrice() { return unitPrice; }
     public void setUnitPrice(double unitPrice) { this.unitPrice = unitPrice; }
 
-    public int getQuantity() { return quantity; }
-    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public double getQuantity() { return quantity; }
+    public void setQuantity(double quantity) { this.quantity = quantity; }
 
+    public double getQuantitySuccess() { return quantitySuccess; }
+    public void setQuantitySuccess(double quantitySuccess) { this.quantitySuccess = quantitySuccess; }
+
+    public double getQuantityScan() { return quantityScan; }
+    public void setQuantityScan(double quantityScan) { this.quantityScan = quantityScan; }
     public double getTotal() { return total; }
     public void setTotal(double total) { this.total = total; }
 

@@ -68,7 +68,7 @@ public class MoveOrderAdapter extends BaseAdapter implements Filterable {
             holder.numberText = convertView.findViewById(R.id.numberText);
             holder.dateText = convertView.findViewById(R.id.dateText);
             holder.sourceText = convertView.findViewById(R.id.sourceText);
-            holder.amountText = convertView.findViewById(R.id.amountText);
+            //holder.amountText = convertView.findViewById(R.id.amountText);
             holder.statusText = convertView.findViewById(R.id.statusText);
             convertView.setTag(holder);
         } else {
@@ -86,7 +86,7 @@ public class MoveOrderAdapter extends BaseAdapter implements Filterable {
         holder.sourceText.setText(String.format("From: %s To: %s",
                 moveOrder.getWarehouseSource(),
                 moveOrder.getWarehouseDestination()));
-        holder.amountText.setText(String.format("Amount: ฿%.2f", moveOrder.getAfterTaxAmount()));
+        //holder.amountText.setText(String.format("Amount: ฿%.2f", moveOrder.getAfterTaxAmount()));
 
         // Set status with color
         setStatus(holder.statusText, moveOrder.getStatus());
@@ -108,21 +108,17 @@ public class MoveOrderAdapter extends BaseAdapter implements Filterable {
         int textColor;
 
         switch (status) {
-            case 1:
+            case 0:
                 statusStr = "New";
                 textColor = context.getResources().getColor(android.R.color.holo_blue_dark);
                 break;
-            case 2:
-                statusStr = "In Progress";
-                textColor = context.getResources().getColor(android.R.color.holo_orange_dark);
-                break;
-            case 3:
-                statusStr = "Completed";
+            case 1:
+                statusStr = "Success";
                 textColor = context.getResources().getColor(android.R.color.holo_green_dark);
                 break;
-            case 4:
-                statusStr = "Cancelled";
-                textColor = context.getResources().getColor(android.R.color.holo_red_dark);
+            case -1:
+                statusStr = "Cancel";
+                textColor = context.getResources().getColor(android.R.color.holo_orange_dark);
                 break;
             default:
                 statusStr = "Unknown";

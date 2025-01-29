@@ -15,6 +15,7 @@ import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 
@@ -29,6 +30,14 @@ public interface ApiService {
     Call<List<MoveOrder>> getMoveOrders();
     @GET("api/moveorderitem")
     Call<List<MoveOrderItem>> getMoveOrderItems(@Query("moveorderid") String moveOrderId);
+
+    @POST("api/MoveOrderTransactionChild")
+    Call<List<MoveOrderItem>> createMoveOrderTransaction(
+            @Header("ParentId") String parentId,
+            @Body List<MoveOrderItem> items
+    );
+
+
     @GET("api/pickingorder")
     Call<List<PickingOrder>> getPickingOrders();
 

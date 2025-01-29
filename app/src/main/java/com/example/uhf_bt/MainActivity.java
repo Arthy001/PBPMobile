@@ -35,10 +35,19 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.uhf_bt.fragment.BTRenameFragment;
 import com.example.uhf_bt.fragment.BarcodeFragment;
 import com.example.uhf_bt.fragment.MoveOrderFragment;
 import com.example.uhf_bt.fragment.PickingOrderFragment;
+import com.example.uhf_bt.fragment.UHFEraseFragment;
+import com.example.uhf_bt.fragment.UHFKillFragment;
+import com.example.uhf_bt.fragment.UHFLocationFragment;
+import com.example.uhf_bt.fragment.UHFLockFragment;
+import com.example.uhf_bt.fragment.UHFReadFragment;
 import com.example.uhf_bt.fragment.UHFReadTagFragment;
+import com.example.uhf_bt.fragment.UHFSetFragment;
+import com.example.uhf_bt.fragment.UHFUpdataFragment;
+import com.example.uhf_bt.fragment.UHFWriteFragment;
 import com.example.uhf_bt.models.UserProfile;
 import com.example.uhf_bt.request.LoginRequest;
 import com.example.uhf_bt.response.LoginResponse;
@@ -241,10 +250,59 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         android.os.Process.killProcess(Process.myPid());
     }
 
+    @Override
+    public void onBackPressed() {
+        if (viewTabhost.getVisibility() == View.VISIBLE) {
+            viewTabhost.setVisibility(View.GONE);
+            viewMenu.setVisibility(View.VISIBLE);
+            return;
+        }
+        super.onBackPressed();
+    }
+
+
+
     private void setupMenuButtons() {
         MaterialButton btnMoveOrder = findViewById(R.id.btnMoveOrder);
         MaterialButton btnPickingOrder = findViewById(R.id.btnPickingOrder);
 
+        MaterialButton btnSettings = findViewById(R.id.btnSettings);
+        btnSettings.setOnClickListener(v -> {
+            viewMenu.setVisibility(View.GONE);
+            viewTabhost.setVisibility(View.VISIBLE);
+
+            // Clear existing tabs
+            mTabHost.clearAllTabs();
+
+            // Setup tabs
+            mTabHost.setup(this, getSupportFragmentManager(), R.id.realtabcontent);
+            mTabHost.setup(this, fm, R.id.realtabcontent);
+
+
+            // mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory)).setIndicator(getString(R.string.title_inventory)), UHFReadTagFragment.class, null);
+            // mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory2)).setIndicator(getString(R.string.title_inventory2)), UHFNewReadTagFragment.class, null);
+            ///mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_2d_Scan)).setIndicator(getString(R.string.title_2d_Scan)), BarcodeFragment.class, null);
+
+            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_set)).setIndicator(getString(R.string.uhf_msg_tab_set)), UHFSetFragment.class, null);
+
+            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.location)).setIndicator(getString(R.string.location)),  UHFLocationFragment.class, null);
+
+            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_read)).setIndicator(getString(R.string.uhf_msg_tab_read)), UHFReadFragment.class, null);
+
+            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_write)).setIndicator(getString(R.string.uhf_msg_tab_write)), UHFWriteFragment.class, null);
+
+            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_lock)).setIndicator(getString(R.string.uhf_msg_tab_lock)), UHFLockFragment.class, null);
+
+            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_kill)).setIndicator(getString(R.string.uhf_msg_tab_kill)), UHFKillFragment.class, null);
+
+            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_erase)).setIndicator(getString(R.string.uhf_msg_tab_erase)), UHFEraseFragment.class, null);
+
+            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_update)).setIndicator(getString(R.string.title_update)), UHFUpdataFragment.class, null);
+
+            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_bt_rename)).setIndicator(getString(R.string.title_bt_rename)), BTRenameFragment.class, null);
+
+
+        });
         btnMoveOrder.setOnClickListener(v -> {
             viewMenu.setVisibility(View.GONE);
             mainContent.setVisibility(View.GONE);
@@ -326,17 +384,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
     private void setupLoginButton() {
         btnLogin.setOnClickListener(v -> {
-            String username = etUsername.getText().toString();
-            String password = etPassword.getText().toString();
             attemptLogin();
-//            if (validateLogin(username, password)) {
-//                loadingOverlay.setVisibility(View.VISIBLE);
-//                new Handler().postDelayed(() -> {
-//                    loadingOverlay.setVisibility(View.GONE);
-//                    viewLogin.setVisibility(View.GONE);
-//                    mainContent.setVisibility(View.VISIBLE);
-//                }, 1500);
-//            }
         });
     }
 
@@ -685,11 +733,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         uhf.disconnect();
     }
 
-    /**
-     * 重新连接
-     *
-     * @param deviceAddress
-     */
     private void reConnect(String deviceAddress) {
         if (!mIsActiveDisconnect && mReConnectCount > 0) {
             connect(deviceAddress);
@@ -697,11 +740,6 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         }
     }
 
-    /**
-     * 应该提示未连接状态
-     *
-     * @return
-     */
     private boolean shouldShowDisconnected() {
         return mIsActiveDisconnect || mReConnectCount == 0;
     }
