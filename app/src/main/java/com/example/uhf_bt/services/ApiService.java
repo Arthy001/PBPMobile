@@ -17,6 +17,7 @@ import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface ApiService {
@@ -31,6 +32,8 @@ public interface ApiService {
     @GET("api/moveorderitem")
     Call<List<MoveOrderItem>> getMoveOrderItems(@Query("moveorderid") String moveOrderId);
 
+    @GET("api/moveordertransaction/by-move-order/{id}")
+    Call<List<MoveOrderItem>> getMoveOrderTransactions(@Path("id") String moveOrderId);
     @POST("api/MoveOrderTransactionChild")
     Call<List<MoveOrderItem>> createMoveOrderTransaction(
             @Header("ParentId") String parentId,

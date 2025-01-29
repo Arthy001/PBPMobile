@@ -61,6 +61,7 @@ public class MoveOrderChildFragment extends Fragment {
     private ProgressBar progressBar;
     private View emptyView;
     private MoveOrderChildAdapter adapter;
+    private List<MoveOrderItem> tempList = new ArrayList<>();
     private List<MoveOrderItem> itemList = new ArrayList<>();
     private String moveOrderId;
     private ApiService apiService;
@@ -91,6 +92,8 @@ public class MoveOrderChildFragment extends Fragment {
             moveOrderId = getArguments().getString("MoveOrderId");
         }
         apiService = RetrofitClient.getClient().create(ApiService.class);
+        tempList = new ArrayList<>();
+        scannedTags = new ArrayList<>();
     }
 
     @Override
@@ -101,6 +104,7 @@ public class MoveOrderChildFragment extends Fragment {
         setupSearchView();
         setupListView();
         loadMoveOrderItems();
+        loadMoveOrderTransactions();
         setupButtonListeners();
         return view;
     }
@@ -270,6 +274,8 @@ public class MoveOrderChildFragment extends Fragment {
 
                 if (response.isSuccessful() && response.body() != null) {
                     List<MoveOrderItem> items = response.body();
+                    itemList = response.body();
+
                     updateUI(items);
                     // Show empty state if no data
                     if (items.isEmpty()) {
@@ -290,6 +296,85 @@ public class MoveOrderChildFragment extends Fragment {
         });
     }
 
+    private void loadMoveOrderTransactions() {
+        showLoading(true);
+
+        apiService.getMoveOrderTransactions(moveOrderId).enqueue(new Callback<List<MoveOrderItem>>() {
+            @Override
+            public void onResponse(Call<List<MoveOrderItem>> call, Response<List<MoveOrderItem>> response) {
+                showLoading(false);
+
+                if (response.isSuccessful() && response.body() != null) {
+                    tempList = response.body();
+
+                    if (!tempList.isEmpty()) {
+                        // Iterate through tempList to find matches in itemList
+                        for (MoveOrderItem tempItem : tempList) {
+                            // Find matching item in itemList
+                            for (MoveOrderItem item : itemList) {
+                                // Match by productId and lot
+                                int xproductId = item.getProductId();
+                                int xxproductId = tempItem.getProductId();
+                                String xLot = item.getLot();
+                                String xxLot = tempItem.getLot();
+                                if (item.getProductId() == (tempItem.getProductId())
+                                        && item.getLot().equals(tempItem.getLot())) {
+                                    // Update quantity success
+                                    item.setQuantitySuccess(item.getQuantitySuccess() + 1);
+                                    break; // Found match, move to next tempItem
+                                }
+                            }
+                        }
+
+                        // Update adapter with the modified itemList
+                        if (adapter != null) {
+                            adapter.updateItems(itemList);  // Make sure you have this method in your adapter
+                            adapter.notifyDataSetChanged();
+                        }
+
+                        // If you're on a background thread, use runOnUiThread
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() -> {
+                                adapter.notifyDataSetChanged();
+                            });
+                        }
+                    }
+
+//                    if (!tempList.isEmpty()) {
+//                        // Iterate through tempList to find matches in itemList
+//                        for (MoveOrderItem tempItem : tempList) {
+//                            // Find matching item in itemList
+//                            for (MoveOrderItem item : itemList) {
+//                                // Match by productId and lot
+//                                int xproductId = item.getProductId();
+//                                int xxproductId = tempItem.getProductId();
+//                                String xLot = item.getLot();
+//                                String xxLot = tempItem.getLot();
+//                                if (item.getProductId() == (tempItem.getProductId())
+//                                        && item.getLot().equals(tempItem.getLot())) {
+//                                    // Update quantity success
+//                                    item.setQuantitySuccess(item.getQuantitySuccess() + 1);
+//                                    break; // Found match, move to next tempItem
+//                                }
+//                            }
+//                        }
+//                        // Notify adapter that data has changed
+//                        adapter.notifyDataSetChanged();
+//                    }
+                } else {
+                    Log.e(TAG, "Error loading move order transactions: " + response.code());
+                    showError("Failed to load move order transactions");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<MoveOrderItem>> call, Throwable t) {
+                Log.e(TAG, "Network error loading move order transactions", t);
+                showLoading(false);
+                showError("Network error: " + t.getMessage());
+            }
+        });
+    }
     private void showLoading(boolean show) {
         if (progressBar != null) {
             progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
@@ -547,6 +632,7 @@ public class MoveOrderChildFragment extends Fragment {
     public void refreshData() {
         clearSearch();
         loadMoveOrderItems();
+
     }
 
 
@@ -556,6 +642,20 @@ public class MoveOrderChildFragment extends Fragment {
             Toast.makeText(mContext, "Scanned EPC: " + epc, Toast.LENGTH_SHORT).show();
             processQrCode(epc);
         }
+    }
+
+    private MoveOrderItem findItemInTempListByTagId(String tagId) {
+        if (tempList == null || tempList.isEmpty() || tagId == null) {
+            return null;
+        }
+
+        for (MoveOrderItem item : tempList) {
+            if (item.getTagId() != null && item.getTagId().equals(tagId)) {
+                return item;
+            }
+        }
+
+        return null;
     }
 
     private void processQrCode(String qrCode) {
@@ -571,8 +671,24 @@ public class MoveOrderChildFragment extends Fragment {
 
             boolean found = false;
 
+
+            String xxTagID = qrCode;
+            MoveOrderItem foundItem = findItemInTempListByTagId(xxTagID);
+            if (foundItem != null) {
+                // Item found - do something with it
+                Log.d(TAG, "Found item with tagId: " + foundItem.getTagId());
+                Log.d(TAG, "Product ID: " + foundItem.getProductId());
+                Log.d(TAG, "Lot: " + foundItem.getLot());
+                return;
+            } else {
+                // Item not found
+                Log.d(TAG, "No item found with tagId: " + xxTagID);
+            }
+
             // Get all items from adapter
             List<MoveOrderItem> items = adapter.getFilteredItems();
+
+
 
             if (items == null) {
                 Toast.makeText(mContext, "No items available", Toast.LENGTH_SHORT).show();
