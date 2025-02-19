@@ -10,26 +10,66 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:visibility="gone">
+        android:visibility="gone"
+        android:padding="16dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMoveOrder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Move Order"
-            android:layout_marginBottom="8dp"/>
+            android:padding="20dp"
+            android:layout_marginBottom="10dp"
+            android:layout_marginTop="10dp"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPickingOrder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Picking Order"/>
+            android:text="Picking Order"
+            android:padding="20dp"
+            android:layout_marginBottom="10dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCreateRenantBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Create Renant Box"
+            android:padding="20dp"
+            android:layout_marginBottom="10dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnReceiveShipping"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Receive to Shipping"
+            android:padding="20dp"
+            android:layout_marginBottom="10dp"/>
+
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnIssueDeliveryOrder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Issue Delivery Order"
+            android:padding="20dp"
+            android:layout_marginBottom="10dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFindProduct"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Find Product"
+            android:padding="20dp"
+            android:layout_marginBottom="10dp"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSettings"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Settings"/>
+            android:text="Settings"
+            android:padding="20dp"
+            android:layout_marginBottom="10dp"/>
 
 
         <!-- View Menu -->
@@ -38,7 +78,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:padding="16dp"
             android:visibility="visible">
 
             <LinearLayout

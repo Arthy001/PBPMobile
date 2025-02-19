@@ -36,6 +36,8 @@ public interface ApiService {
     @GET("api/moveordertransaction/by-move-order/{id}")
     Call<List<MoveOrderItem>> getMoveOrderTransactions(@Path("id") String moveOrderId);
 
+    @GET("api/productitem/by-tag/{tagId}")
+    Call<ProductItem> getProductItemByTag(@Path("tagId") String tagId);
     @GET("api/productitem/by-status/{status}")
     Call<List<ProductItem>> getProductItemsByStatus(@Path("status") int status);
     @POST("api/MoveOrderTransactionChild")

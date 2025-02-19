@@ -714,7 +714,7 @@ public class MoveOrderChildFragment extends Fragment {
                         // Add tag to scanned list
                         MoveOrderItem xitem = new MoveOrderItem();
                         xitem.setProductId(item.getProductId());
-                        xitem.setQuantity(item.getQuantity());
+                        xitem.setQuantity(1);
                         xitem.setTagId(qrCode.trim());
                         xitem.setLotNumber(item.getLotNumber());
                         xitem.setLot(lot);
