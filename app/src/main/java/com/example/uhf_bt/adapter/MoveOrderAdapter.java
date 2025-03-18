@@ -113,6 +113,10 @@ public class MoveOrderAdapter extends BaseAdapter implements Filterable {
                 textColor = context.getResources().getColor(android.R.color.holo_blue_dark);
                 break;
             case 1:
+                statusStr = "In Progress";
+                textColor = context.getResources().getColor(android.R.color.holo_orange_light);
+                break;
+            case 2:
                 statusStr = "Success";
                 textColor = context.getResources().getColor(android.R.color.holo_green_dark);
                 break;

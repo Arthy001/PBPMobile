@@ -9,6 +9,7 @@ import android.widget.Filterable;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.uhf_bt.ColorConstants;
 import com.example.uhf_bt.R;
 import com.example.uhf_bt.models.MoveOrderItem;
 
@@ -75,20 +76,21 @@ public class MoveOrderChildAdapter extends BaseAdapter implements Filterable {
         holder.tvQuantityScan.setText(String.format("Scan: %.0f", item.getQuantityScan()));
 
 
-        // Set status icon based on moveTransStatus
-//        int statusIcon;
-//        switch(item.getMoveTransStatus()) {
-//            case 1: // Completed
-//                statusIcon = R.drawable.ic_check_circle;
-//                break;
-//            case 2: // In Progress
-//                statusIcon = R.drawable.ic_pending;
-//                break;
-//            default: // Not Started
-//                statusIcon = R.drawable.ic_not_started;
-//                break;
-//        }
-//        holder.ivStatus.setImageResource(statusIcon);
+        // Set background color using the utility method from ColorConstants
+        int backgroundColor = ColorConstants.getMoveOrderItemBackground(
+                item.getQuantity(),
+                item.getQuantitySuccess(),
+                item.getQuantityScan()
+        );
+        convertView.setBackgroundColor(backgroundColor);
+
+        // Set text colors using global constants
+        holder.tvItem.setTextColor(ColorConstants.TEXT_PRIMARY);
+        holder.tvProduct.setTextColor(ColorConstants.TEXT_PRIMARY);
+        holder.tvLot.setTextColor(ColorConstants.TEXT_SECONDARY);
+        holder.tvQuantity.setTextColor(ColorConstants.TEXT_SECONDARY);
+        holder.tvQuantitySuccess.setTextColor(ColorConstants.TEXT_SECONDARY);
+        holder.tvQuantityScan.setTextColor(ColorConstants.TEXT_SECONDARY);
 
         return convertView;
     }

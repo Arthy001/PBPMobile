@@ -3,8 +3,11 @@ package com.example.uhf_bt.services;
 
 import com.example.uhf_bt.models.MoveOrder;
 import com.example.uhf_bt.models.MoveOrderItem;
+import com.example.uhf_bt.models.PalletTag;
+import com.example.uhf_bt.models.PalletTransaction;
 import com.example.uhf_bt.models.PickingOrder;
 import com.example.uhf_bt.models.PickingOrderItem;
+import com.example.uhf_bt.models.PickingOrderTransaction;
 import com.example.uhf_bt.models.ProductItem;
 import com.example.uhf_bt.models.UserProfile;
 import com.example.uhf_bt.request.LoginRequest;
@@ -32,7 +35,6 @@ public interface ApiService {
     Call<List<MoveOrder>> getMoveOrders();
     @GET("api/moveorderitem")
     Call<List<MoveOrderItem>> getMoveOrderItems(@Query("moveorderid") String moveOrderId);
-
     @GET("api/moveordertransaction/by-move-order/{id}")
     Call<List<MoveOrderItem>> getMoveOrderTransactions(@Path("id") String moveOrderId);
 
@@ -51,7 +53,8 @@ public interface ApiService {
             @Header("ParentId") String parentId,
             @Body List<PickingOrderItem> items
     );
-
+    @GET("api/pickingordertransaction/by-picking-order/{pickingOrderId}")
+    Call<List<PickingOrderTransaction>> getPickingOrderTransactions(@Path("pickingOrderId") String pickingOrderId);
 
 
     @GET("api/pickingorder")
@@ -59,6 +62,19 @@ public interface ApiService {
 
     @GET("api/pickingorderitem")
     Call<List<PickingOrderItem>> getPickingOrderItems(@Query("pickingorderid") String pickingOrderId);
+
+    @GET("api/PickingOrderItem/pallet-tagids")
+    Call<List<PalletTag>> getPalletTags();
+
+    @GET("api/PickingOrderItem/pallet-tagids/{pickingOrderId}")
+    Call<List<PalletTag>> getPalletTagsByPickingOrder(@Path("pickingOrderId") String pickingOrderId);
+
+    // Optional: Add a method to get pallet details by tag ID
+    @GET("api/PickingOrderItem/pallet/{palletTagId}")
+    Call<PalletTag> getPalletByTagId(@Path("palletTagId") String palletTagId);
+
+    @GET("api/PickingOrderTransaction/by-pallet-tag-id/{palletTagId}")
+    Call<List<PalletTransaction>> getTransactionsByPalletTagId(@Path("palletTagId") String palletTagId);
 
 
 }

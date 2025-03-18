@@ -5,168 +5,170 @@
     android:layout_height="match_parent">
 
     <!-- Main Content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:id="@+id/mainContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:padding="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnMoveOrder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Move Order"
+                android:padding="20dp"
+                android:layout_marginBottom="10dp"
+                android:layout_marginTop="10dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPickingOrder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Picking Order"
+                android:padding="20dp"
+                android:layout_marginBottom="10dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCreateRenantBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Create Renant Box"
+                android:padding="20dp"
+                android:layout_marginBottom="10dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnReceiveShipping"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Receive to Shipping"
+                android:padding="20dp"
+                android:layout_marginBottom="10dp"/>
+
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnIssueDeliveryOrder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Issue Delivery Order"
+                android:padding="20dp"
+                android:layout_marginBottom="10dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFindProduct"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Find Product"
+                android:padding="20dp"
+                android:layout_marginBottom="10dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSettings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Settings"
+                android:padding="20dp"
+                android:layout_marginBottom="10dp"/>
+
+
+            <!-- View Menu -->
+            <LinearLayout
+                android:id="@+id/view_menu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="16dp">
+
+                    <Button
+                        android:id="@+id/btn_connect"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:text="@string/Connect" />
+
+                    <Button
+                        android:id="@+id/btn_search"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:text="@string/title_search" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:paddingLeft="4dp"
+                    android:paddingRight="4dp"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp"/>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- TabHost View - แยกออกมาจาก mainContent -->
     <LinearLayout
-        android:id="@+id/mainContent"
+        android:id="@+id/view_tabhost"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:visibility="gone"
-        android:padding="16dp">
+        android:background="@color/white">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnMoveOrder"
+        <androidx.fragment.app.FragmentTabHost
+            android:id="@android:id/tabhost"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Move Order"
-            android:padding="20dp"
-            android:layout_marginBottom="10dp"
-            android:layout_marginTop="10dp"/>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPickingOrder"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Picking Order"
-            android:padding="20dp"
-            android:layout_marginBottom="10dp"/>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCreateRenantBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Create Renant Box"
-            android:padding="20dp"
-            android:layout_marginBottom="10dp"/>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnReceiveShipping"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Receive to Shipping"
-            android:padding="20dp"
-            android:layout_marginBottom="10dp"/>
-
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnIssueDeliveryOrder"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Issue Delivery Order"
-            android:padding="20dp"
-            android:layout_marginBottom="10dp"/>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnFindProduct"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Find Product"
-            android:padding="20dp"
-            android:layout_marginBottom="10dp"/>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSettings"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Settings"
-            android:padding="20dp"
-            android:layout_marginBottom="10dp"/>
-
-
-        <!-- View Menu -->
-        <LinearLayout
-            android:id="@+id/view_menu"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:visibility="visible">
+            android:layout_height="match_parent">
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
+                android:layout_height="match_parent"
+                android:orientation="vertical">
 
-                <Button
-                    android:id="@+id/btn_connect"
-                    android:layout_width="0dp"
+                <HorizontalScrollView
+                    android:id="@+id/hScroller_mytabhostactivity"
+                    android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
-                    android:text="@string/Connect" />
+                    android:fadingEdge="none"
+                    android:saveEnabled="false"
+                    android:scrollbars="horizontal"
+                    android:scrollbarSize="2dp">
 
-                <Button
-                    android:id="@+id/btn_search"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:text="@string/title_search" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/tvAddress"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="48dp"
-                android:paddingLeft="4dp"
-                android:paddingRight="4dp"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp"/>
-
-
-        </LinearLayout>
-
-        <!-- TabHost View -->
-        <LinearLayout
-            android:id="@+id/view_tabhost"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:background="@color/blue"
-          >
-
-            <androidx.fragment.app.FragmentTabHost
-                android:id="@android:id/tabhost"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical">
-
-                    <HorizontalScrollView
-                        android:id="@+id/hScroller_mytabhostactivity"
-                        android:layout_width="fill_parent"
+                    <TabWidget
+                        android:id="@android:id/tabs"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:fadingEdge="none"
-                        android:saveEnabled="false"
-                        android:scrollbars="horizontal"
-                        android:scrollbarSize="2dp"
-                        android:background="@color/blue_qian">
+                        android:orientation="horizontal" />
+                </HorizontalScrollView>
 
-                        <TabWidget
-                            android:id="@android:id/tabs"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal" />
-                    </HorizontalScrollView>
+                <FrameLayout
+                    android:id="@android:id/tabcontent"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="0" />
 
-                    <FrameLayout
-                        android:id="@android:id/tabcontent"
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:layout_weight="0" />
-
-                    <FrameLayout
-                        android:id="@+id/realtabcontent"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="1" />
-
-                </LinearLayout>
-            </androidx.fragment.app.FragmentTabHost>
-        </LinearLayout>
+                <FrameLayout
+                    android:id="@+id/realtabcontent"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+        </androidx.fragment.app.FragmentTabHost>
     </LinearLayout>
 
     <!-- Login View -->
@@ -188,7 +190,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="PBP &amp; UHM"
+            android:text="PBP"
             android:textSize="24sp"
             android:textStyle="bold"
             android:layout_marginBottom="32dp"/>
@@ -249,542 +251,4 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"/>
     </FrameLayout>
-
 </FrameLayout>
-
-<!--<?xml version="1.0" encoding="utf-8"?>-->
-<!--<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
-<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
-<!--    android:layout_width="match_parent"-->
-<!--    android:layout_height="match_parent">-->
-
-<!--    &lt;!&ndash; Main Content &ndash;&gt;-->
-<!--    <LinearLayout-->
-<!--        android:id="@+id/mainContent"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:orientation="vertical"-->
-<!--        android:visibility="gone">-->
-
-<!--        &lt;!&ndash; View Menu &ndash;&gt;-->
-<!--        <LinearLayout-->
-<!--            android:id="@+id/view_menu"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:orientation="vertical"-->
-<!--            android:padding="16dp">-->
-
-<!--            <LinearLayout-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:orientation="horizontal"-->
-<!--                android:layout_marginBottom="16dp">-->
-
-<!--                <Button-->
-<!--                    android:id="@+id/btn_connect"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:layout_weight="1"-->
-<!--                    android:layout_marginEnd="4dp"-->
-<!--                    android:text="@string/Connect" />-->
-
-<!--                <Button-->
-<!--                    android:id="@+id/btn_search"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:layout_weight="1"-->
-<!--                    android:layout_marginStart="4dp"-->
-<!--                    android:text="@string/title_search" />-->
-<!--            </LinearLayout>-->
-
-<!--            <TextView-->
-<!--                android:id="@+id/tvAddress"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:minHeight="48dp"-->
-<!--                android:paddingLeft="4dp"-->
-<!--                android:paddingRight="4dp"-->
-<!--                android:gravity="center_vertical"-->
-<!--                android:layout_marginBottom="16dp"/>-->
-
-<!--            <com.google.android.material.button.MaterialButton-->
-<!--                android:id="@+id/btnMoveOrder"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:text="Move Order"-->
-<!--                android:layout_marginBottom="8dp"/>-->
-
-<!--            <com.google.android.material.button.MaterialButton-->
-<!--                android:id="@+id/btnPickingOrder"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:text="Picking Order"/>-->
-<!--        </LinearLayout>-->
-
-<!--    </LinearLayout>-->
-
-<!--    &lt;!&ndash; Login View &ndash;&gt;-->
-<!--    <LinearLayout-->
-<!--        android:id="@+id/view_login"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:orientation="vertical"-->
-<!--        android:padding="16dp"-->
-<!--        android:gravity="center"-->
-<!--        android:visibility="visible">-->
-
-<!--        <ImageView-->
-<!--            android:layout_width="120dp"-->
-<!--            android:layout_height="120dp"-->
-<!--            android:src="@drawable/app_logo"-->
-<!--            android:layout_marginBottom="32dp"/>-->
-
-<!--        <TextView-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text="PBP &amp; UHM"-->
-<!--            android:textSize="24sp"-->
-<!--            android:textStyle="bold"-->
-<!--            android:layout_marginBottom="32dp"/>-->
-
-<!--        <com.google.android.material.textfield.TextInputLayout-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginBottom="16dp">-->
-
-<!--            <com.google.android.material.textfield.TextInputEditText-->
-<!--                android:id="@+id/etUsername"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:hint="E-mail or Username"-->
-<!--                android:text="admin@gmail.com"-->
-<!--                android:inputType="textEmailAddress"/>-->
-<!--        </com.google.android.material.textfield.TextInputLayout>-->
-
-<!--        <com.google.android.material.textfield.TextInputLayout-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginBottom="24dp">-->
-
-<!--            <com.google.android.material.textfield.TextInputEditText-->
-<!--                android:id="@+id/etPassword"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:hint="123456"-->
-<!--                android:text="123456"-->
-<!--                android:inputType="textPassword"/>-->
-<!--        </com.google.android.material.textfield.TextInputLayout>-->
-
-<!--        <com.google.android.material.button.MaterialButton-->
-<!--            android:id="@+id/btnLogin"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text="Login"/>-->
-
-<!--        <TextView-->
-<!--            android:id="@+id/tvDeviceId"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginTop="16dp"-->
-<!--            android:text="-"/>-->
-<!--    </LinearLayout>-->
-
-<!--    &lt;!&ndash; Loading Overlay &ndash;&gt;-->
-<!--    <FrameLayout-->
-<!--        android:id="@+id/loadingOverlay"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:background="@color/white"-->
-<!--        android:visibility="gone">-->
-
-<!--        <ProgressBar-->
-<!--            android:id="@+id/progressBar"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_gravity="center"/>-->
-<!--    </FrameLayout>-->
-
-<!--</FrameLayout>-->
-
-<!--<?xml version="1.0" encoding="utf-8"?>-->
-<!--<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
-<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
-<!--    android:layout_width="match_parent"-->
-<!--    android:layout_height="match_parent">-->
-
-<!--    &lt;!&ndash; Main Content &ndash;&gt;-->
-<!--    <LinearLayout-->
-<!--        android:id="@+id/mainContent"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:orientation="vertical">-->
-
-<!--        <androidx.fragment.app.FragmentTabHost-->
-<!--            android:id="@android:id/tabhost"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="0dp"-->
-<!--            android:layout_weight="1">-->
-
-<!--            <LinearLayout-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="match_parent"-->
-<!--                android:orientation="vertical">-->
-
-<!--                <LinearLayout-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:background="@drawable/rectangle_bg"-->
-<!--                    android:orientation="vertical">-->
-
-<!--                    <LinearLayout-->
-<!--                        android:layout_width="match_parent"-->
-<!--                        android:layout_height="wrap_content">-->
-
-<!--                        <Button-->
-<!--                            android:id="@+id/btn_connect"-->
-<!--                            android:layout_width="0dp"-->
-<!--                            android:layout_height="match_parent"-->
-<!--                            android:layout_weight="1"-->
-<!--                            android:text="@string/Connect" />-->
-
-<!--                        <Button-->
-<!--                            android:id="@+id/btn_search"-->
-<!--                            android:layout_width="0dp"-->
-<!--                            android:layout_height="match_parent"-->
-<!--                            android:layout_weight="1"-->
-<!--                            android:text="@string/title_search" />-->
-<!--                    </LinearLayout>-->
-
-<!--                    <TextView-->
-<!--                        android:id="@+id/tvAddress"-->
-<!--                        android:layout_width="match_parent"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:minHeight="48dp"-->
-<!--                        android:paddingLeft="4dp"-->
-<!--                        android:paddingRight="4dp"-->
-<!--                        android:gravity="center_vertical"/>-->
-<!--                </LinearLayout>-->
-
-<!--                <HorizontalScrollView-->
-<!--                    android:id="@+id/hScroller_mytabhostactivity"-->
-<!--                    android:layout_width="fill_parent"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:fadingEdge="none"-->
-<!--                    android:saveEnabled="false"-->
-<!--                    android:scrollbars="horizontal"-->
-<!--                    android:scrollbarSize="2dp"-->
-<!--                    android:background="@color/blue_qian">-->
-
-<!--                    <TabWidget-->
-<!--                        android:id="@android:id/tabs"-->
-<!--                        android:layout_width="wrap_content"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:orientation="horizontal" />-->
-<!--                </HorizontalScrollView>-->
-
-<!--                <FrameLayout-->
-<!--                    android:id="@android:id/tabcontent"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_height="0dp"-->
-<!--                    android:layout_weight="0" />-->
-
-<!--                <FrameLayout-->
-<!--                    android:id="@+id/realtabcontent"-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="0dp"-->
-<!--                    android:layout_weight="1" />-->
-
-<!--            </LinearLayout>-->
-<!--        </androidx.fragment.app.FragmentTabHost>-->
-
-<!--        &lt;!&ndash; Menu buttons &ndash;&gt;-->
-<!--        <LinearLayout-->
-<!--            android:id="@+id/view_menu"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:orientation="horizontal"-->
-<!--            android:padding="8dp">-->
-
-<!--            <com.google.android.material.button.MaterialButton-->
-<!--                android:id="@+id/btnMoveOrder"-->
-<!--                android:layout_width="0dp"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_weight="1"-->
-<!--                android:layout_marginEnd="4dp"-->
-<!--                android:text="Move Order"/>-->
-
-<!--            <com.google.android.material.button.MaterialButton-->
-<!--                android:id="@+id/btnPickingOrder"-->
-<!--                android:layout_width="0dp"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_weight="1"-->
-<!--                android:layout_marginStart="4dp"-->
-<!--                android:text="Picking Order"/>-->
-<!--        </LinearLayout>-->
-<!--    </LinearLayout>-->
-
-<!--    &lt;!&ndash; Login View &ndash;&gt;-->
-<!--    <LinearLayout-->
-<!--        android:id="@+id/view_login"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:orientation="vertical"-->
-<!--        android:padding="16dp"-->
-<!--        android:gravity="center"-->
-<!--        android:visibility="visible">-->
-
-<!--        <ImageView-->
-<!--            android:layout_width="120dp"-->
-<!--            android:layout_height="120dp"-->
-<!--            android:src="@drawable/app_logo"-->
-<!--            android:layout_marginBottom="32dp"/>-->
-
-<!--        <TextView-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text="PBP &amp; UHM"-->
-<!--            android:textSize="24sp"-->
-<!--            android:textStyle="bold"-->
-<!--            android:layout_marginBottom="32dp"/>-->
-
-<!--        <com.google.android.material.textfield.TextInputLayout-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginBottom="16dp">-->
-
-<!--            <com.google.android.material.textfield.TextInputEditText-->
-<!--                android:id="@+id/etUsername"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:hint="Username or Email"-->
-<!--                android:inputType="textEmailAddress"/>-->
-<!--        </com.google.android.material.textfield.TextInputLayout>-->
-
-<!--        <com.google.android.material.textfield.TextInputLayout-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginBottom="24dp">-->
-
-<!--            <com.google.android.material.textfield.TextInputEditText-->
-<!--                android:id="@+id/etPassword"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:hint="Password"-->
-<!--                android:inputType="textPassword"/>-->
-<!--        </com.google.android.material.textfield.TextInputLayout>-->
-
-<!--        <com.google.android.material.button.MaterialButton-->
-<!--            android:id="@+id/btnLogin"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:text="Login"/>-->
-
-<!--        <TextView-->
-<!--            android:id="@+id/tvDeviceId"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginTop="16dp"-->
-<!--            android:text="-"/>-->
-<!--    </LinearLayout>-->
-
-<!--    &lt;!&ndash; Loading Overlay &ndash;&gt;-->
-<!--    <FrameLayout-->
-<!--        android:id="@+id/loadingOverlay"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:background="@color/white"-->
-<!--        android:visibility="gone">-->
-
-<!--        <ProgressBar-->
-<!--            android:id="@+id/progressBar"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_gravity="center"/>-->
-<!--    </FrameLayout>-->
-
-<!--</FrameLayout>-->
-
-<!--<?xml version="1.0" encoding="utf-8"?>-->
-<!--<androidx.fragment.app.FragmentTabHost xmlns:android="http://schemas.android.com/apk/res/android"-->
-<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
-<!--    android:id="@android:id/tabhost"-->
-<!--    android:layout_width="match_parent"-->
-<!--    android:layout_height="match_parent">-->
-
-<!--    <LinearLayout-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:orientation="vertical">-->
-
-<!--        <LinearLayout-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:background="@drawable/rectangle_bg"-->
-<!--            android:orientation="vertical">-->
-
-<!--            <LinearLayout-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content">-->
-
-<!--                <Button-->
-<!--                    android:id="@+id/btn_connect"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_height="match_parent"-->
-<!--                    android:layout_weight="1"-->
-<!--                    android:text="@string/Connect" />-->
-
-<!--                <Button-->
-<!--                    android:id="@+id/btn_search"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_height="match_parent"-->
-<!--                    android:layout_weight="1"-->
-<!--                    android:text="@string/title_search" />-->
-<!--            </LinearLayout>-->
-
-<!--            <TextView-->
-<!--                android:id="@+id/tvAddress"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:minHeight="48dp"-->
-<!--                android:paddingLeft="4dp"-->
-<!--                android:paddingRight="4dp"-->
-<!--                android:gravity="center_vertical"/>-->
-<!--        </LinearLayout>-->
-
-<!--        <HorizontalScrollView-->
-<!--            android:id="@+id/hScroller_mytabhostactivity"-->
-<!--            android:layout_width="fill_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:fadingEdge="none"-->
-<!--            android:saveEnabled="false"-->
-<!--            android:scrollbars="horizontal"-->
-<!--            android:scrollbarSize="2dp"-->
-<!--            android:background="@color/blue_qian">-->
-
-<!--            <TabWidget-->
-<!--                android:id="@android:id/tabs"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:orientation="horizontal" />-->
-<!--        </HorizontalScrollView>-->
-
-<!--        <FrameLayout-->
-<!--            android:id="@android:id/tabcontent"-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="0dp"-->
-<!--            android:layout_weight="0" />-->
-
-<!--        <FrameLayout-->
-<!--            android:id="@+id/realtabcontent"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="0dp"-->
-<!--            android:layout_weight="1" />-->
-
-<!--        &lt;!&ndash; Added Menu View &ndash;&gt;-->
-<!--        <LinearLayout-->
-<!--            android:id="@+id/view_menu"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:orientation="horizontal"-->
-<!--            android:padding="8dp">-->
-
-<!--            <com.google.android.material.button.MaterialButton-->
-<!--                android:id="@+id/btnMoveOrder"-->
-<!--                android:layout_width="0dp"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_weight="1"-->
-<!--                android:layout_marginEnd="4dp"-->
-<!--                android:text="Move Order"/>-->
-
-<!--            <com.google.android.material.button.MaterialButton-->
-<!--                android:id="@+id/btnPickingOrder"-->
-<!--                android:layout_width="0dp"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_weight="1"-->
-<!--                android:layout_marginStart="4dp"-->
-<!--                android:text="Picking Order"/>-->
-
-<!--        </LinearLayout>-->
-
-<!--    </LinearLayout>-->
-
-<!--</androidx.fragment.app.FragmentTabHost>-->
-
-
-<!--<androidx.fragment.app.FragmentTabHost xmlns:android="http://schemas.android.com/apk/res/android"-->
-<!--    android:id="@android:id/tabhost"-->
-<!--    android:layout_width="match_parent"-->
-<!--    android:layout_height="match_parent">-->
-
-<!--    <LinearLayout-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:orientation="vertical">-->
-
-<!--        <LinearLayout-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:background="@drawable/rectangle_bg"-->
-<!--            android:orientation="vertical">-->
-
-<!--            <LinearLayout-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content">-->
-
-<!--                <Button-->
-<!--                    android:id="@+id/btn_connect"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_height="match_parent"-->
-<!--                    android:layout_weight="1"-->
-<!--                    android:text="@string/Connect" />-->
-
-<!--                <Button-->
-<!--                    android:id="@+id/btn_search"-->
-<!--                    android:layout_width="0dp"-->
-<!--                    android:layout_height="match_parent"-->
-<!--                    android:layout_weight="1"-->
-<!--                    android:text="@string/title_search" />-->
-<!--            </LinearLayout>-->
-
-<!--            <TextView-->
-<!--                android:id="@+id/tvAddress"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:minHeight="48dp"-->
-<!--                android:paddingLeft="4dp"-->
-<!--                android:paddingRight="4dp"-->
-<!--                android:gravity="center_vertical"/>-->
-<!--        </LinearLayout>-->
-
-<!--        <HorizontalScrollView-->
-<!--            android:id="@+id/hScroller_mytabhostactivity"-->
-<!--            android:layout_width="fill_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:fadingEdge="none"-->
-<!--            android:saveEnabled="false"-->
-<!--            android:scrollbars="horizontal"-->
-<!--            android:scrollbarSize="2dp"-->
-<!--            android:background="@color/blue_qian">-->
-
-<!--            <TabWidget-->
-<!--                android:id="@android:id/tabs"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:orientation="horizontal" />-->
-<!--        </HorizontalScrollView>-->
-
-<!--        <FrameLayout-->
-<!--            android:id="@android:id/tabcontent"-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="0dp"-->
-<!--            android:layout_weight="0" />-->
-
-<!--        <FrameLayout-->
-<!--            android:id="@+id/realtabcontent"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="0dp"-->
-<!--            android:layout_weight="1" />-->
-
-<!--    </LinearLayout>-->
-
-<!--</androidx.fragment.app.FragmentTabHost>-->

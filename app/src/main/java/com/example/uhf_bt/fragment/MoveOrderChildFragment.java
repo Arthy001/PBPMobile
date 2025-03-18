@@ -53,6 +53,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MoveOrderChildFragment extends Fragment {
+
     private static final String TAG = "MoveOrderChildFragment";
     private List<MoveOrderItem> scannedTags = new ArrayList<>();
     private TextView tvOrderNo,tvSourceWarehouse, tvDestinationWarehouse;
@@ -340,27 +341,6 @@ public class MoveOrderChildFragment extends Fragment {
                         }
                     }
 
-//                    if (!tempList.isEmpty()) {
-//                        // Iterate through tempList to find matches in itemList
-//                        for (MoveOrderItem tempItem : tempList) {
-//                            // Find matching item in itemList
-//                            for (MoveOrderItem item : itemList) {
-//                                // Match by productId and lot
-//                                int xproductId = item.getProductId();
-//                                int xxproductId = tempItem.getProductId();
-//                                String xLot = item.getLot();
-//                                String xxLot = tempItem.getLot();
-//                                if (item.getProductId() == (tempItem.getProductId())
-//                                        && item.getLot().equals(tempItem.getLot())) {
-//                                    // Update quantity success
-//                                    item.setQuantitySuccess(item.getQuantitySuccess() + 1);
-//                                    break; // Found match, move to next tempItem
-//                                }
-//                            }
-//                        }
-//                        // Notify adapter that data has changed
-//                        adapter.notifyDataSetChanged();
-//                    }
                 } else {
                     Log.e(TAG, "Error loading move order transactions: " + response.code());
                     showError("Failed to load move order transactions");
@@ -668,6 +648,10 @@ public class MoveOrderChildFragment extends Fragment {
 
             String barcode = qrCode.substring(0, 6);
             String lot = qrCode.substring(6, 12);
+            String mc  = qrCode.substring(12, 14);
+            String box_type = qrCode.substring(14, 15);
+            String box_size = qrCode.substring(15, 19);
+            String running =  qrCode.substring(19, 24);
 
             boolean found = false;
 
@@ -682,7 +666,7 @@ public class MoveOrderChildFragment extends Fragment {
                 return;
             } else {
                 // Item not found
-                Log.d(TAG, "No item found with tagId: " + xxTagID);
+                //Log.d(TAG, "No item found with tagId: " + xxTagID);
             }
 
             // Get all items from adapter
@@ -698,6 +682,7 @@ public class MoveOrderChildFragment extends Fragment {
             // Search for matching item
             for (MoveOrderItem item : items) {
                 String tempbarcode = item.getBarcode();
+                String templot = item.getLot();
                 if (item != null &&
                         item.getBarcode() != null &&
                         item.getLot() != null &&
@@ -745,8 +730,8 @@ public class MoveOrderChildFragment extends Fragment {
 
             if (!found) {
                 // Item not found in list
-                showToastOnUiThread(String.format("No matching item found for Item: %s, Lot: %s",
-                        barcode, lot));
+//                showToastOnUiThread(String.format("No matching item found for Item: %s, Lot: %s",
+//                        barcode, lot));
             }
 
         } catch (Exception e) {
@@ -957,6 +942,9 @@ public class MoveOrderChildFragment extends Fragment {
                 if (response.isSuccessful()) {
                     // Handle success
                     Toast.makeText(mContext, "Data sent successfully", Toast.LENGTH_SHORT).show();
+
+                    loadMoveOrderItems();
+                    loadMoveOrderTransactions();
                 } else {
                     // Handle error
                     Toast.makeText(mContext, "Error: " + response.message(), Toast.LENGTH_SHORT).show();

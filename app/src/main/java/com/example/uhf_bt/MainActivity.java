@@ -37,6 +37,7 @@ import android.widget.Toast;
 
 import com.example.uhf_bt.fragment.BTRenameFragment;
 import com.example.uhf_bt.fragment.BarcodeFragment;
+import com.example.uhf_bt.fragment.FindPalletFragment;
 import com.example.uhf_bt.fragment.FindProductFragment;
 import com.example.uhf_bt.fragment.MoveOrderFragment;
 import com.example.uhf_bt.fragment.PickingOrderFragment;
@@ -131,7 +132,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     public static boolean isKeyDownUP=false;
     private static final int RUNNING_DISCONNECT_TIMER = 10;
 
-    private static final long SESSION_TIMEOUT = 10 * 60 * 1000; // 30 minutes in milliseconds
+    private static final long SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
     private Handler sessionTimeoutHandler = new Handler();
     private Runnable sessionTimeoutRunnable;
     private long lastActivityTime;
@@ -261,6 +262,63 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         super.onBackPressed();
     }
 
+    // เพิ่มเมธอดนี้
+    private void hideAllContent() {
+        viewMenu.setVisibility(View.GONE);
+        viewLogin.setVisibility(View.GONE);
+        loadingOverlay.setVisibility(View.GONE);
+    }
+
+    // เพิ่มเมธอดนี้
+    private void setupTabHost() {
+        // ลบ tab เดิมทั้งหมด
+        mTabHost.clearAllTabs();
+
+        // ตั้งค่า TabHost ใหม่
+        mTabHost.setup(this, getSupportFragmentManager(), R.id.realtabcontent);
+
+        // เพิ่ม tabs
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory)).setIndicator(getString(R.string.title_inventory)), UHFReadTagFragment.class, null);
+        // mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory2)).setIndicator(getString(R.string.title_inventory2)), UHFNewReadTagFragment.class, null);
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_2d_Scan)).setIndicator(getString(R.string.title_2d_Scan)), BarcodeFragment.class, null);
+
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_set)).setIndicator(getString(R.string.uhf_msg_tab_set)), UHFSetFragment.class, null);
+
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.location)).setIndicator(getString(R.string.location)),
+                UHFLocationFragment.class, null);
+
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_read)).setIndicator(getString(R.string.uhf_msg_tab_read)), UHFReadFragment.class, null);
+
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_write)).setIndicator(getString(R.string.uhf_msg_tab_write)), UHFWriteFragment.class, null);
+
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_lock)).setIndicator(getString(R.string.uhf_msg_tab_lock)), UHFLockFragment.class, null);
+
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_kill)).setIndicator(getString(R.string.uhf_msg_tab_kill)), UHFKillFragment.class, null);
+
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_erase)).setIndicator(getString(R.string.uhf_msg_tab_erase)), UHFEraseFragment.class, null);
+
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_update)).setIndicator(getString(R.string.title_update)), UHFUpdataFragment.class, null);
+
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_bt_rename)).setIndicator(getString(R.string.title_bt_rename)), BTRenameFragment.class, null);
+        //mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory)).setIndicator(getString(R.string.title_inventory)), UHFReadTagFragment.class, null);
+        //mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_2d_Scan)).setIndicator(getString(R.string.title_2d_Scan)), BarcodeFragment.class, null);
+        // จำลองการคลิกแท็บที่ 1 แล้วกลับมาที่แท็บแรก
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                // สั่งให้แสดงแท็บที่ 1 ก่อน
+                mTabHost.setCurrentTab(1);
+
+                // แล้วค่อยกลับมาที่แท็บแรก
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mTabHost.setCurrentTab(0);
+                    }
+                }, 50);
+            }
+        }, 100);
+    }
 
 
     private void setupMenuButtons() {
@@ -275,41 +333,17 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
         MaterialButton btnSettings = findViewById(R.id.btnSettings);
         btnSettings.setOnClickListener(v -> {
-            viewMenu.setVisibility(View.GONE);
+            // ซ่อนทุกส่วน
+            hideAllContent();
+
+            // แสดงเฉพาะ TabHost
             viewTabhost.setVisibility(View.VISIBLE);
+            mTabHost.setVisibility(View.VISIBLE);
 
-            // Clear existing tabs
-            mTabHost.clearAllTabs();
-
-            // Setup tabs
-            mTabHost.setup(this, getSupportFragmentManager(), R.id.realtabcontent);
-            mTabHost.setup(this, fm, R.id.realtabcontent);
-
-
-            // mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory)).setIndicator(getString(R.string.title_inventory)), UHFReadTagFragment.class, null);
-            // mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory2)).setIndicator(getString(R.string.title_inventory2)), UHFNewReadTagFragment.class, null);
-            ///mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_2d_Scan)).setIndicator(getString(R.string.title_2d_Scan)), BarcodeFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_set)).setIndicator(getString(R.string.uhf_msg_tab_set)), UHFSetFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.location)).setIndicator(getString(R.string.location)),  UHFLocationFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_read)).setIndicator(getString(R.string.uhf_msg_tab_read)), UHFReadFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_write)).setIndicator(getString(R.string.uhf_msg_tab_write)), UHFWriteFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_lock)).setIndicator(getString(R.string.uhf_msg_tab_lock)), UHFLockFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_kill)).setIndicator(getString(R.string.uhf_msg_tab_kill)), UHFKillFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_erase)).setIndicator(getString(R.string.uhf_msg_tab_erase)), UHFEraseFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_update)).setIndicator(getString(R.string.title_update)), UHFUpdataFragment.class, null);
-
-            mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_bt_rename)).setIndicator(getString(R.string.title_bt_rename)), BTRenameFragment.class, null);
-
-
+            // รีเซ็ตและตั้งค่า TabHost ใหม่
+            setupTabHost();
         });
+
         btnMoveOrder.setOnClickListener(v -> {
             viewMenu.setVisibility(View.GONE);
             mainContent.setVisibility(View.GONE);
@@ -336,6 +370,16 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
             hideNavigationBar();
             getSupportFragmentManager().beginTransaction()
                     .replace(android.R.id.content, new FindProductFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        btnReceiveShipping.setOnClickListener(v -> {
+            viewMenu.setVisibility(View.GONE);
+            mainContent.setVisibility(View.GONE);
+            hideNavigationBar();
+            getSupportFragmentManager().beginTransaction()
+                    .replace(android.R.id.content, new FindPalletFragment())
                     .addToBackStack(null)
                     .commit();
         });
@@ -705,10 +749,14 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         editor.clear();
         editor.apply();
 
-        // Update UI
-        viewMenu.setVisibility(View.VISIBLE);
+        // Update UI - ซ่อนทุกส่วนยกเว้น viewLogin
+        viewMenu.setVisibility(View.GONE);  // ควรเป็น GONE ไม่ใช่ VISIBLE
         mainContent.setVisibility(View.GONE);
+        viewTabhost.setVisibility(View.GONE);  // ตรวจสอบว่าใช้ viewTabhost ถูกต้องแล้ว
         mTabHost.setVisibility(View.GONE);
+
+        // แสดงหน้า login
+        viewLogin.setVisibility(View.VISIBLE);  // เพิ่มบรรทัดนี้
 
         // Hide toolbar
         if (getSupportActionBar() != null) {
@@ -840,48 +888,17 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
 
     private void initTabHost() {
-        fm = getSupportFragmentManager();
-        mTabHost.setup(this, fm, R.id.realtabcontent);
+       // fm = getSupportFragmentManager();
+       // mTabHost.setup(this, fm, R.id.realtabcontent);
 
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory)).setIndicator(getString(R.string.title_inventory)), UHFReadTagFragment.class, null);
-        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_2d_Scan)).setIndicator(getString(R.string.title_2d_Scan)), BarcodeFragment.class, null);
+       // mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory)).setIndicator(getString(R.string.title_inventory)), UHFReadTagFragment.class, null);
+       // mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_2d_Scan)).setIndicator(getString(R.string.title_2d_Scan)), BarcodeFragment.class, null);
         // Add other tabs...
     }
 
 
 
-//    protected void initUI() {
-//        mBtAdapter = BluetoothAdapter.getDefaultAdapter();
-//
-//        tvAddress = (TextView) findViewById(R.id.tvAddress);
-//
-//        fm = getSupportFragmentManager();
-//        mTabHost = (FragmentTabHost) findViewById(android.R.id.tabhost);
-//        mTabHost.setup(this, fm, R.id.realtabcontent);
-//
-//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory)).setIndicator(getString(R.string.title_inventory)), UHFReadTagFragment.class, null);
-//       // mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory2)).setIndicator(getString(R.string.title_inventory2)), UHFNewReadTagFragment.class, null);
-//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_2d_Scan)).setIndicator(getString(R.string.title_2d_Scan)), BarcodeFragment.class, null);
-//
-//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_set)).setIndicator(getString(R.string.uhf_msg_tab_set)), UHFSetFragment.class, null);
-//
-//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.location)).setIndicator(getString(R.string.location)),
-//                UHFLocationFragment.class, null);
-//
-//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_read)).setIndicator(getString(R.string.uhf_msg_tab_read)), UHFReadFragment.class, null);
-//
-//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_write)).setIndicator(getString(R.string.uhf_msg_tab_write)), UHFWriteFragment.class, null);
-//
-//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_lock)).setIndicator(getString(R.string.uhf_msg_tab_lock)), UHFLockFragment.class, null);
-//
-//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_kill)).setIndicator(getString(R.string.uhf_msg_tab_kill)), UHFKillFragment.class, null);
-//
-//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.uhf_msg_tab_erase)).setIndicator(getString(R.string.uhf_msg_tab_erase)), UHFEraseFragment.class, null);
-//
-//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_update)).setIndicator(getString(R.string.title_update)), UHFUpdataFragment.class, null);
-//
-//        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_bt_rename)).setIndicator(getString(R.string.title_bt_rename)), BTRenameFragment.class, null);
-//    }
+
 
     public void updateConnectMessage(String oldName, String newName) {
         if (!TextUtils.isEmpty(oldName) && !TextUtils.isEmpty(newName)) {

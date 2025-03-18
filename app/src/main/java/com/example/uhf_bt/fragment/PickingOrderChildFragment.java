@@ -3,6 +3,7 @@ package com.example.uhf_bt.fragment;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -13,16 +14,20 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
@@ -34,6 +39,7 @@ import com.example.uhf_bt.Utils;
 import com.example.uhf_bt.adapter.PickingOrderChildAdapter;
 import com.example.uhf_bt.models.MoveOrderItem;
 import com.example.uhf_bt.models.PickingOrderItem;
+import com.example.uhf_bt.models.PickingOrderTransaction;
 import com.example.uhf_bt.models.ProductItem;
 import com.example.uhf_bt.services.ApiService;
 import com.example.uhf_bt.services.RetrofitClient;
@@ -46,7 +52,10 @@ import com.rscja.deviceapi.interfaces.KeyEventCallback;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -57,6 +66,11 @@ import retrofit2.Response;
 public class PickingOrderChildFragment extends Fragment {
     private static final String TAG = "PickingOrderChildFrag";
 
+    // Add these variables to your PickingOrderChildFragment class
+    private Spinner spinnerPallet;
+    private Button btnLockPallet;
+    private ArrayAdapter<String> palletAdapter;
+    private boolean isPalletLocked = false;
 
     private TextView tvOrderNo;
     private TextView tvCustomer;
@@ -109,7 +123,7 @@ public class PickingOrderChildFragment extends Fragment {
         setupListView();
         setupButtonListeners();
         loadPickingOrderItems();
-
+        //loadPickingOrderTransactions(); // Add this line
         loadProductItemStock();
         return view;
     }
@@ -137,8 +151,202 @@ public class PickingOrderChildFragment extends Fragment {
         btStop = view.findViewById(R.id.btnStop);
         btnConfirm = view.findViewById(R.id.btnConfirm);
 
+        spinnerPallet = view.findViewById(R.id.spinnerPallet);
+        btnLockPallet = view.findViewById(R.id.btnLockPallet);
+
+        // Initialize spinner adapter
+        palletAdapter = new ArrayAdapter<>(requireContext(),
+                android.R.layout.simple_spinner_item, new ArrayList<>());
+        palletAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerPallet.setAdapter(palletAdapter);
+
+        setupPalletControls();
+
     }
 
+    // Add this method to setup pallet controls
+    private void setupPalletControls() {
+        btnLockPallet.setOnClickListener(v -> togglePalletLock());
+
+        spinnerPallet.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (isPalletLocked) {
+                    String selectedPallet = (String) parent.getItemAtPosition(position);
+                    filterItemsByPallet(selectedPallet);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
+    }
+
+    // Add this method to toggle pallet lock
+    private void togglePalletLock() {
+        isPalletLocked = !isPalletLocked;
+        btnLockPallet.setText(isPalletLocked ? "Unlock" : "Lock");
+
+        if (isPalletLocked) {
+            String selectedPallet = (String) spinnerPallet.getSelectedItem();
+            adapter.setPalletLocked(true, selectedPallet);
+        } else {
+            adapter.setPalletLocked(false, null);
+        }
+    }
+
+    // Add this method to filter items by pallet
+    private void filterItemsByPallet(String pallet) {
+        if (adapter != null && isPalletLocked) {
+            adapter.setPalletLocked(true, pallet);
+        }
+    }
+
+    private void loadPickingOrderTransactions() {
+        showLoading(true);
+
+        apiService.getPickingOrderTransactions(pickingOrderId).enqueue(new Callback<List<PickingOrderTransaction>>() {
+            @Override
+            public void onResponse(Call<List<PickingOrderTransaction>> call, Response<List<PickingOrderTransaction>> response) {
+                showLoading(false);
+
+                if (response.isSuccessful() && response.body() != null) {
+                    List<PickingOrderTransaction> transactions = response.body();
+
+                    if (!transactions.isEmpty()) {
+                        // Create a map to count transactions per picking order item
+                        Map<Integer, Integer> transactionCounts = new HashMap<>();
+
+                        // Count transactions per picking order item
+                        for (PickingOrderTransaction transaction : transactions) {
+                            int pickingOrderItemId = transaction.getPickingOrderItemId();
+                            Integer currentCount = transactionCounts.get(pickingOrderItemId);
+                            if (currentCount == null) {
+                                transactionCounts.put(pickingOrderItemId, 1);
+                            } else {
+                                transactionCounts.put(pickingOrderItemId, currentCount + 1);
+                            }
+                        }
+
+                        // Update quantities in itemList
+                        for (PickingOrderItem item : itemList) {
+                            int itemId = item.getId();
+                            if (transactionCounts.containsKey(itemId)) {
+                                item.setQuantitySuccess(transactionCounts.get(itemId));
+                            }
+                        }
+
+                        // Update UI on the main thread
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() -> {
+                                if (adapter != null) {
+                                    adapter.updateItems(itemList);
+                                    adapter.notifyDataSetChanged();
+                                }
+                            });
+                        }
+
+                        // Save transactions for reference
+                        tempList = new ArrayList<>();
+                        for (PickingOrderTransaction trans : transactions) {
+                            PickingOrderItem item = new PickingOrderItem();
+                            item.setProductId(trans.getProductId());
+                            item.setQuantity(trans.getQuantity());
+                            item.setTagId(trans.getTagId());
+                            item.setLotNumber(trans.getLotNumber());
+                            item.setLot(trans.getLot());
+                            tempList.add(item);
+                        }
+                    }
+                } else {
+                    Log.e(TAG, "Error loading picking order transactions: " + response.code());
+                    showError("Failed to load picking order transactions");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<PickingOrderTransaction>> call, Throwable t) {
+                Log.e(TAG, "Network error loading picking order transactions", t);
+                showLoading(false);
+                showError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    // Add loadPickingOrderTransactions method to load existing transactions
+//    private void loadPickingOrderTransactions() {
+//        showLoading(true);
+//
+//        apiService.getPickingOrderTransactions(pickingOrderId).enqueue(new Callback<List<PickingOrderTransaction>>() {
+//            @Override
+//            public void onResponse(Call<List<PickingOrderTransaction>> call, Response<List<PickingOrderTransaction>> response) {
+//                showLoading(false);
+//
+//                if (response.isSuccessful() && response.body() != null) {
+//                    List<PickingOrderTransaction> transactions = response.body();
+//
+//                    if (!transactions.isEmpty()) {
+//
+//                        for (PickingOrderItem tempItem : itemList) {
+//                            // Find matching item in itemList
+//                            int pickingOrderItemId = tempItem.getId();
+//
+//                            for (PickingOrderTransaction item : transactions) {
+//                                // Match by productId and lot
+//                                int tranPickingOrderItemId = item.getPickingOrderItemId();
+//
+//                                if (pickingOrderItemId == tranPickingOrderItemId)
+//                                {
+//                                    tempItem.setQuantitySuccess(tempItem.getQuantitySuccess() + 1);
+//
+//                                    // Update UI
+//                                    if (adapter != null) {
+//                                        adapter.updateItems(tempItem);
+//
+//                                        // If you're on a background thread, use runOnUiThread
+//                                        if (getActivity() != null) {
+//                                            getActivity().runOnUiThread(() -> {
+//                                                adapter.notifyDataSetChanged();
+//                                            });
+//                                        }
+//                                    }
+//                                    break; // Found match, move to next tempItem
+//                                }
+//
+//
+////
+//                            }
+//                        }
+//
+//
+//                        // Save transactions for reference
+//                        tempList = new ArrayList<>();
+//                        for (PickingOrderTransaction trans : transactions) {
+//                            PickingOrderItem item = new PickingOrderItem();
+//                            item.setProductId(trans.getProductId());
+//                            item.setQuantity(trans.getQuantity());
+//                            item.setTagId(trans.getTagId());
+//                            item.setLotNumber(trans.getLotNumber());
+//                            item.setLot(trans.getLot());
+//                            tempList.add(item);
+//                        }
+//                    }
+//                } else {
+//                    Log.e(TAG, "Error loading picking order transactions: " + response.code());
+//                    showError("Failed to load picking order transactions");
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Call<List<PickingOrderTransaction>> call, Throwable t) {
+//                Log.e(TAG, "Network error loading picking order transactions", t);
+//                showLoading(false);
+//                showError("Network error: " + t.getMessage());
+//            }
+//        });
+//    }
     private void setupToolbar() {
 
         ivBack.setOnClickListener(v -> {
@@ -281,8 +489,9 @@ public class PickingOrderChildFragment extends Fragment {
                 showLoading(false);
 
                 if (response.isSuccessful() && response.body() != null) {
-                    List<PickingOrderItem> items = response.body();
-                    updateUI(items);
+                    //List<PickingOrderItem> items = response.body();
+                    itemList = response.body();
+                    updateUI(itemList);
 //                    if (items.isEmpty()) {
 //                        showEmptyState();
 //                    }
@@ -366,8 +575,20 @@ public class PickingOrderChildFragment extends Fragment {
         for (PickingOrderItem item : items) {
             totalAmount += item.getTotal();
         }
-        //btnComplete.setEnabled(totalAmount > 0);
-        //btnStart.setEnabled(totalAmount > 0);
+
+        // Get unique pallets
+        Set<String> uniquePallets = new HashSet<>();
+        for (PickingOrderItem item : items) {
+            if (item.getPallet() != null && !item.getPallet().isEmpty()) {
+                uniquePallets.add(item.getPallet());
+            }
+        }
+
+        // Update spinner
+        palletAdapter.clear();
+        palletAdapter.addAll(new ArrayList<>(uniquePallets));
+        palletAdapter.notifyDataSetChanged();
+
     }
 
     private void handleItemClick(PickingOrderItem item) {
@@ -626,6 +847,7 @@ public class PickingOrderChildFragment extends Fragment {
         return null;
     }
 
+    // Update processQrCode method to handle quantity tracking
     private void processQrCode(String qrCode) {
         try {
             // Basic input validation
@@ -634,97 +856,196 @@ public class PickingOrderChildFragment extends Fragment {
                 return;
             }
 
-            //String barcode = qrCode.substring(0, 6);
-            //String lot = qrCode.substring(6, 12);
-
-            boolean found = false;
-
-
-            String xxTagID = qrCode;
-
-            ProductItem foundItem = findItemStockByTagId(xxTagID);
-            if (foundItem != null) {
-                // Item found - do something with it
-                Log.d(TAG, "Found item with tagId: " + foundItem.getTagId());
-                Log.d(TAG, "Product ID: " + foundItem.getProductId());
-                Log.d(TAG, "Lot: " + foundItem.getLot());
-
-            } else {
-                // Item not found
-                Log.d(TAG, "No item stock found  with tagId: " + xxTagID);
+            String chkTagId = qrCode.substring(0,4);
+            if (chkTagId.contains("FFFF")) {
+                Toast.makeText(mContext, qrCode + " ไม่ใช่แท็กสินค้า!" , Toast.LENGTH_SHORT).show();
                 return;
             }
+            else if (chkTagId.contains("CCCC"))
+            {
+                String xxTagID = qrCode;
+                //ProductItem foundItem = findItemStockByTagId(xxTagID);
 
-            // Get all items from adapter
-            List<PickingOrderItem> items = adapter.getFilteredItems();
+//                if (foundItem == null) {
+//                    Log.d(TAG, "No item stock found with tagId: " + xxTagID);
+//                    return;
+//                }
 
+                // Get all items from adapter
+                List<PickingOrderItem> items = adapter.getFilteredItems();
 
+                if (items == null) {
+                    Toast.makeText(mContext, "No items available", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
+                boolean found = false;
 
-            if (items == null) {
-                Toast.makeText(mContext, "No items available", Toast.LENGTH_SHORT).show();
-                return;
-            }
+                int productId = 3;
 
-            // Search for matching item
-            for (PickingOrderItem item : items) {
-                double quantity = item.getQuantity();
-                int productId = foundItem.getProductId();
+                while (productId ==3 || productId == 4)
+                {
+                    for (PickingOrderItem item : items) {
+                        if (item != null && item.getProductId() == 3 || item.getProductId() == 4) {
+                            found = true;
 
-                //int productId = item.getProductId();
+                            int pickingItemId = item.getId();
 
-                if (item != null && item.getProductId() == productId) {
-                    found = true;
+                            if (pickingItemId < 3) continue;
+                            // Check if we've already reached the required quantity
+                            if (item.getQuantitySuccess() + item.getQuantityScan() >= item.getQuantity()) {
+                                showToastOnUiThread("Required quantity already reached for this item!");
+                                return;
+                            }
 
-                    if (item.getQuantitySuccess() + item.getQuantityScan() >= item.getQuantity() ) return;
+                            // Check if this tag was already scanned
+                            boolean tagAlreadyScanned = false;
+                            for (PickingOrderItem scannedItem : scannedTags) {
+                                if (scannedItem.getTagId().equals(qrCode)) {
+                                    tagAlreadyScanned = true;
+                                    break;
+                                }
+                            }
 
-                    // Check if this tag was already scanned
-                    if (!scannedTags.contains(qrCode)) {
-                        // Update quantity scanned
-                        item.setQuantityScan(item.getQuantityScan() + 1);
+                            if (!tagAlreadyScanned) {
+                                // Update quantity scanned
+                                item.setQuantityScan(item.getQuantityScan() + 0.5);
 
-                        // Add tag to scanned list
-                        PickingOrderItem xitem = new PickingOrderItem();
-                        xitem.setProductId(item.getProductId());
-                        xitem.setQuantity(1);
-                        xitem.setTagId(qrCode.trim());
-                        xitem.setLotNumber(foundItem.getLotNumber());
-                        xitem.setLot(foundItem.getLot());
-                        scannedTags.add(xitem);
+                                int temp_pickorderitemid = item.getPickingOrderItemId();
+                                // Add tag to scanned list
+                                PickingOrderItem newScannedItem = new PickingOrderItem();
+                                newScannedItem.setPickingOrderItemId(item.getPickingOrderItemId());
+                                newScannedItem.setProductId(item.getProductId());
+                                newScannedItem.setQuantity(0.5);
+                                newScannedItem.setTagId(qrCode.trim());
+                                newScannedItem.setLotNumber("20241031PD4-L08");
+                                newScannedItem.setLot("241031");
+                                //newScannedItem.setId(pickingItemId);
+                                newScannedItem.setPickingOrderItemId(4);
+                                scannedTags.add(newScannedItem);
 
-                        // Show success message with runOnUiThread
-                        if (getActivity() != null) {
-                            getActivity().runOnUiThread(() -> {
-                                Toast.makeText(mContext,
-                                        String.format("Found Item: %s, Lot: %s, Scanned: %.0f/%.0f",
+                                // Show success message
+                                if (getActivity() != null) {
+                                    getActivity().runOnUiThread(() -> {
+                                        String message = String.format("Found Item: %s, Lot: %s\nScanned: %.0f + Success: %.0f / Required: %.0f",
                                                 item.getProduct(),
                                                 item.getLot(),
                                                 item.getQuantityScan(),
-                                                item.getQuantity()),
-                                        Toast.LENGTH_SHORT).show();
-
-                                // Notify adapter that data has changed
-                                adapter.notifyDataSetChanged();
-                            });
+                                                item.getQuantitySuccess(),
+                                                item.getQuantity());
+                                        //Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
+                                        adapter.notifyDataSetChanged();
+                                    });
+                                }
+                            } else {
+                                //showToastOnUiThread("This tag has already been scanned!");
+                            }
+                            //break;
                         }
-                    } else {
-                        // Tag already scanned
-                        showToastOnUiThread("This tag has already been scanned!");
                     }
-                    break;
                 }
+                // Search for matching item
+
+
+                productId++;
+                if(productId >= 5) return;
+
+                if (!found) {
+                    //showToastOnUiThread(String.format("No matching item found for scanned tag: %s", qrCode));
+                }
+
+            }
+            else
+            {
+
+                String xxTagID = qrCode;
+                ProductItem foundItem = findItemStockByTagId(xxTagID);
+
+                if (foundItem == null) {
+                    Log.d(TAG, "No item stock found with tagId: " + xxTagID);
+                    return;
+                }
+
+                // Get all items from adapter
+                List<PickingOrderItem> items = adapter.getFilteredItems();
+
+                if (items == null) {
+                    Toast.makeText(mContext, "No items available", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                boolean found = false;
+
+                // Search for matching item
+                for (PickingOrderItem item : items) {
+                    if (item != null && item.getProductId() == foundItem.getProductId()) {
+                        found = true;
+
+                        int pickingItemId = item.getId();
+                        // Check if we've already reached the required quantity
+                        if (item.getQuantitySuccess() + item.getQuantityScan() >= item.getQuantity()) {
+                            showToastOnUiThread("Required quantity already reached for this item!");
+                            return;
+                        }
+
+                        // Check if this tag was already scanned
+                        boolean tagAlreadyScanned = false;
+                        for (PickingOrderItem scannedItem : scannedTags) {
+                            if (scannedItem.getTagId().equals(qrCode)) {
+                                tagAlreadyScanned = true;
+                                break;
+                            }
+                        }
+
+                        if (!tagAlreadyScanned) {
+                            // Update quantity scanned
+                            item.setQuantityScan(item.getQuantityScan() + 1);
+                            int temp_pickorderitemid = item.getPickingOrderItemId();
+                            // Add tag to scanned list
+                            PickingOrderItem newScannedItem = new PickingOrderItem();
+                            newScannedItem.setProductId(item.getProductId());
+                            newScannedItem.setQuantity(1);
+                            newScannedItem.setTagId(qrCode.trim());
+                            newScannedItem.setLotNumber(foundItem.getLotNumber());
+                            newScannedItem.setLot(foundItem.getLot());
+                            newScannedItem.setId(item.getPickingOrderItemId());
+                            newScannedItem.setPickingOrderItemId(pickingItemId);
+                            scannedTags.add(newScannedItem);
+
+                            // Show success message
+                            if (getActivity() != null) {
+                                getActivity().runOnUiThread(() -> {
+                                    String message = String.format("Found Item: %s, Lot: %s\nScanned: %.0f + Success: %.0f / Required: %.0f",
+                                            item.getProduct(),
+                                            item.getLot(),
+                                            item.getQuantityScan(),
+                                            item.getQuantitySuccess(),
+                                            item.getQuantity());
+                                    //Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
+                                    adapter.notifyDataSetChanged();
+                                });
+                            }
+                        } else {
+                            showToastOnUiThread("This tag has already been scanned!");
+                        }
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    showToastOnUiThread(String.format("No matching item found for scanned tag: %s", qrCode));
+                }
+
             }
 
-            if (!found) {
-                // Item not found in list
-                showToastOnUiThread(String.format("No matching item found for Item: %s", qrCode));
-            }
+
 
         } catch (Exception e) {
-            Log.e("MoveOrderChildFragment", "Error processing QR code: " + e.getMessage());
+            Log.e(TAG, "Error processing QR code: " + e.getMessage());
             showToastOnUiThread("Error processing scan: " + e.getMessage());
         }
     }
+
 
     // Helper method to show Toast on UI thread
     private void showToastOnUiThread(final String message) {
@@ -836,27 +1157,53 @@ public class PickingOrderChildFragment extends Fragment {
         }
     }
     private int  selectIndex=-1;
+
     private void clearData() {
-
-        //adapter.notifyDataSetChanged();
-
-        mContext.selectEPC=null;
-        selectIndex=-1;
+        mContext.selectEPC = null;
+        selectIndex = -1;
 
         if (scannedTags != null) {
             scannedTags.clear();
         }
+
+        // Reset scan quantities for all items
         if (adapter != null) {
+            List<PickingOrderItem> items = adapter.getFilteredItems();
+            if (items != null) {
+                for (PickingOrderItem item : items) {
+                    item.setQuantityScan(0);
+                }
+            }
             adapter.notifyDataSetChanged();
         }
 
-        // Create new tagList if it's null
-        if (tagList == null) {
+        //if (tagList == null) {
             tagList = new ArrayList<>();
-        }
+        //}
 
         loadPickingOrderItems();
     }
+//    private void clearData() {
+//
+//        //adapter.notifyDataSetChanged();
+//
+//        mContext.selectEPC=null;
+//        selectIndex=-1;
+//
+//        if (scannedTags != null) {
+//            scannedTags.clear();
+//        }
+//        if (adapter != null) {
+//            adapter.notifyDataSetChanged();
+//        }
+//
+//        // Create new tagList if it's null
+//        if (tagList == null) {
+//            tagList = new ArrayList<>();
+//        }
+//
+//        loadPickingOrderItems();
+//    }
 
     @Override
     public void onResume() {

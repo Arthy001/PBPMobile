@@ -2,6 +2,8 @@ package com.example.uhf_bt.models;
 
 public class PickingOrderItem {
     private int id;
+
+    private int pickingOrderItemId;
     private String rowGuid;
     private String createdAtUtc;
     private String pickingOrder;
@@ -27,9 +29,17 @@ public class PickingOrderItem {
     private int pickingTransStatus;
     private boolean isScanned;
 
+    private String pallet;
+    private String palletNo;
+    private String palletTagId;
+
+    private String boxType;
+    private String sequenceNumber;
     // Getters and Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
+    public int getPickingOrderItemId() { return pickingOrderItemId; }
+    public void setPickingOrderItemId(int id) { this.pickingOrderItemId = pickingOrderItemId; }
 
     public String getRowGuid() { return rowGuid; }
     public void setRowGuid(String rowGuid) { this.rowGuid = rowGuid; }
@@ -96,9 +106,32 @@ public class PickingOrderItem {
     public String getLot() { return lot; }
     public void setLot(String lot) { this.lot = lot; }
 
+    public String getPallet() { return pallet; }
+    public void setPallet(String lot) { this.pallet = pallet; }
+
+    public String getPalletNo() { return lot; }
+    public void setPalletNo(String palletNo) { this.palletNo = palletNo; }
+    public String getPalletTagId() { return palletTagId; }
+    public void setPalletTagId(String palletTagId) { this.palletTagId = palletTagId; }
+
     public int getPickingTransStatus() { return pickingTransStatus; }
     public void setPickingTransStatus(int pickingTransStatus) { this.pickingTransStatus = pickingTransStatus; }
 
     public boolean isScanned() { return isScanned; }
     public void setScanned(boolean scanned) { isScanned = scanned; }
+
+    public String getBoxType() {
+        return boxType;
+    }
+
+    public void setBoxType(String boxType) {
+        this.boxType = boxType;
+    }
+    public String getSequenceNumber() {
+        return sequenceNumber;
+    }
+
+    public void setSequenceNumber(String sequenceNumber) {
+        this.sequenceNumber = sequenceNumber;
+    }
 }

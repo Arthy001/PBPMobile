@@ -221,8 +221,8 @@ public class UHFSetFragment extends Fragment implements View.OnClickListener {
         btnbeepClose = (Button) view.findViewById(R.id.btnbeepClose);
         cbTagFocus= (CheckBox) view.findViewById(R.id.cbTagFocus);
         cbRssi= (CheckBox) view.findViewById(R.id.cbRssi);
-        cbAntiRead= (CheckBox) view.findViewById(R.id.cbAntiRead);
-        cbClipboard= (CheckBox) view.findViewById(R.id.cbClipboard);
+        //cbAntiRead= (CheckBox) view.findViewById(R.id.cbAntiRead);
+        //cbClipboard= (CheckBox) view.findViewById(R.id.cbClipboard);
 
         splinkParams= view.findViewById(R.id.splinkParams);
         btnSetRFlink=(Button)view.findViewById(R.id.btnSetRFlink);
@@ -272,6 +272,11 @@ public class UHFSetFragment extends Fragment implements View.OnClickListener {
         btnGetProtocol = (Button) view.findViewById(R.id.btnGetProtocol);
         btnGetProtocol.setOnClickListener(this);
 
+
+        //cbTagFocus.setChecked(true);
+        //
+        //
+        // context.uhf.setTagFocus(cbTagFocus.isChecked());
 
         cbContinuousWave = (CheckBox) view.findViewById(R.id.cbContinuousWave);
         cbContinuousWave.setOnClickListener(new View.OnClickListener() {
@@ -364,24 +369,6 @@ public class UHFSetFragment extends Fragment implements View.OnClickListener {
                     context.showToast(R.string.setting_succ);
                 } else {
                     context.showToast(R.string.setting_fail);
-                }
-                break;
-            case R.id.cbAntiRead:
-                if (cbAntiRead.isChecked() == true) {
-                    UHFReadTagFragment.anti_read = true;
-                    context.showToast("Set Anti-Read Success");
-                } else {
-                    UHFReadTagFragment.anti_read = false;
-                    context.showToast("Cancel Anti-Read Success.");
-                }
-                break;
-            case R.id.cbClipboard:
-                if (cbClipboard.isChecked() == true) {
-                    UHFReadTagFragment.is_clipboard = true;
-                    context.showToast("Set Copy to Clipboard Success");
-                } else {
-                    UHFReadTagFragment.is_clipboard = false;
-                    context.showToast("Cancel Copy to Clipboard  Success.");
                 }
                 break;
             case R.id.btnSetRFlink:

@@ -647,18 +647,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 
-            <CheckBox
-                android:id="@+id/cbAntiRead"
-                android:text="Anti-Read"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-            <CheckBox
-                android:id="@+id/cbClipboard"
-                android:text="Copy to Clipboard"
-                android:checked="true"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
 
 
         </LinearLayout>
