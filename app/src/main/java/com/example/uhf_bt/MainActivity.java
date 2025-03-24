@@ -326,7 +326,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         MaterialButton btnPickingOrder = findViewById(R.id.btnPickingOrder);
         MaterialButton btnFindProduct = findViewById(R.id.btnFindProduct);
 
-        MaterialButton btnCreateRenant = findViewById(R.id.btnCreateRenantBox);
+        //MaterialButton btnCreateRenant = findViewById(R.id.btnCreateRenantBox);
         MaterialButton btnReceiveShipping = findViewById(R.id.btnReceiveShipping);
         MaterialButton btnIssueDeliveryOrder = findViewById(R.id.btnIssueDeliveryOrder);
 
@@ -826,6 +826,11 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
                             showToast(R.string.connect_success);
                         }
 
+                        // Set TagFocus to true whenever the device is connected
+                        //uhf.setTagFocus(true);
+                        //uhf.setTagFocus(true);
+
+
                         timeCountCur = SPUtils.getInstance(getApplicationContext()).getSPLong(SPUtils.DISCONNECT_TIME, 0);
                         if (timeCountCur > 0) {
                             startDisconnectTimer(timeCountCur);
@@ -888,12 +893,12 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
 
     private void initTabHost() {
-       // fm = getSupportFragmentManager();
-       // mTabHost.setup(this, fm, R.id.realtabcontent);
+        fm = getSupportFragmentManager();
+        mTabHost.setup(this, fm, R.id.realtabcontent);
 
-       // mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory)).setIndicator(getString(R.string.title_inventory)), UHFReadTagFragment.class, null);
-       // mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_2d_Scan)).setIndicator(getString(R.string.title_2d_Scan)), BarcodeFragment.class, null);
-        // Add other tabs...
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_inventory)).setIndicator(getString(R.string.title_inventory)), UHFReadTagFragment.class, null);
+        mTabHost.addTab(mTabHost.newTabSpec(getString(R.string.title_2d_Scan)).setIndicator(getString(R.string.title_2d_Scan)), BarcodeFragment.class, null);
+
     }
 
 

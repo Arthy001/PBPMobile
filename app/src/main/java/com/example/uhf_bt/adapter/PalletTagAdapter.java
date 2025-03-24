@@ -76,21 +76,21 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
         if (item != null) {
             try {
                 // Set picking order and customer
-                holder.tvPickingOrder.setText(item.getPickingOrder());
-                holder.tvCustomer.setText(item.getCustomer());
+                holder.tvPickingOrder.setText("DO: " + item.getPickingOrder());
+                holder.tvCustomer.setText("ลูกค้า: " + item.getCustomer());
 
                 // Set product details
                 holder.tvProduct.setText(item.getProduct());
-                holder.tvProductNumber.setText(item.getProductNumber());
+                holder.tvProductNumber.setText("Item: " + item.getProductNumber());
 
                 // Set pallet info and quantity
                 String palletInfo = String.format("Pallet: %s (%s)",
                         item.getPallet(), item.getPalletNo());
                 holder.tvPalletInfo.setText(palletInfo);
-                holder.tvQuantity.setText(String.format("Qty: %d", item.getQuantity()));
+                holder.tvQuantity.setText(String.format("Quantity: %.2f", item.getQuantity()));
 
                 // Set tag ID
-                holder.tvPalletTagId.setText(item.getPalletTagId());
+                holder.tvPalletTagId.setText("Pallet Tag: "  + item.getPalletTagId());
 
             } catch (Exception e) {
                 Log.e(TAG, "Error binding data to view at position " + position, e);

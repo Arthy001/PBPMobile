@@ -35,13 +35,14 @@
                 android:padding="20dp"
                 android:layout_marginBottom="10dp"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCreateRenantBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Create Renant Box"
-                android:padding="20dp"
-                android:layout_marginBottom="10dp"/>
+<!--            <com.google.android.material.button.MaterialButton-->
+<!--                android:id="@+id/btnCreateRenantBox"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="Create Renant Box"-->
+<!--                android:padding="20dp"-->
+<!--                android:visibility="invisible"-->
+<!--                android:layout_marginBottom="10dp"/>-->
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnReceiveShipping"

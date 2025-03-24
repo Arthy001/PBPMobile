@@ -50,8 +50,8 @@ public class UHFSetFragment extends Fragment implements View.OnClickListener {
     Button btnbeepOpen;
     Button btnbeepClose;
     CheckBox cbTagFocus;
-    CheckBox cbAntiRead;
-    CheckBox  cbClipboard;
+    //CheckBox cbAntiRead;
+    //CheckBox  cbClipboard;
     Button btnSetRFlink,btnGetRFlink;
     CheckBox cbRssi;
 
@@ -254,8 +254,8 @@ public class UHFSetFragment extends Fragment implements View.OnClickListener {
         btnSetRFlink.setOnClickListener(this);
         btnGetRFlink.setOnClickListener(this);
         cbTagFocus.setOnClickListener(this);
-        cbAntiRead.setOnClickListener(this);
-        cbClipboard.setOnClickListener(this);
+        //cbAntiRead.setOnClickListener(this);
+        //cbClipboard.setOnClickListener(this);
 
         btnSetFreHop.setOnClickListener(this);
         btnGetPower.setOnClickListener(this);
@@ -274,9 +274,7 @@ public class UHFSetFragment extends Fragment implements View.OnClickListener {
 
 
         //cbTagFocus.setChecked(true);
-        //
-        //
-        // context.uhf.setTagFocus(cbTagFocus.isChecked());
+        //context.uhf.setTagFocus(cbTagFocus.isChecked());
 
         cbContinuousWave = (CheckBox) view.findViewById(R.id.cbContinuousWave);
         cbContinuousWave.setOnClickListener(new View.OnClickListener() {
@@ -371,6 +369,24 @@ public class UHFSetFragment extends Fragment implements View.OnClickListener {
                     context.showToast(R.string.setting_fail);
                 }
                 break;
+//            case R.id.cbAntiRead:
+//                if (cbAntiRead.isChecked() == true) {
+//                    UHFReadTagFragment.anti_read = true;
+//                    context.showToast("Set Anti-Read Success");
+//                } else {
+//                    UHFReadTagFragment.anti_read = false;
+//                    context.showToast("Cancel Anti-Read Success.");
+//                }
+//                break;
+//            case R.id.cbClipboard:
+//                if (cbClipboard.isChecked() == true) {
+//                    UHFReadTagFragment.is_clipboard = true;
+//                    context.showToast("Set Copy to Clipboard Success");
+//                } else {
+//                    UHFReadTagFragment.is_clipboard = false;
+//                    context.showToast("Cancel Copy to Clipboard  Success.");
+//                }
+//                break;
             case R.id.btnSetRFlink:
                 int link = splinkParams.getSelectedItemPosition();
                 if (context.uhf.setRFLink(link)) {

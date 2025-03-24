@@ -50,7 +50,7 @@ public class PalletTag {
     private double unitPrice;
 
     @SerializedName("quantity")
-    private int quantity;
+    private double quantity;
 
     @SerializedName("total")
     private double total;
@@ -86,7 +86,7 @@ public class PalletTag {
     public String getLotNumber() { return lotNumber; }
     public String getSummary() { return summary; }
     public double getUnitPrice() { return unitPrice; }
-    public int getQuantity() { return quantity; }
+    public double getQuantity() { return quantity; }
     public double getTotal() { return total; }
     public String getPallet() { return pallet; }
     public String getPalletNo() { return palletNo; }

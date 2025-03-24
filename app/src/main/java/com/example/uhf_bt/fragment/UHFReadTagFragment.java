@@ -538,7 +538,8 @@ public class UHFReadTagFragment extends Fragment implements View.OnClickListener
 
 
 
-    public static Boolean is_clipboard = true;
+    //
+    // public static Boolean is_clipboard = true;
     void insertTag(UHFTAGInfo info, int index,boolean exists){
 
         String data=info.getEPC();
