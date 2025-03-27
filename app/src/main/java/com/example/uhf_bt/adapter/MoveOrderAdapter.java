@@ -81,7 +81,7 @@ public class MoveOrderAdapter extends BaseAdapter implements Filterable {
         String formattedDate = formatDate(moveOrder.getOrderDate());
 
         // Set values
-        holder.numberText.setText("Order: " + moveOrder.getNumber());
+        holder.numberText.setText("Move Order: " + moveOrder.getNumber());
         holder.dateText.setText("Date: " + formattedDate);
         holder.sourceText.setText(String.format("From: %s To: %s",
                 moveOrder.getWarehouseSource(),
@@ -141,6 +141,13 @@ public class MoveOrderAdapter extends BaseAdapter implements Filterable {
                 protected FilterResults performFiltering(CharSequence constraint) {
                     FilterResults results = new FilterResults();
 
+                    // ตรวจสอบว่ามีข้อมูลต้นฉบับหรือไม่
+                    if (moveOrders == null || moveOrders.isEmpty()) {
+                        results.values = new ArrayList<>();
+                        results.count = 0;
+                        return results;
+                    }
+
                     if (constraint == null || constraint.length() == 0) {
                         results.values = new ArrayList<>(moveOrders);
                         results.count = moveOrders.size();
@@ -149,9 +156,9 @@ public class MoveOrderAdapter extends BaseAdapter implements Filterable {
                         List<MoveOrder> filteredList = new ArrayList<>();
 
                         for (MoveOrder order : moveOrders) {
-                            if (order.getNumber().toLowerCase().contains(filterPattern) ||
-                                    order.getWarehouseSource().toLowerCase().contains(filterPattern) ||
-                                    order.getWarehouseDestination().toLowerCase().contains(filterPattern)) {
+                            if (order.getNumber() != null && order.getNumber().toLowerCase().contains(filterPattern) ||
+                                    order.getWarehouseSource() != null && order.getWarehouseSource().toLowerCase().contains(filterPattern) ||
+                                    order.getWarehouseDestination() != null && order.getWarehouseDestination().toLowerCase().contains(filterPattern)) {
                                 filteredList.add(order);
                             }
                         }
@@ -173,6 +180,47 @@ public class MoveOrderAdapter extends BaseAdapter implements Filterable {
         }
         return moveOrderFilter;
     }
+
+//    @Override
+//    public Filter getFilter() {
+//        if (moveOrderFilter == null) {
+//            moveOrderFilter = new Filter() {
+//                @Override
+//                protected FilterResults performFiltering(CharSequence constraint) {
+//                    FilterResults results = new FilterResults();
+//
+//                    if (constraint == null || constraint.length() == 0) {
+//                        results.values = new ArrayList<>(moveOrders);
+//                        results.count = moveOrders.size();
+//                    } else {
+//                        String filterPattern = constraint.toString().toLowerCase().trim();
+//                        List<MoveOrder> filteredList = new ArrayList<>();
+//
+//                        for (MoveOrder order : moveOrders) {
+//                            if (order.getNumber().toLowerCase().contains(filterPattern) ||
+//                                    order.getWarehouseSource().toLowerCase().contains(filterPattern) ||
+//                                    order.getWarehouseDestination().toLowerCase().contains(filterPattern)) {
+//                                filteredList.add(order);
+//                            }
+//                        }
+//
+//                        results.values = filteredList;
+//                        results.count = filteredList.size();
+//                    }
+//
+//                    return results;
+//                }
+//
+//                @SuppressWarnings("unchecked")
+//                @Override
+//                protected void publishResults(CharSequence constraint, FilterResults results) {
+//                    filteredMoveOrders = (List<MoveOrder>) results.values;
+//                    notifyDataSetChanged();
+//                }
+//            };
+//        }
+//        return moveOrderFilter;
+//    }
 
     private static class ViewHolder {
         TextView numberText;

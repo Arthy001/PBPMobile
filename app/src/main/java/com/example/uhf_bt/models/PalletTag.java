@@ -70,6 +70,11 @@ public class PalletTag {
     @SerializedName("sequenceNumber")
     private String sequenceNumber;
 
+    private static int palletStatus;
+
+    public void setPalletStatus(int palletStatus) { this.palletStatus = palletStatus; }
+    public static int getPalletStatus() { return palletStatus; }
+
     // Getters
     public long getId() { return id; }
     public String getRowGuid() { return rowGuid; }

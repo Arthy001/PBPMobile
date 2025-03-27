@@ -55,6 +55,10 @@ import retrofit2.Response;
 public class MoveOrderChildFragment extends Fragment {
 
     private static final String TAG = "MoveOrderChildFragment";
+
+    private TextView tvTotalQty, tvTotalScan, tvTotalSuccess;
+    private ImageView ivNotification;
+    private TextView tvNotificationCount;
     private List<MoveOrderItem> scannedTags = new ArrayList<>();
     private TextView tvOrderNo,tvSourceWarehouse, tvDestinationWarehouse;
     private ListView listView;
@@ -133,6 +137,14 @@ public class MoveOrderChildFragment extends Fragment {
         btClear = view.findViewById(R.id.btnClear);
         btStop = view.findViewById(R.id.btnStop);
         btnConfirm = view.findViewById(R.id.btnConfirm);
+
+        ivNotification = view.findViewById(R.id.ivNotification);
+        tvNotificationCount = view.findViewById(R.id.tvNotificationCount);
+
+        // Initialize total quantity TextViews
+        tvTotalQty = view.findViewById(R.id.tvTotalQty);
+        tvTotalScan = view.findViewById(R.id.tvTotalScan);
+        tvTotalSuccess = view.findViewById(R.id.tvTotalSuccess);
     }
 
     private void setupToolbar() {
@@ -141,6 +153,11 @@ public class MoveOrderChildFragment extends Fragment {
             if (getActivity() != null) {
                 getActivity().onBackPressed();
             }
+        });
+
+        // Add notification button click listener
+        ivNotification.setOnClickListener(v -> {
+            showNotificationsDialog();
         });
     }
 
@@ -196,6 +213,88 @@ public class MoveOrderChildFragment extends Fragment {
             }
         });
     }
+
+    private List<String> notificationMessages = new ArrayList<>();
+    private boolean hasNotifications = false;
+
+    private void checkNotifications() {
+        // In a real app, you would make an API call here
+        // For demo purposes, we'll just simulate an API response
+
+        // Clear existing notifications
+        notificationMessages.clear();
+
+        // Simulate API call to get notifications
+        // This could be replaced with an actual API call in your app
+        simulateGetNotifications();
+
+        // Update UI based on notification status
+        hasNotifications = !notificationMessages.isEmpty();
+        updateNotificationVisibility();
+    }
+
+    private void simulateGetNotifications() {
+        // This is just a placeholder for your actual API call
+        // In a real app, you would make a network request here
+
+        // For testing, add some sample notifications
+        //notificationMessages.add("New item assigned to your move order");
+        //notificationMessages.add("Item 'PROD001' needs verification");
+        //notificationMessages.add("Move order #" + moveOrderId + " updated");
+
+        // Uncomment to test with no notifications
+        // notificationMessages.clear();
+    }
+
+    // Add this method to update notification visibility
+    // Update the updateNotificationVisibility method
+    private void updateNotificationVisibility() {
+        if (ivNotification != null && tvNotificationCount != null) {
+            if (hasNotifications) {
+                ivNotification.setVisibility(View.VISIBLE);
+                tvNotificationCount.setVisibility(View.VISIBLE);
+                tvNotificationCount.setText(String.valueOf(notificationMessages.size()));
+            } else {
+                ivNotification.setVisibility(View.GONE);
+                tvNotificationCount.setVisibility(View.GONE);
+            }
+        }
+    }
+    private void showNotificationsDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        builder.setTitle("Notifications");
+
+        if (notificationMessages.isEmpty()) {
+            builder.setMessage("No notifications available");
+        } else {
+            // Create numbered notifications
+            String[] numberedNotifications = new String[notificationMessages.size()];
+            for (int i = 0; i < notificationMessages.size(); i++) {
+                numberedNotifications[i] = (i + 1) + ". " + notificationMessages.get(i);
+            }
+
+            builder.setItems(numberedNotifications, (dialog, which) -> {
+                // Handle notification click
+                Toast.makeText(mContext, "Selected: " + notificationMessages.get(which), Toast.LENGTH_SHORT).show();
+
+                // You could mark this notification as read here
+                // For demo purposes, we'll just show a toast
+            });
+
+            // Add option to mark all as read
+            builder.setNeutralButton("Mark All as Read", (dialog, which) -> {
+                // Clear all notifications
+                notificationMessages.clear();
+                hasNotifications = false;
+                updateNotificationVisibility();
+                Toast.makeText(mContext, "All notifications marked as read", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        builder.setPositiveButton("Close", null);
+        builder.show();
+    }
+
     private void setupSearchView() {
         searchView.setMaxWidth(Integer.MAX_VALUE);
 
@@ -265,6 +364,23 @@ public class MoveOrderChildFragment extends Fragment {
         });
     }
 
+    private void updateTotalQuantities() {
+        double totalQty = 0;
+        double totalScan = 0;
+        double totalSuccess = 0;
+
+        for (MoveOrderItem item : itemList) {
+            totalQty += item.getQuantity();
+            totalScan += item.getQuantityScan();
+            totalSuccess += item.getQuantitySuccess();
+        }
+
+        // Update UI with formatted values
+        tvTotalQty.setText(String.format("%.0f", totalQty));
+        tvTotalScan.setText(String.format("%.0f", totalScan));
+        tvTotalSuccess.setText(String.format("%.0f", totalSuccess));
+    }
+
     private void loadMoveOrderItems() {
         showLoading(true);
 
@@ -278,6 +394,7 @@ public class MoveOrderChildFragment extends Fragment {
                     itemList = response.body();
 
                     updateUI(items);
+                    updateTotalQuantities(); // Add this line
                     // Show empty state if no data
                     if (items.isEmpty()) {
                         showEmptyState();
@@ -333,6 +450,9 @@ public class MoveOrderChildFragment extends Fragment {
                             adapter.notifyDataSetChanged();
                         }
 
+                        // Update total quantities after updating items
+                        updateTotalQuantities(); // Add this line
+
                         // If you're on a background thread, use runOnUiThread
                         if (getActivity() != null) {
                             getActivity().runOnUiThread(() -> {
@@ -381,12 +501,13 @@ public class MoveOrderChildFragment extends Fragment {
     private void updateUI(List<MoveOrderItem> items) {
         if (!items.isEmpty()) {
             MoveOrderItem firstItem = items.get(0);
-            tvOrderNo.setText("Order No: " + firstItem.getMoveOrder());
+            tvOrderNo.setText("Move Order: " + firstItem.getMoveOrder());
             tvSourceWarehouse.setText("From: " + firstItem.getWarehouseSourceName());
             tvDestinationWarehouse.setText("To: " + firstItem.getWarehouseDestinationName());
         }
 
         adapter.updateItems(items);
+        updateTotalQuantities(); // Add this line
 
         // Enable/disable buttons based on status
         boolean hasUnfinishedItems = false;
@@ -642,12 +763,17 @@ public class MoveOrderChildFragment extends Fragment {
         try {
             // Basic input validation
             if (qrCode == null || qrCode.length() < 11) {
-                Toast.makeText(mContext, "Invalid QR code format", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "Invalid QR code format", Toast.LENGTH_SHORT).show();
+                String msg = qrCode + " Invalid format";
+                notificationMessages.add(msg);
+                showToastOnUiThread(msg);
+                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                 return;
             }
 
             String barcode = qrCode.substring(0, 6);
-            String lot = qrCode.substring(6, 12);
+            String lot = qrCode.substring(6, 14);
             String mc  = qrCode.substring(12, 14);
             String box_type = qrCode.substring(14, 15);
             String box_size = qrCode.substring(15, 19);
@@ -667,6 +793,10 @@ public class MoveOrderChildFragment extends Fragment {
             } else {
                 // Item not found
                 //Log.d(TAG, "No item found with tagId: " + xxTagID);
+                String msg = qrCode + " ไม่พบข้อมูลแท็กนี้";
+                showToastOnUiThread(msg);
+                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
             }
 
             // Get all items from adapter
@@ -675,7 +805,12 @@ public class MoveOrderChildFragment extends Fragment {
 
 
             if (items == null) {
-                Toast.makeText(mContext, "No items available", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "No items available", Toast.LENGTH_SHORT).show();
+
+                String msg = "No items available";
+                showToastOnUiThread(msg);
+                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                 return;
             }
 
@@ -708,21 +843,27 @@ public class MoveOrderChildFragment extends Fragment {
                         // Show success message with runOnUiThread
                         if (getActivity() != null) {
                             getActivity().runOnUiThread(() -> {
-                                Toast.makeText(mContext,
-                                        String.format("Found Item: %s, Lot: %s, Scanned: %.0f/%.0f",
-                                                item.getProduct(),
-                                                item.getLot(),
-                                                item.getQuantityScan(),
-                                                item.getQuantity()),
-                                        Toast.LENGTH_SHORT).show();
+//                                Toast.makeText(mContext,
+//                                        String.format("Found Item: %s, Lot: %s, Scanned: %.0f/%.0f",
+//                                                item.getProduct(),
+//                                                item.getLot(),
+//                                                item.getQuantityScan(),
+//                                                item.getQuantity()),
+//                                        Toast.LENGTH_SHORT).show();
 
                                 // Notify adapter that data has changed
                                 adapter.notifyDataSetChanged();
+                                updateTotalQuantities(); // Add this line
                             });
                         }
                     } else {
                         // Tag already scanned
-                        showToastOnUiThread("This tag has already been scanned!");
+                        //showToastOnUiThread("Tag "+ qrCode +" has already been scanned!");
+                        String msg = qrCode + "  has already been scanned!";
+                        notificationMessages.add(msg);
+                        showToastOnUiThread(msg);
+                        hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                        updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                     }
                     break;
                 }
@@ -732,12 +873,23 @@ public class MoveOrderChildFragment extends Fragment {
                 // Item not found in list
 //                showToastOnUiThread(String.format("No matching item found for Item: %s, Lot: %s",
 //                        barcode, lot));
+                String msg = "Item: " + barcode + " , Lot: " + lot + " No matching in Order ";
+                notificationMessages.add(msg);
+                showToastOnUiThread(msg);
+                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
             }
 
         } catch (Exception e) {
             Log.e("MoveOrderChildFragment", "Error processing QR code: " + e.getMessage());
-            showToastOnUiThread("Error processing scan: " + e.getMessage());
+            //showToastOnUiThread("Error processing scan: " + e.getMessage());
+            String msg = "Error processing QR code: " + e.getMessage();
+            notificationMessages.add(msg);
+            showToastOnUiThread(msg);
+            hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+            updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
         }
+
     }
 
     // Helper method to show Toast on UI thread
@@ -875,6 +1027,10 @@ public class MoveOrderChildFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+
+        // Check notifications when fragment resumes
+        checkNotifications();
+
         if (mContext.uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
             btnScanRFID.setEnabled(true);
             //btInventory.setEnabled(true);

@@ -67,6 +67,7 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
             holder.tvPalletInfo = convertView.findViewById(R.id.tvPalletInfo);
             holder.tvQuantity = convertView.findViewById(R.id.tvQuantity);
             holder.tvPalletTagId = convertView.findViewById(R.id.tvPalletTagId);
+            holder.tvStatus = convertView.findViewById(R.id.tvStatus);
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
@@ -87,7 +88,7 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
                 String palletInfo = String.format("Pallet: %s (%s)",
                         item.getPallet(), item.getPalletNo());
                 holder.tvPalletInfo.setText(palletInfo);
-                holder.tvQuantity.setText(String.format("Quantity: %.2f", item.getQuantity()));
+                holder.tvQuantity.setText(String.format("QTY: %.2f", item.getQuantity()));
 
                 // Set tag ID
                 holder.tvPalletTagId.setText("Pallet Tag: "  + item.getPalletTagId());
@@ -97,7 +98,52 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
             }
         }
 
+        // Set status with color
+        setStatus(holder.tvStatus, PalletTag.getPalletStatus());
+
         return convertView;
+    }
+
+    private void setStatus(TextView statusText, int status) {
+        String statusStr;
+        int textColor;
+
+        switch (status) {
+            case 0:
+                statusStr = "New";
+                textColor = context.getResources().getColor(android.R.color.holo_blue_dark);
+                break;
+            case 1:
+                statusStr = "Picked";
+                textColor = context.getResources().getColor(android.R.color.holo_orange_dark);
+                break;
+            case 2:
+                statusStr = "Packed";
+                textColor = context.getResources().getColor(android.R.color.holo_green_dark);
+                break;
+            case 3:
+                statusStr = "รับเข้าจัดส่ง";
+                textColor = context.getResources().getColor(android.R.color.holo_red_dark);
+                break;
+            case 4:
+                statusStr = "โหลดสินค้า";
+                textColor = context.getResources().getColor(android.R.color.holo_red_dark);
+                break;
+            case 5:
+                statusStr = "จัดส่งแล้ว";
+                textColor = context.getResources().getColor(android.R.color.holo_red_dark);
+                break;
+            case -1:
+                statusStr = "Cancel";
+                textColor = context.getResources().getColor(android.R.color.holo_red_dark);
+                break;
+            default:
+                statusStr = "Unknown";
+                textColor = context.getResources().getColor(android.R.color.darker_gray);
+        }
+
+        statusText.setText(statusStr);
+        statusText.setTextColor(textColor);
     }
 
     @Override
@@ -107,8 +153,15 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
             protected FilterResults performFiltering(CharSequence constraint) {
                 FilterResults results = new FilterResults();
 
+                // ตรวจสอบว่ามีข้อมูลต้นฉบับหรือไม่
+                if (palletTags == null || palletTags.isEmpty()) {
+                    results.values = new ArrayList<>();
+                    results.count = 0;
+                    return results;
+                }
+
                 if (constraint == null || constraint.length() == 0) {
-                    results.values = palletTags;
+                    results.values = new ArrayList<>(palletTags);
                     results.count = palletTags.size();
                 } else {
                     List<PalletTag> filtered = new ArrayList<>();
@@ -134,11 +187,55 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
 
             @Override
             protected void publishResults(CharSequence constraint, FilterResults results) {
-                filteredPalletTags = (List<PalletTag>) results.values;
+                if (results.values != null) {
+                    filteredPalletTags = (List<PalletTag>) results.values;
+                } else {
+                    filteredPalletTags = new ArrayList<>();
+                }
                 notifyDataSetChanged();
             }
         };
     }
+
+//    @Override
+//    public Filter getFilter() {
+//        return new Filter() {
+//            @Override
+//            protected FilterResults performFiltering(CharSequence constraint) {
+//                FilterResults results = new FilterResults();
+//
+//                if (constraint == null || constraint.length() == 0) {
+//                    results.values = palletTags;
+//                    results.count = palletTags.size();
+//                } else {
+//                    List<PalletTag> filtered = new ArrayList<>();
+//                    String filterPattern = constraint.toString().toLowerCase().trim();
+//
+//                    for (PalletTag tag : palletTags) {
+//                        if (tag != null && (
+//                                containsIgnoreCase(tag.getPickingOrder(), filterPattern) ||
+//                                        containsIgnoreCase(tag.getPalletTagId(), filterPattern) ||
+//                                        containsIgnoreCase(tag.getProduct(), filterPattern) ||
+//                                        containsIgnoreCase(tag.getProductNumber(), filterPattern) ||
+//                                        containsIgnoreCase(tag.getPalletNo(), filterPattern) ||
+//                                        containsIgnoreCase(tag.getCustomer(), filterPattern))) {
+//                            filtered.add(tag);
+//                        }
+//                    }
+//
+//                    results.values = filtered;
+//                    results.count = filtered.size();
+//                }
+//                return results;
+//            }
+//
+//            @Override
+//            protected void publishResults(CharSequence constraint, FilterResults results) {
+//                filteredPalletTags = (List<PalletTag>) results.values;
+//                notifyDataSetChanged();
+//            }
+//        };
+//    }
 
     private boolean containsIgnoreCase(String source, String target) {
         return source != null && source.toLowerCase().contains(target);
@@ -152,5 +249,6 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
         TextView tvPalletInfo;
         TextView tvQuantity;
         TextView tvPalletTagId;
+        TextView tvStatus;
     }
 }

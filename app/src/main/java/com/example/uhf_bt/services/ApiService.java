@@ -48,32 +48,35 @@ public interface ApiService {
             @Body List<MoveOrderItem> items
     );
 
-    @POST("api/PickingOrderTransactionChild")
+    @POST("api/mobile/PickingOrderTransactionChild")
     Call<List<PickingOrderItem>> createPickingOrderTransaction(
             @Header("ParentId") String parentId,
             @Body List<PickingOrderItem> items
     );
-    @GET("api/pickingordertransaction/by-picking-order/{pickingOrderId}")
+    @GET("api/mobile/pickingordertransaction/by-picking-order/{pickingOrderId}")
     Call<List<PickingOrderTransaction>> getPickingOrderTransactions(@Path("pickingOrderId") String pickingOrderId);
 
 
-    @GET("api/pickingorder")
+    @GET("api/mobile/pickingorder")
     Call<List<PickingOrder>> getPickingOrders();
 
-    @GET("api/pickingorderitem")
+    @GET("api/mobile/pickingorderitem")
     Call<List<PickingOrderItem>> getPickingOrderItems(@Query("pickingorderid") String pickingOrderId);
 
-    @GET("api/PickingOrderItem/pallet-tagids")
+    @GET("api/mobile/PickingOrderItem/pallet-tagids")
     Call<List<PalletTag>> getPalletTags();
 
-    @GET("api/PickingOrderItem/pallet-tagids/{pickingOrderId}")
+    @GET("api/mobile/PickingOrderItem/pallet-tagids/{pickingOrderId}")
     Call<List<PalletTag>> getPalletTagsByPickingOrder(@Path("pickingOrderId") String pickingOrderId);
 
     // Optional: Add a method to get pallet details by tag ID
-    @GET("api/PickingOrderItem/pallet/{palletTagId}")
+    @GET("api/mobile/PickingOrderItem/pallet/{palletTagId}")
     Call<PalletTag> getPalletByTagId(@Path("palletTagId") String palletTagId);
 
-    @GET("api/PickingOrderTransaction/by-pallet-tag-id/{palletTagId}")
+    @GET("api/mobile/PickingOrderItem/pallet/{palletTagId}")
+    Call<List<PickingOrderItem>> getPalletDetailByTagId(@Path("palletTagId") String palletTagId);
+
+    @GET("api/mobile/PickingOrderTransaction/by-pallet-tag-id/{palletTagId}")
     Call<List<PalletTransaction>> getTransactionsByPalletTagId(@Path("palletTagId") String palletTagId);
 
 

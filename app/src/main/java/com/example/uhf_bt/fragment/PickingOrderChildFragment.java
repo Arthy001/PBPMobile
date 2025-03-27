@@ -66,6 +66,11 @@ import retrofit2.Response;
 public class PickingOrderChildFragment extends Fragment {
     private static final String TAG = "PickingOrderChildFrag";
 
+    private TextView tvTotalQty, tvTotalScan, tvTotalSuccess;
+    private ImageView ivNotification;
+    private TextView tvNotificationCount;
+    private List<String> notificationMessages = new ArrayList<>();
+    private boolean hasNotifications = false;
     // Add these variables to your PickingOrderChildFragment class
     private Spinner spinnerPallet;
     private Button btnLockPallet;
@@ -74,7 +79,6 @@ public class PickingOrderChildFragment extends Fragment {
 
     private TextView tvOrderNo;
     private TextView tvCustomer;
-    private TextView tvOrderDate;
     private ListView listView;
     private ProgressBar progressBar;
     private View emptyView;
@@ -123,7 +127,7 @@ public class PickingOrderChildFragment extends Fragment {
         setupListView();
         setupButtonListeners();
         loadPickingOrderItems();
-        //loadPickingOrderTransactions(); // Add this line
+        loadPickingOrderTransactions(); // Add this line
         loadProductItemStock();
         return view;
     }
@@ -134,12 +138,21 @@ public class PickingOrderChildFragment extends Fragment {
         searchView = view.findViewById(R.id.searchView);
         ivBack = view.findViewById(R.id.ivBack);
 
+        // Initialize notification views
+        ivNotification = view.findViewById(R.id.ivNotification);
+        tvNotificationCount = view.findViewById(R.id.tvNotificationCount);
+
         tvOrderNo = view.findViewById(R.id.tvOrderNo);
         tvCustomer = view.findViewById(R.id.tvCustomer);
-        tvOrderDate = view.findViewById(R.id.tvOrderDate);
         listView = view.findViewById(R.id.listView);
         progressBar = view.findViewById(R.id.progressBar);
         emptyView = view.findViewById(R.id.emptyView);
+
+        // Initialize total quantity TextViews
+        tvTotalQty = view.findViewById(R.id.tvTotalQty);
+        tvTotalScan = view.findViewById(R.id.tvTotalScan);
+        tvTotalSuccess = view.findViewById(R.id.tvTotalSuccess);
+
 
         etTime = view.findViewById(R.id.etTime);
         tv_count = view.findViewById(R.id.tv_count);
@@ -204,6 +217,7 @@ public class PickingOrderChildFragment extends Fragment {
         }
     }
 
+    // Update loadPickingOrderTransactions to call updateTotalQuantities after updating items
     private void loadPickingOrderTransactions() {
         showLoading(true);
 
@@ -244,6 +258,9 @@ public class PickingOrderChildFragment extends Fragment {
                                 if (adapter != null) {
                                     adapter.updateItems(itemList);
                                     adapter.notifyDataSetChanged();
+
+                                    // Update total quantities
+                                    updateTotalQuantities();
                                 }
                             });
                         }
@@ -275,7 +292,6 @@ public class PickingOrderChildFragment extends Fragment {
         });
     }
 
-    // Add loadPickingOrderTransactions method to load existing transactions
 //    private void loadPickingOrderTransactions() {
 //        showLoading(true);
 //
@@ -288,38 +304,37 @@ public class PickingOrderChildFragment extends Fragment {
 //                    List<PickingOrderTransaction> transactions = response.body();
 //
 //                    if (!transactions.isEmpty()) {
+//                        // Create a map to count transactions per picking order item
+//                        Map<Integer, Integer> transactionCounts = new HashMap<>();
 //
-//                        for (PickingOrderItem tempItem : itemList) {
-//                            // Find matching item in itemList
-//                            int pickingOrderItemId = tempItem.getId();
-//
-//                            for (PickingOrderTransaction item : transactions) {
-//                                // Match by productId and lot
-//                                int tranPickingOrderItemId = item.getPickingOrderItemId();
-//
-//                                if (pickingOrderItemId == tranPickingOrderItemId)
-//                                {
-//                                    tempItem.setQuantitySuccess(tempItem.getQuantitySuccess() + 1);
-//
-//                                    // Update UI
-//                                    if (adapter != null) {
-//                                        adapter.updateItems(tempItem);
-//
-//                                        // If you're on a background thread, use runOnUiThread
-//                                        if (getActivity() != null) {
-//                                            getActivity().runOnUiThread(() -> {
-//                                                adapter.notifyDataSetChanged();
-//                                            });
-//                                        }
-//                                    }
-//                                    break; // Found match, move to next tempItem
-//                                }
-//
-//
-////
+//                        // Count transactions per picking order item
+//                        for (PickingOrderTransaction transaction : transactions) {
+//                            int pickingOrderItemId = transaction.getPickingOrderItemId();
+//                            Integer currentCount = transactionCounts.get(pickingOrderItemId);
+//                            if (currentCount == null) {
+//                                transactionCounts.put(pickingOrderItemId, 1);
+//                            } else {
+//                                transactionCounts.put(pickingOrderItemId, currentCount + 1);
 //                            }
 //                        }
 //
+//                        // Update quantities in itemList
+//                        for (PickingOrderItem item : itemList) {
+//                            int itemId = item.getId();
+//                            if (transactionCounts.containsKey(itemId)) {
+//                                item.setQuantitySuccess(transactionCounts.get(itemId));
+//                            }
+//                        }
+//
+//                        // Update UI on the main thread
+//                        if (getActivity() != null) {
+//                            getActivity().runOnUiThread(() -> {
+//                                if (adapter != null) {
+//                                    adapter.updateItems(itemList);
+//                                    adapter.notifyDataSetChanged();
+//                                }
+//                            });
+//                        }
 //
 //                        // Save transactions for reference
 //                        tempList = new ArrayList<>();
@@ -347,6 +362,7 @@ public class PickingOrderChildFragment extends Fragment {
 //            }
 //        });
 //    }
+
     private void setupToolbar() {
 
         ivBack.setOnClickListener(v -> {
@@ -354,8 +370,93 @@ public class PickingOrderChildFragment extends Fragment {
                 getActivity().onBackPressed();
             }
         });
+
+        // Setup notification button click listener
+        ivNotification.setOnClickListener(v -> {
+            showNotificationsDialog();
+        });
     }
 
+    private void checkNotifications() {
+        // ไม่ต้องล้างรายการแจ้งเตือนที่มีอยู่
+        // notificationMessages.clear(); // ลบบรรทัดนี้
+
+        // สำหรับการทดสอบ อาจเพิ่มการแจ้งเตือนเริ่มต้น (ถ้ายังไม่มีการแจ้งเตือนใดๆ)
+        if (notificationMessages.isEmpty()) {
+            // เพิ่มการแจ้งเตือนเริ่มต้นเพื่อการทดสอบ
+            // notificationMessages.add("ทดสอบการแจ้งเตือน");
+        }
+
+        // อัพเดทสถานะการมีการแจ้งเตือน
+        hasNotifications = !notificationMessages.isEmpty();
+
+        // อัพเดทการแสดงผลปุ่มแจ้งเตือน
+        updateNotificationVisibility();
+    }
+    private void updateNotificationVisibility() {
+        if (ivNotification != null && tvNotificationCount != null) {
+            if (hasNotifications) {
+                ivNotification.setVisibility(View.VISIBLE);
+                tvNotificationCount.setVisibility(View.VISIBLE);
+                tvNotificationCount.setText(String.valueOf(notificationMessages.size()));
+            } else {
+                ivNotification.setVisibility(View.GONE);
+                tvNotificationCount.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    private void showNotificationsDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        builder.setTitle("Notifications");
+
+        if (notificationMessages.isEmpty()) {
+            builder.setMessage("No notifications available");
+        } else {
+            // Create numbered notifications
+            String[] numberedNotifications = new String[notificationMessages.size()];
+            for (int i = 0; i < notificationMessages.size(); i++) {
+                numberedNotifications[i] = (i + 1) + ". " + notificationMessages.get(i);
+            }
+
+            builder.setItems(numberedNotifications, (dialog, which) -> {
+                // Handle notification click
+                Toast.makeText(mContext, "Selected: " + notificationMessages.get(which), Toast.LENGTH_SHORT).show();
+            });
+
+            // Add option to mark all as read
+            builder.setNeutralButton("Mark All as Read", (dialog, which) -> {
+                // Clear all notifications
+                notificationMessages.clear();
+                hasNotifications = false;
+                updateNotificationVisibility();
+                Toast.makeText(mContext, "All notifications marked as read", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        builder.setPositiveButton("Close", null);
+        builder.show();
+    }
+
+    // Add method to update total quantities
+    private void updateTotalQuantities() {
+        double totalQty = 0;
+        double totalScan = 0;
+        double totalSuccess = 0;
+
+        for (PickingOrderItem item : itemList) {
+            totalQty += item.getQuantity();
+            totalScan += item.getQuantityScan();
+            totalSuccess += item.getQuantitySuccess();
+        }
+
+        // Update UI with formatted values
+        if (tvTotalQty != null && tvTotalScan != null && tvTotalSuccess != null) {
+            tvTotalQty.setText(String.format("%.0f", totalQty));
+            tvTotalScan.setText(String.format("%.0f", totalScan));
+            tvTotalSuccess.setText(String.format("%.0f", totalSuccess));
+        }
+    }
     private void setupButtonListeners() {
         btnScanRFID.setOnClickListener(v -> scanRFID());
         btClear.setOnClickListener(v -> clearRFID());
@@ -563,18 +664,23 @@ public class PickingOrderChildFragment extends Fragment {
     private void updateUI(List<PickingOrderItem> items) {
         if (!items.isEmpty()) {
             PickingOrderItem firstItem = items.get(0);
-            tvOrderNo.setText("Order No: " + firstItem.getPickingOrder());
-            tvCustomer.setText("Customer: " + firstItem.getCustomer());
-            tvOrderDate.setText("Order Date: " + firstItem.getOrderDate());
+            tvOrderNo.setText("DO: " + firstItem.getPickingOrder());
+            tvCustomer.setText("ลูกค้า: " + firstItem.getCustomer());
+            //tvOrderDate.setText("Order Date: " + firstItem.getOrderDate());
         }
 
         adapter.updateItems(items);
+
+
 
         // Enable/disable buttons based on total amount
         double totalAmount = 0;
         for (PickingOrderItem item : items) {
             totalAmount += item.getTotal();
         }
+
+        // Update total quantities
+        updateTotalQuantities();
 
         // Get unique pallets
         Set<String> uniquePallets = new HashSet<>();
@@ -752,15 +858,51 @@ public class PickingOrderChildFragment extends Fragment {
     }
 
 
-
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
         if (context instanceof MainActivity) {
             mContext = (MainActivity) context;
             uhf = mContext.uhf;
+
+            // Initialize variables
+            if (tagList == null) {
+                tagList = new ArrayList<>();
+            }
+
+            if (tempDatas == null) {
+                tempDatas = new ArrayList<>();
+            }
+
+            // Register connect status listener
+            mContext.addConnectStatusNotice(mConnectStatus);
+
+            // Try to set TagFocus
+            if (uhf != null && uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
+                try {
+                    uhf.setTagFocus(true);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error setting TagFocus in onAttach: " + e.getMessage());
+                }
+            }
         }
     }
+
+    @Override
+    public void onDetach() {
+        // Remove connect status listener to prevent memory leaks
+        if (mContext != null) {
+            mContext.removeConnectStatusNotice(mConnectStatus);
+        }
+        super.onDetach();
+    }
+//    @Override
+//    public void onAttach(@NonNull Context context) {
+//        super.onAttach(context);
+//        if (context instanceof MainActivity) {
+//            mContext = (MainActivity) context;
+//        }
+//    }
 
 
     private void handleStart() {
@@ -852,30 +994,35 @@ public class PickingOrderChildFragment extends Fragment {
         try {
             // Basic input validation
             if (qrCode == null || qrCode.length() < 11) {
-                Toast.makeText(mContext, "Invalid QR code format", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "Invalid QR code format", Toast.LENGTH_SHORT).show();
+                String msg = qrCode +  " Invalid format";
+                showToastOnUiThread(msg);
+                notificationMessages.add(msg);
+                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
+
                 return;
             }
 
             String chkTagId = qrCode.substring(0,4);
             if (chkTagId.contains("FFFF")) {
-                Toast.makeText(mContext, qrCode + " ไม่ใช่แท็กสินค้า!" , Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, qrCode + " ไม่ใช่แท็กสินค้า!" , Toast.LENGTH_SHORT).show();
+
                 return;
             }
             else if (chkTagId.contains("CCCC"))
             {
                 String xxTagID = qrCode;
-                //ProductItem foundItem = findItemStockByTagId(xxTagID);
-
-//                if (foundItem == null) {
-//                    Log.d(TAG, "No item stock found with tagId: " + xxTagID);
-//                    return;
-//                }
-
                 // Get all items from adapter
                 List<PickingOrderItem> items = adapter.getFilteredItems();
 
                 if (items == null) {
-                    Toast.makeText(mContext, "No items available", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(mContext, "No items available", Toast.LENGTH_SHORT).show();
+                    String msg =  "No items available";
+                    notificationMessages.add(msg);
+                    showToastOnUiThread(msg);
+                    hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                    updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                     return;
                 }
 
@@ -894,7 +1041,12 @@ public class PickingOrderChildFragment extends Fragment {
                             if (pickingItemId < 3) continue;
                             // Check if we've already reached the required quantity
                             if (item.getQuantitySuccess() + item.getQuantityScan() >= item.getQuantity()) {
-                                showToastOnUiThread("Required quantity already reached for this item!");
+                                //showToastOnUiThread("Required quantity already reached for this item!");
+                                String msg = item.getProductNumber()  + " จัดสินค้าครบแล้ว";
+                                notificationMessages.add(msg);
+                                showToastOnUiThread(msg);
+                                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                                 return;
                             }
 
@@ -927,18 +1079,23 @@ public class PickingOrderChildFragment extends Fragment {
                                 // Show success message
                                 if (getActivity() != null) {
                                     getActivity().runOnUiThread(() -> {
-                                        String message = String.format("Found Item: %s, Lot: %s\nScanned: %.0f + Success: %.0f / Required: %.0f",
-                                                item.getProduct(),
-                                                item.getLot(),
-                                                item.getQuantityScan(),
-                                                item.getQuantitySuccess(),
-                                                item.getQuantity());
+//                                        String message = String.format("Found Item: %s, Lot: %s\nScanned: %.0f + Success: %.0f / Required: %.0f",
+//                                                item.getProduct(),
+//                                                item.getLot(),
+//                                                item.getQuantityScan(),
+//                                                item.getQuantitySuccess(),
+//                                                item.getQuantity());
                                         //Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
                                         adapter.notifyDataSetChanged();
                                     });
                                 }
                             } else {
                                 //showToastOnUiThread("This tag has already been scanned!");
+                                String msg = qrCode  + " สแกนไปแล้ว";
+                                notificationMessages.add(msg);
+                                showToastOnUiThread(msg);
+                                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                             }
                             //break;
                         }
@@ -952,6 +1109,11 @@ public class PickingOrderChildFragment extends Fragment {
 
                 if (!found) {
                     //showToastOnUiThread(String.format("No matching item found for scanned tag: %s", qrCode));
+                    String msg = qrCode +  " No matching item found for scanned tag";
+                    notificationMessages.add(msg);
+                    showToastOnUiThread(msg);
+                    hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                    updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                 }
 
             }
@@ -963,6 +1125,11 @@ public class PickingOrderChildFragment extends Fragment {
 
                 if (foundItem == null) {
                     Log.d(TAG, "No item stock found with tagId: " + xxTagID);
+                    String msg = qrCode  + " ไม่มีอยู่ในสต็อก";
+                    notificationMessages.add(msg);
+                    showToastOnUiThread(msg);
+                    hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                    updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                     return;
                 }
 
@@ -970,7 +1137,11 @@ public class PickingOrderChildFragment extends Fragment {
                 List<PickingOrderItem> items = adapter.getFilteredItems();
 
                 if (items == null) {
-                    Toast.makeText(mContext, "No items available", Toast.LENGTH_SHORT).show();
+                    String msg = "No items available";
+                    notificationMessages.add(msg);
+                    showToastOnUiThread(msg);
+                    hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                    updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                     return;
                 }
 
@@ -984,7 +1155,11 @@ public class PickingOrderChildFragment extends Fragment {
                         int pickingItemId = item.getId();
                         // Check if we've already reached the required quantity
                         if (item.getQuantitySuccess() + item.getQuantityScan() >= item.getQuantity()) {
-                            showToastOnUiThread("Required quantity already reached for this item!");
+                            String msg = item.getProductNumber() +  " สแกนสินค้าครบแล้ว";
+                            notificationMessages.add(msg);
+                            showToastOnUiThread(msg);
+                            hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                            updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                             return;
                         }
 
@@ -1015,34 +1190,47 @@ public class PickingOrderChildFragment extends Fragment {
                             // Show success message
                             if (getActivity() != null) {
                                 getActivity().runOnUiThread(() -> {
-                                    String message = String.format("Found Item: %s, Lot: %s\nScanned: %.0f + Success: %.0f / Required: %.0f",
-                                            item.getProduct(),
-                                            item.getLot(),
-                                            item.getQuantityScan(),
-                                            item.getQuantitySuccess(),
-                                            item.getQuantity());
+//                                    String message = String.format("Found Item: %s, Lot: %s\nScanned: %.0f + Success: %.0f / Required: %.0f",
+//                                            item.getProduct(),
+//                                            item.getLot(),
+//                                            item.getQuantityScan(),
+//                                            item.getQuantitySuccess(),
+//                                            item.getQuantity());
                                     //Toast.makeText(mContext, message, Toast.LENGTH_SHORT).show();
                                     adapter.notifyDataSetChanged();
+
+                                    // Add this:
+                                    updateTotalQuantities();
                                 });
                             }
                         } else {
-                            showToastOnUiThread("This tag has already been scanned!");
+                            String msg = qrCode +  " สแกนไปแล้ว";
+                            showToastOnUiThread(msg);
+                            notificationMessages.add(msg);
+                            hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                            updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                         }
                         break;
                     }
                 }
 
                 if (!found) {
-                    showToastOnUiThread(String.format("No matching item found for scanned tag: %s", qrCode));
+                    String msg = qrCode +  " ไม่ตรงกับสินค้าทีต้องจัด";
+                    showToastOnUiThread(msg);
+                    notificationMessages.add(msg);
+                    hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+                    updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                 }
-
             }
 
 
 
         } catch (Exception e) {
-            Log.e(TAG, "Error processing QR code: " + e.getMessage());
-            showToastOnUiThread("Error processing scan: " + e.getMessage());
+            String msg =  "Error processing QR code: " + e.getMessage();
+            Log.e(TAG, msg);
+            notificationMessages.add(msg);
+            hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+            updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
         }
     }
 
@@ -1061,7 +1249,6 @@ public class PickingOrderChildFragment extends Fragment {
             Toast.makeText(mContext, "RFID reader is not connected", Toast.LENGTH_SHORT).show();
             return;
         }
-
         mStrTime = System.currentTimeMillis();
         UHFTAGInfo info = uhf.inventorySingleTag();
         if (info != null) {
@@ -1090,21 +1277,37 @@ public class PickingOrderChildFragment extends Fragment {
             return;
         }
 
-        //--
+        // Ensure tempDatas is initialized
+        if (tempDatas == null) {
+            tempDatas = new ArrayList<>();
+        }
 
+        // Ensure tagList is initialized
+        if (tagList == null) {
+            tagList = new ArrayList<>();
+        }
+
+        // Set TagFocus to true before starting inventory with try-catch
+        try {
+            mContext.uhf.setTagFocus(true);
+        } catch (Exception ex) {
+            Log.e(TAG, "Error setting TagFocus: " + ex.getMessage());
+        }
+
+        // Time handling
         String time = etTime.getText().toString();
-        if(time!=null && time.length()>0 && time.startsWith(".")){
+        if (time != null && time.length() > 0 && time.startsWith(".")) {
             etTime.setText("");
-            time="";
+            time = "";
         }
         if (time != null && !time.isEmpty()) {
             maxRunTime = (int)(Float.parseFloat(time) * 1000);
-            clearData();
+            // Don't call clearData() here as it might be causing issues
         } else {
-            maxRunTime=Integer.parseInt(etTime.getHint().toString())* 1000;
+            maxRunTime = Integer.parseInt(etTime.getHint().toString()) * 1000;
         }
 
-        //--
+        // Set inventory callback
         mContext.uhf.setInventoryCallback(new IUHFInventoryCallback() {
             @Override
             public void callback(UHFTAGInfo uhftagInfo) {
@@ -1112,8 +1315,6 @@ public class PickingOrderChildFragment extends Fragment {
             }
         });
         mContext.isScanning = true;
-        //        cbFilter.setChecked(true);
-        //new TagThread().start();
 
         Message msg = handler.obtainMessage(FLAG_START);
         Log.i(TAG, "startInventoryTag() 1");
@@ -1122,14 +1323,12 @@ public class PickingOrderChildFragment extends Fragment {
             msg.arg1 = FLAG_SUCCESS;
             handler.sendEmptyMessage(FLAG_UPDATE_TIME);
             handler.removeMessages(FLAG_TIME_OVER);
-            handler.sendEmptyMessageDelayed(FLAG_TIME_OVER,maxRunTime);
+            handler.sendEmptyMessageDelayed(FLAG_TIME_OVER, maxRunTime);
         } else {
             msg.arg1 = FLAG_FAIL;
             mContext.isScanning = false;
         }
         handler.sendMessage(msg);
-
-
     }
 
     private void stopInventory(){
@@ -1158,14 +1357,18 @@ public class PickingOrderChildFragment extends Fragment {
     }
     private int  selectIndex=-1;
 
+    // Fixed clearData method in PickingOrderChildFragment.java
     private void clearData() {
+        // Reset scan tracking variables
         mContext.selectEPC = null;
         selectIndex = -1;
 
+        // Clear scanned tags list safely
         if (scannedTags != null) {
             scannedTags.clear();
         }
 
+        updateTotalQuantities();
         // Reset scan quantities for all items
         if (adapter != null) {
             List<PickingOrderItem> items = adapter.getFilteredItems();
@@ -1177,37 +1380,54 @@ public class PickingOrderChildFragment extends Fragment {
             adapter.notifyDataSetChanged();
         }
 
-        //if (tagList == null) {
-            tagList = new ArrayList<>();
-        //}
+        // Clear the tempDatas list
+        if (tempDatas != null) {
+            tempDatas.clear();
+        }
 
+        // Initialize tagList if null, otherwise clear it
+        if (tagList == null) {
+            tagList = new ArrayList<>();
+        } else {
+            tagList.clear();
+        }
+
+        // Reload picking order items
         loadPickingOrderItems();
     }
+
 //    private void clearData() {
-//
-//        //adapter.notifyDataSetChanged();
-//
-//        mContext.selectEPC=null;
-//        selectIndex=-1;
+//        mContext.selectEPC = null;
+//        selectIndex = -1;
 //
 //        if (scannedTags != null) {
 //            scannedTags.clear();
 //        }
+//
+//        // Reset scan quantities for all items
 //        if (adapter != null) {
+//            List<PickingOrderItem> items = adapter.getFilteredItems();
+//            if (items != null) {
+//                for (PickingOrderItem item : items) {
+//                    item.setQuantityScan(0);
+//                }
+//            }
 //            adapter.notifyDataSetChanged();
 //        }
 //
-//        // Create new tagList if it's null
-//        if (tagList == null) {
+//        //if (tagList == null) {
 //            tagList = new ArrayList<>();
-//        }
-//
+//        //}
 //        loadPickingOrderItems();
 //    }
+
 
     @Override
     public void onResume() {
         super.onResume();
+        // Check notifications when fragment resumes
+        checkNotifications();
+
         if (mContext.uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
             btnScanRFID.setEnabled(true);
             //btInventory.setEnabled(true);
@@ -1248,7 +1468,7 @@ public class PickingOrderChildFragment extends Fragment {
     private void confirmPickingOrderTransaction() {
 
         // Make API call
-        String url = "http://30.0.1.111:5240/api/PickingOrderTransactionChild";
+        //String url = "http://30.0.1.111:5240/api/PickingOrderTransactionChild";
 
         // Create Retrofit service or similar HTTP client
         Call<List<PickingOrderItem>> call = apiService.createPickingOrderTransaction(
@@ -1290,6 +1510,7 @@ public class PickingOrderChildFragment extends Fragment {
                         e.printStackTrace();
                     }
                     btnScanRFID.setEnabled(true);
+                    //mContext.uhf.setTagFocus(true);
                     //btInventory.setEnabled(true);
                     //btInventoryPerMinute.setEnabled(true);
                 }

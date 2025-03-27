@@ -132,7 +132,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     public static boolean isKeyDownUP=false;
     private static final int RUNNING_DISCONNECT_TIMER = 10;
 
-    private static final long SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+    private static final long SESSION_TIMEOUT = 480 * 60 * 1000; // 30 minutes in milliseconds
     private Handler sessionTimeoutHandler = new Handler();
     private Runnable sessionTimeoutRunnable;
     private long lastActivityTime;

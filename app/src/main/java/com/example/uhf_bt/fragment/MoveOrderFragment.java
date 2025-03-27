@@ -13,7 +13,6 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
-//import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.widget.SearchView;
@@ -23,19 +22,15 @@ import com.example.uhf_bt.adapter.MoveOrderAdapter;
 import com.example.uhf_bt.models.MoveOrder;
 import com.example.uhf_bt.services.ApiService;
 import com.example.uhf_bt.services.RetrofitClient;
+import com.google.android.material.tabs.TabLayout;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link MoveOrderFragment#newInstance} factory method to
- * create an instance of this fragment.
- *
- */
 public class MoveOrderFragment extends Fragment {
 
     private static final String TAG = "MoveOrderFragment";
@@ -48,9 +43,9 @@ public class MoveOrderFragment extends Fragment {
     private View emptyView;
     private MoveOrderAdapter adapter;
     private ApiService apiService;
+    private TabLayout statusTabLayout;
+    private List<MoveOrder> allMoveOrders; // เก็บรายการทั้งหมดไว้สำหรับการกรอง
 
-
-    // TODO: Rename and change types and number of parameters
     public static MoveOrderFragment newInstance(String param1, String param2) {
         MoveOrderFragment fragment = new MoveOrderFragment();
         Bundle args = new Bundle();
@@ -74,14 +69,15 @@ public class MoveOrderFragment extends Fragment {
 
         initViews(view);
         setupBackButton();
+        setupStatusTabs();
         setupSearchView();
         setupListView();
 
         apiService = RetrofitClient.getClient().create(ApiService.class);
+        allMoveOrders = new ArrayList<>();
 
         return view;
     }
-
 
     private void initViews(View view) {
         searchView = view.findViewById(R.id.searchView);
@@ -90,7 +86,92 @@ public class MoveOrderFragment extends Fragment {
         progressBar = view.findViewById(R.id.progressBar);
         emptyView = view.findViewById(R.id.emptyView);
         toolbar_title = view.findViewById(R.id.toolbar_title);
+        statusTabLayout = view.findViewById(R.id.statusTabLayout);
+    }
 
+    private void setupStatusTabs() {
+        // เพิ่ม tabs ตามสถานะของ MoveOrder
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("All"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("New"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("In Progress"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("Success"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("Cancel"));
+
+        statusTabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                filterOrdersByStatus(tab.getPosition());
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                // ไม่ต้องทำอะไร
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                // ไม่ต้องทำอะไร
+            }
+        });
+    }
+
+    private void filterOrdersByStatus(int tabPosition) {
+        if (allMoveOrders == null || allMoveOrders.isEmpty()) {
+            return;
+        }
+
+        List<MoveOrder> filteredList = new ArrayList<>();
+
+        // กรองตามสถานะที่เลือก
+        switch (tabPosition) {
+            case 0: // All
+                filteredList = new ArrayList<>(allMoveOrders);
+                break;
+            case 1: // New (0)
+                for (MoveOrder order : allMoveOrders) {
+                    if (order.getStatus() == 0) {
+                        filteredList.add(order);
+                    }
+                }
+                break;
+            case 2: // In Progress (1)
+                for (MoveOrder order : allMoveOrders) {
+                    if (order.getStatus() == 1) {
+                        filteredList.add(order);
+                    }
+                }
+                break;
+            case 3: // Success (2)
+                for (MoveOrder order : allMoveOrders) {
+                    if (order.getStatus() == 2) {
+                        filteredList.add(order);
+                    }
+                }
+                break;
+            case 4: // Cancel (-1)
+                for (MoveOrder order : allMoveOrders) {
+                    if (order.getStatus() == -1) {
+                        filteredList.add(order);
+                    }
+                }
+                break;
+        }
+
+        // อัพเดทรายการที่แสดงใน ListView
+        adapter.setMoveOrders(filteredList);
+
+        // แสดงข้อความเมื่อไม่มีรายการ
+        if (filteredList.isEmpty()) {
+            showEmptyState();
+        } else {
+            hideEmptyState();
+        }
+    }
+
+    private void hideEmptyState() {
+        if (emptyView != null) {
+            emptyView.setVisibility(View.GONE);
+        }
     }
 
     private void setupBackButton() {
@@ -173,6 +254,23 @@ public class MoveOrderFragment extends Fragment {
     }
 
     private void openMoveOrderChild(String moveOrderId) {
+
+        // ล้างค่าค้นหาก่อนเปิด Fragment ใหม่
+        if (searchView != null) {
+            searchView.setQuery("", false);
+            searchView.clearFocus();
+            searchView.setIconified(true);
+
+            // คืนสถานะปุ่ม Back และ Title
+            btnBack.setVisibility(View.VISIBLE);
+            toolbar_title.setVisibility(View.VISIBLE);
+
+            // คืนขนาดของ SearchView
+            ViewGroup.LayoutParams params = searchView.getLayoutParams();
+            params.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+            searchView.setLayoutParams(params);
+        }
+
         MoveOrderChildFragment detailFragment = new MoveOrderChildFragment();
         Bundle args = new Bundle();
         args.putString("MoveOrderId", moveOrderId);
@@ -184,7 +282,6 @@ public class MoveOrderFragment extends Fragment {
                     .addToBackStack(null)
                     .commit();
         }
-
     }
 
     private void loadMoveOrders() {
@@ -194,9 +291,13 @@ public class MoveOrderFragment extends Fragment {
             public void onResponse(Call<List<MoveOrder>> call, Response<List<MoveOrder>> response) {
                 showLoading(false);
                 if (response.isSuccessful() && response.body() != null) {
-                    List<MoveOrder> moveOrders = response.body();
-                    adapter.setMoveOrders(moveOrders);
-                    if (moveOrders.isEmpty()) {
+                    allMoveOrders = response.body();
+
+                    // กรองตามแท็บที่เลือกอยู่
+                    int selectedTabPosition = statusTabLayout.getSelectedTabPosition();
+                    filterOrdersByStatus(selectedTabPosition);
+
+                    if (allMoveOrders.isEmpty()) {
                         showEmptyState();
                     }
                 } else {
@@ -248,5 +349,5 @@ public class MoveOrderFragment extends Fragment {
         }
         loadMoveOrders();
     }
-
 }
+
