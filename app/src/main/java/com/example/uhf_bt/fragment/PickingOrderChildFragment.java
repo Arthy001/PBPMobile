@@ -19,6 +19,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
@@ -66,6 +67,7 @@ import retrofit2.Response;
 public class PickingOrderChildFragment extends Fragment {
     private static final String TAG = "PickingOrderChildFrag";
 
+    private LinearLayout viewAction ;
     private TextView tvTotalQty, tvTotalScan, tvTotalSuccess;
     private ImageView ivNotification;
     private TextView tvNotificationCount;
@@ -137,6 +139,8 @@ public class PickingOrderChildFragment extends Fragment {
         toolbar_title = view.findViewById(R.id.toolbar_title);
         searchView = view.findViewById(R.id.searchView);
         ivBack = view.findViewById(R.id.ivBack);
+
+        viewAction = view.findViewById(R.id.viewAction);
 
         // Initialize notification views
         ivNotification = view.findViewById(R.id.ivNotification);
@@ -292,77 +296,6 @@ public class PickingOrderChildFragment extends Fragment {
         });
     }
 
-//    private void loadPickingOrderTransactions() {
-//        showLoading(true);
-//
-//        apiService.getPickingOrderTransactions(pickingOrderId).enqueue(new Callback<List<PickingOrderTransaction>>() {
-//            @Override
-//            public void onResponse(Call<List<PickingOrderTransaction>> call, Response<List<PickingOrderTransaction>> response) {
-//                showLoading(false);
-//
-//                if (response.isSuccessful() && response.body() != null) {
-//                    List<PickingOrderTransaction> transactions = response.body();
-//
-//                    if (!transactions.isEmpty()) {
-//                        // Create a map to count transactions per picking order item
-//                        Map<Integer, Integer> transactionCounts = new HashMap<>();
-//
-//                        // Count transactions per picking order item
-//                        for (PickingOrderTransaction transaction : transactions) {
-//                            int pickingOrderItemId = transaction.getPickingOrderItemId();
-//                            Integer currentCount = transactionCounts.get(pickingOrderItemId);
-//                            if (currentCount == null) {
-//                                transactionCounts.put(pickingOrderItemId, 1);
-//                            } else {
-//                                transactionCounts.put(pickingOrderItemId, currentCount + 1);
-//                            }
-//                        }
-//
-//                        // Update quantities in itemList
-//                        for (PickingOrderItem item : itemList) {
-//                            int itemId = item.getId();
-//                            if (transactionCounts.containsKey(itemId)) {
-//                                item.setQuantitySuccess(transactionCounts.get(itemId));
-//                            }
-//                        }
-//
-//                        // Update UI on the main thread
-//                        if (getActivity() != null) {
-//                            getActivity().runOnUiThread(() -> {
-//                                if (adapter != null) {
-//                                    adapter.updateItems(itemList);
-//                                    adapter.notifyDataSetChanged();
-//                                }
-//                            });
-//                        }
-//
-//                        // Save transactions for reference
-//                        tempList = new ArrayList<>();
-//                        for (PickingOrderTransaction trans : transactions) {
-//                            PickingOrderItem item = new PickingOrderItem();
-//                            item.setProductId(trans.getProductId());
-//                            item.setQuantity(trans.getQuantity());
-//                            item.setTagId(trans.getTagId());
-//                            item.setLotNumber(trans.getLotNumber());
-//                            item.setLot(trans.getLot());
-//                            tempList.add(item);
-//                        }
-//                    }
-//                } else {
-//                    Log.e(TAG, "Error loading picking order transactions: " + response.code());
-//                    showError("Failed to load picking order transactions");
-//                }
-//            }
-//
-//            @Override
-//            public void onFailure(Call<List<PickingOrderTransaction>> call, Throwable t) {
-//                Log.e(TAG, "Network error loading picking order transactions", t);
-//                showLoading(false);
-//                showError("Network error: " + t.getMessage());
-//            }
-//        });
-//    }
-
     private void setupToolbar() {
 
         ivBack.setOnClickListener(v -> {
@@ -378,15 +311,11 @@ public class PickingOrderChildFragment extends Fragment {
     }
 
     private void checkNotifications() {
-        // ไม่ต้องล้างรายการแจ้งเตือนที่มีอยู่
-        // notificationMessages.clear(); // ลบบรรทัดนี้
-
         // สำหรับการทดสอบ อาจเพิ่มการแจ้งเตือนเริ่มต้น (ถ้ายังไม่มีการแจ้งเตือนใดๆ)
         if (notificationMessages.isEmpty()) {
             // เพิ่มการแจ้งเตือนเริ่มต้นเพื่อการทดสอบ
             // notificationMessages.add("ทดสอบการแจ้งเตือน");
         }
-
         // อัพเดทสถานะการมีการแจ้งเตือน
         hasNotifications = !notificationMessages.isEmpty();
 

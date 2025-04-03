@@ -27,22 +27,22 @@ import retrofit2.http.Query;
 public interface ApiService {
 
 
-    @POST("api/userprofile/login")
+    @POST("api/mobile/mobileuserprofile/login")
     Call<UserProfile> login(@Body LoginRequest loginRequest);
     @POST("api/mobile/login/") // Replace "login" with your actual login endpoint
     Call<ResponseBody> login2(@Body LoginRequest loginRequest);
-    @GET("api/moveorder")
+    @GET("api/mobile/mobilemoveorder")
     Call<List<MoveOrder>> getMoveOrders();
-    @GET("api/moveorderitem")
+    @GET("api/mobile/mobilemoveorderitem")
     Call<List<MoveOrderItem>> getMoveOrderItems(@Query("moveorderid") String moveOrderId);
-    @GET("api/moveordertransaction/by-move-order/{id}")
+    @GET("api/mobile/mobilemoveordertransaction/by-move-order/{id}")
     Call<List<MoveOrderItem>> getMoveOrderTransactions(@Path("id") String moveOrderId);
 
-    @GET("api/productitem/by-tag/{tagId}")
+    @GET("api/mobile/productitem/by-tag/{tagId}")
     Call<ProductItem> getProductItemByTag(@Path("tagId") String tagId);
-    @GET("api/productitem/by-status/{status}")
+    @GET("api/mobile/productitem/by-status/{status}")
     Call<List<ProductItem>> getProductItemsByStatus(@Path("status") int status);
-    @POST("api/MoveOrderTransactionChild")
+    @POST("api/mobile/MobileMoveOrderTransactionChild")
     Call<List<MoveOrderItem>> createMoveOrderTransaction(
             @Header("ParentId") String parentId,
             @Body List<MoveOrderItem> items

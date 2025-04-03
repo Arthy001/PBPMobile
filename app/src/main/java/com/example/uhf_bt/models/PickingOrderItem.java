@@ -33,6 +33,8 @@ public class PickingOrderItem {
     private String palletNo;
     private String palletTagId;
 
+    private int palletStatus;
+
     private String boxType;
     private String sequenceNumber;
     // Getters and Setters
@@ -113,6 +115,10 @@ public class PickingOrderItem {
     public void setPalletNo(String palletNo) { this.palletNo = palletNo; }
     public String getPalletTagId() { return palletTagId; }
     public void setPalletTagId(String palletTagId) { this.palletTagId = palletTagId; }
+
+
+    public int getPalletStatus() { return palletStatus; }
+    public void setPalletStatus(int palletStatus) { this.palletStatus = palletStatus; }
 
     public int getPickingTransStatus() { return pickingTransStatus; }
     public void setPickingTransStatus(int pickingTransStatus) { this.pickingTransStatus = pickingTransStatus; }

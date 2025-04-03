@@ -25,6 +25,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -62,6 +63,7 @@ public class PalletChildFragment extends Fragment {
 
     private static final String TAG = "PalletChildFragment";
 
+    LinearLayout viewAction ;
     private TextView tvTotalQty, tvTotalScan, tvTotalSuccess;
     private ImageView ivNotification;
     private TextView tvNotificationCount;
@@ -101,10 +103,11 @@ public class PalletChildFragment extends Fragment {
         // Required empty public constructor
     }
 
-    public static PalletChildFragment newInstance(String palletTagId) {
+    public static PalletChildFragment newInstance(String palletTagId, String pickingOrder) {
         PalletChildFragment fragment = new PalletChildFragment();
         Bundle args = new Bundle();
         args.putString("PalletTagId", palletTagId);
+        args.putString("PickingOrder", pickingOrder);
         fragment.setArguments(args);
         return fragment;
     }
@@ -141,6 +144,7 @@ public class PalletChildFragment extends Fragment {
         searchView = view.findViewById(R.id.searchView);
         ivBack = view.findViewById(R.id.ivBack);
 
+        viewAction = view.findViewById(R.id.viewAction);
         // Initialize notification views
         ivNotification = view.findViewById(R.id.ivNotification);
         tvNotificationCount = view.findViewById(R.id.tvNotificationCount);
@@ -470,6 +474,7 @@ public class PalletChildFragment extends Fragment {
                     List<PickingOrderItem> items = response.body();
                     if (!items.isEmpty()) {
                         // เลือกรายการแรกหรือประมวลผลทั้งลิสต์ตามความเหมาะสม
+
                         itemList = items;
                         updateUI(itemList);
                     } else {
@@ -580,6 +585,15 @@ public class PalletChildFragment extends Fragment {
             tvOrderNo.setText("Order No: " + (firstItem.getPickingOrder() != null ? firstItem.getPickingOrder() : ""));
             tvCustomer.setText("Customer: " + (firstItem.getCustomer() != null ? firstItem.getCustomer() : ""));
             tvOrderDate.setText("Order Date: " + (firstItem.getOrderDate() != null ? firstItem.getOrderDate() : ""));
+        }
+
+        if(firstItem.getPalletStatus() == 3)
+        {
+            viewAction.setVisibility(View.VISIBLE);
+        }
+        else
+        {
+            viewAction.setVisibility(View.INVISIBLE);
         }
 
         if (adapter != null) {

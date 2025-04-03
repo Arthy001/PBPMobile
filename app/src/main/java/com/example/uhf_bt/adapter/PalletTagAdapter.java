@@ -93,13 +93,15 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
                 // Set tag ID
                 holder.tvPalletTagId.setText("Pallet Tag: "  + item.getPalletTagId());
 
+                // Set status with color
+                setStatus(holder.tvStatus, item.getPalletStatus());
+
             } catch (Exception e) {
                 Log.e(TAG, "Error binding data to view at position " + position, e);
             }
         }
 
-        // Set status with color
-        setStatus(holder.tvStatus, PalletTag.getPalletStatus());
+
 
         return convertView;
     }
@@ -109,27 +111,27 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
         int textColor;
 
         switch (status) {
-            case 0:
+            case 1:
                 statusStr = "New";
                 textColor = context.getResources().getColor(android.R.color.holo_blue_dark);
                 break;
-            case 1:
+            case 2:
                 statusStr = "Picked";
                 textColor = context.getResources().getColor(android.R.color.holo_orange_dark);
                 break;
-            case 2:
-                statusStr = "Packed";
+            case 3:
+                statusStr =  "Packed";
                 textColor = context.getResources().getColor(android.R.color.holo_green_dark);
                 break;
-            case 3:
+            case 4:
                 statusStr = "รับเข้าจัดส่ง";
                 textColor = context.getResources().getColor(android.R.color.holo_red_dark);
                 break;
-            case 4:
+            case 5:
                 statusStr = "โหลดสินค้า";
                 textColor = context.getResources().getColor(android.R.color.holo_red_dark);
                 break;
-            case 5:
+            case 6:
                 statusStr = "จัดส่งแล้ว";
                 textColor = context.getResources().getColor(android.R.color.holo_red_dark);
                 break;

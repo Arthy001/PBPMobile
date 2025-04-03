@@ -70,10 +70,19 @@ public class PalletTag {
     @SerializedName("sequenceNumber")
     private String sequenceNumber;
 
-    private static int palletStatus;
+    @SerializedName("pickingOrderId")
+    private int pickingOrderId; // เพิ่ม property สำหรับ pickingOrderId
+
+    // เพิ่ม getter และ setter สำหรับ pickingOrderId
+    public int getPickingOrderId() {
+        return pickingOrderId;
+    }
+
+    @SerializedName("palletStatus")
+    private int palletStatus;
 
     public void setPalletStatus(int palletStatus) { this.palletStatus = palletStatus; }
-    public static int getPalletStatus() { return palletStatus; }
+    public  int getPalletStatus() { return palletStatus; }
 
     // Getters
     public long getId() { return id; }

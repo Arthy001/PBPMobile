@@ -20,6 +20,7 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.window.OnBackAnimationCallback;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -218,14 +219,8 @@ public class MoveOrderChildFragment extends Fragment {
     private boolean hasNotifications = false;
 
     private void checkNotifications() {
-        // In a real app, you would make an API call here
-        // For demo purposes, we'll just simulate an API response
 
-        // Clear existing notifications
         notificationMessages.clear();
-
-        // Simulate API call to get notifications
-        // This could be replaced with an actual API call in your app
         simulateGetNotifications();
 
         // Update UI based on notification status
@@ -234,16 +229,7 @@ public class MoveOrderChildFragment extends Fragment {
     }
 
     private void simulateGetNotifications() {
-        // This is just a placeholder for your actual API call
-        // In a real app, you would make a network request here
 
-        // For testing, add some sample notifications
-        //notificationMessages.add("New item assigned to your move order");
-        //notificationMessages.add("Item 'PROD001' needs verification");
-        //notificationMessages.add("Move order #" + moveOrderId + " updated");
-
-        // Uncomment to test with no notifications
-        // notificationMessages.clear();
     }
 
     // Add this method to update notification visibility
@@ -686,6 +672,28 @@ public class MoveOrderChildFragment extends Fragment {
         if (context instanceof MainActivity) {
             mContext = (MainActivity) context;
             uhf = mContext.uhf;
+
+            // Initialize variables
+            if (tagList == null) {
+                tagList = new ArrayList<>();
+            }
+
+            if (tempDatas == null) {
+                tempDatas = new ArrayList<>();
+            }
+
+
+            // Register connect status listener
+            mContext.addConnectStatusNotice(mConnectStatus);
+
+            // Try to set TagFocus
+            if (uhf != null && uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
+                try {
+                    uhf.setTagFocus(true);
+                } catch (Exception e) {
+                    Log.e(TAG, "Error setting TagFocus in onAttach: " + e.getMessage());
+                }
+            }
         }
     }
 
@@ -778,6 +786,20 @@ public class MoveOrderChildFragment extends Fragment {
             String box_type = qrCode.substring(14, 15);
             String box_size = qrCode.substring(15, 19);
             String running =  qrCode.substring(19, 24);
+            String itemType = "Full Box";
+            if (box_type.equals("C"))
+            {
+                itemType ="Renant";
+            }
+            else if (box_type.equals("F"))
+            {
+                itemType = "Full Box";
+            }
+            else
+            {
+
+            }
+
 
             boolean found = false;
 
@@ -789,26 +811,27 @@ public class MoveOrderChildFragment extends Fragment {
                 Log.d(TAG, "Found item with tagId: " + foundItem.getTagId());
                 Log.d(TAG, "Product ID: " + foundItem.getProductId());
                 Log.d(TAG, "Lot: " + foundItem.getLot());
+                Log.d(TAG, "Item Type: " + foundItem.getItemType());
                 return;
             } else {
                 // Item not found
                 //Log.d(TAG, "No item found with tagId: " + xxTagID);
-                String msg = qrCode + " ไม่พบข้อมูลแท็กนี้";
-                showToastOnUiThread(msg);
-                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
-                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
+//                String msg = qrCode + " ไม่พบข้อมูลแท็กนี้";
+//                notificationMessages.add(msg);
+//                //showToastOnUiThread(msg);
+//                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
+//                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
             }
 
             // Get all items from adapter
             List<MoveOrderItem> items = adapter.getFilteredItems();
 
-
-
             if (items == null) {
                 //Toast.makeText(mContext, "No items available", Toast.LENGTH_SHORT).show();
 
                 String msg = "No items available";
-                showToastOnUiThread(msg);
+                notificationMessages.add(msg);
+                //showToastOnUiThread(msg);
                 hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
                 updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                 return;
@@ -818,18 +841,31 @@ public class MoveOrderChildFragment extends Fragment {
             for (MoveOrderItem item : items) {
                 String tempbarcode = item.getBarcode();
                 String templot = item.getLot();
+                String tempitemtype = item.getItemType();
+                double allocatedQty = 0;
+                if (itemType.equals("Full Box"))
+                {
+                    allocatedQty = item.getQuantityPerBox();
+                }
+                else if(itemType.equals("Renant"))
+                {
+                    allocatedQty = item.getAllocatedQty();
+                }
+                else
+                {}
                 if (item != null &&
                         item.getBarcode() != null &&
                         item.getLot() != null &&
                         item.getBarcode().equals(barcode) &&
-                        item.getLot().equals(lot)) {
+                        item.getLot().equals(lot) &&
+                        item.getItemType().equals(itemType) ) {
 
                     found = true;
 
                     // Check if this tag was already scanned
                     if (!scannedTags.contains(qrCode)) {
                         // Update quantity scanned
-                        item.setQuantityScan(item.getQuantityScan() + 1);
+
 
                         // Add tag to scanned list
                         MoveOrderItem xitem = new MoveOrderItem();
@@ -838,18 +874,14 @@ public class MoveOrderChildFragment extends Fragment {
                         xitem.setTagId(qrCode.trim());
                         xitem.setLotNumber(item.getLotNumber());
                         xitem.setLot(lot);
+                        xitem.setItemType(itemType);
+                        xitem.setAllocatedQty(allocatedQty);
                         scannedTags.add(xitem);
 
+                        item.setQuantityScan(item.getQuantityScan() + 1);
                         // Show success message with runOnUiThread
                         if (getActivity() != null) {
                             getActivity().runOnUiThread(() -> {
-//                                Toast.makeText(mContext,
-//                                        String.format("Found Item: %s, Lot: %s, Scanned: %.0f/%.0f",
-//                                                item.getProduct(),
-//                                                item.getLot(),
-//                                                item.getQuantityScan(),
-//                                                item.getQuantity()),
-//                                        Toast.LENGTH_SHORT).show();
 
                                 // Notify adapter that data has changed
                                 adapter.notifyDataSetChanged();
@@ -857,11 +889,10 @@ public class MoveOrderChildFragment extends Fragment {
                             });
                         }
                     } else {
-                        // Tag already scanned
-                        //showToastOnUiThread("Tag "+ qrCode +" has already been scanned!");
+
                         String msg = qrCode + "  has already been scanned!";
                         notificationMessages.add(msg);
-                        showToastOnUiThread(msg);
+                        //showToastOnUiThread(msg);
                         hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
                         updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
                     }
@@ -875,7 +906,7 @@ public class MoveOrderChildFragment extends Fragment {
 //                        barcode, lot));
                 String msg = "Item: " + barcode + " , Lot: " + lot + " No matching in Order ";
                 notificationMessages.add(msg);
-                showToastOnUiThread(msg);
+                //showToastOnUiThread(msg);
                 hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
                 updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
             }
@@ -885,7 +916,7 @@ public class MoveOrderChildFragment extends Fragment {
             //showToastOnUiThread("Error processing scan: " + e.getMessage());
             String msg = "Error processing QR code: " + e.getMessage();
             notificationMessages.add(msg);
-            showToastOnUiThread(msg);
+            //showToastOnUiThread(msg);
             hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
             updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
         }
@@ -933,6 +964,12 @@ public class MoveOrderChildFragment extends Fragment {
     public void startThread() {
         if (mContext.isScanning) {
             return;
+        }
+
+        try {
+            mContext.uhf.setTagFocus(true);
+        } catch (Exception ex) {
+            Log.e(TAG, "Error setting TagFocus: " + ex.getMessage());
         }
 
         //--
@@ -1069,23 +1106,6 @@ public class MoveOrderChildFragment extends Fragment {
     }
 
     private void confirmMoveOrderTransaction() {
-        // Create list to hold MoveOrderItem objects
-//        List<MoveOrderItem> moveOrderItems = new ArrayList<>();
-//
-//        // Convert scannedTags to MoveOrderItems
-//        for (String tagId : scannedTags) {
-//            MoveOrderItem item = new MoveOrderItem();
-//            item.setProductId(1);  // Set your product ID
-//            item.setQuantity(1.0); // Set your quantity
-//            item.setTagId(tagId);
-//            item.setLotNumber("LOT250115"); // Set your lot number
-//            item.setLot("250115");     // Set your lot
-//            moveOrderItems.add(item);
-//        }
-
-        // Make API call
-        String url = "http://192.168.110.79:5240/api/MoveOrderTransactionChild";
-
         // Create Retrofit service or similar HTTP client
         Call<List<MoveOrderItem>> call = apiService.createMoveOrderTransaction(
                 moveOrderId, // Replace with actual parent ID

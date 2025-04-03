@@ -125,49 +125,49 @@ public class FindPalletFragment extends Fragment {
                 break;
             case 1: // New (0)
                 for (PalletTag pallet : allPalletTags) {
-                    if (PalletTag.getPalletStatus() == 0) {
+                    if (pallet.getPalletStatus() == 1) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
             case 2: // Picked (1)
                 for (PalletTag pallet : allPalletTags) {
-                    if (PalletTag.getPalletStatus() == 1) {
+                    if (pallet.getPalletStatus() == 2) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
             case 3: // Packed (2)
                 for (PalletTag pallet : allPalletTags) {
-                    if (PalletTag.getPalletStatus() == 2) {
+                    if (pallet.getPalletStatus() == 3) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
             case 4: // รับเข้าจัดส่ง (3)
                 for (PalletTag pallet : allPalletTags) {
-                    if (PalletTag.getPalletStatus() == 3) {
+                    if (pallet.getPalletStatus() == 4) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
             case 5: // โหลดสินค้า (4)
                 for (PalletTag pallet : allPalletTags) {
-                    if (PalletTag.getPalletStatus() == 4) {
+                    if (pallet.getPalletStatus() == 5) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
             case 6: // จัดส่งแล้ว (5)
                 for (PalletTag pallet : allPalletTags) {
-                    if (PalletTag.getPalletStatus() == 5) {
+                    if (pallet.getPalletStatus() == 6) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
             case 7: // Cancel (-1)
                 for (PalletTag pallet : allPalletTags) {
-                    if (PalletTag.getPalletStatus() == -1) {
+                    if (pallet.getPalletStatus() == -1) {
                         filteredList.add(pallet);
                     }
                 }
