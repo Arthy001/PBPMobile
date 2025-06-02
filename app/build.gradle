@@ -9,8 +9,8 @@ android {
         minSdkVersion 18
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 29
-        versionCode 4
-        versionName "1.0.3"
+        versionCode 8
+        versionName "1.0.9"
         //1.8增加R2数据提取和导出
         //1.8.1修改Session设置获取BUG
         //1.8.2 更改API（修改盘点标签bug）

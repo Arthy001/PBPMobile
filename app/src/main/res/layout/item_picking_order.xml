@@ -35,6 +35,16 @@
         android:textColor="@android:color/darker_gray"/>
 
     <TextView
+        android:id="@+id/tvPickType"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvDate"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="4dp"
+        android:padding="6sp"
+        android:textSize="14sp"/>
+
+    <TextView
         android:id="@+id/tvStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

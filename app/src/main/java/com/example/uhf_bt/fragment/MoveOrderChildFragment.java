@@ -33,6 +33,7 @@ import com.example.uhf_bt.MainActivity;
 import com.example.uhf_bt.R;
 import com.example.uhf_bt.Utils;
 import com.example.uhf_bt.adapter.MoveOrderChildAdapter;
+import com.example.uhf_bt.adapter.MoveOrderChildTagAdapter;
 import com.example.uhf_bt.models.MoveOrderItem;
 import com.example.uhf_bt.services.ApiService;
 import com.example.uhf_bt.services.RetrofitClient;
@@ -110,7 +111,7 @@ public class MoveOrderChildFragment extends Fragment {
         setupSearchView();
         setupListView();
         loadMoveOrderItems();
-        loadMoveOrderTransactions();
+
         setupButtonListeners();
         return view;
     }
@@ -381,7 +382,7 @@ public class MoveOrderChildFragment extends Fragment {
 
                     updateUI(items);
                     updateTotalQuantities(); // Add this line
-                    // Show empty state if no data
+                    loadMoveOrderTransactions();
                     if (items.isEmpty()) {
                         showEmptyState();
                     }
@@ -421,8 +422,10 @@ public class MoveOrderChildFragment extends Fragment {
                                 int xxproductId = tempItem.getProductId();
                                 String xLot = item.getLot();
                                 String xxLot = tempItem.getLot();
+                                String xxItemType = tempItem.getItemType();
                                 if (item.getProductId() == (tempItem.getProductId())
-                                        && item.getLot().equals(tempItem.getLot())) {
+                                        && item.getLot().equals(tempItem.getLot())
+                                        && item.getItemType().equals(tempItem.getItemType())) {
                                     // Update quantity success
                                     item.setQuantitySuccess(item.getQuantitySuccess() + 1);
                                     break; // Found match, move to next tempItem
@@ -508,22 +511,80 @@ public class MoveOrderChildFragment extends Fragment {
     }
 
     private void handleItemClick(MoveOrderItem item) {
-        new AlertDialog.Builder(requireContext())
-                .setTitle(item.getProduct())
-                .setMessage("Lot: " + item.getLotNumber() + "\n" +
-                        "Quantity: " + item.getQuantity())
-                .setPositiveButton("Scan", (dialog, which) -> {
-                    startScanningForItem(item);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+        // สร้าง dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        View dialogView = getLayoutInflater().inflate(R.layout.layout_scanned_tags_move_order_child, null);
+        builder.setView(dialogView);
+
+        // หา views ใน dialog
+        TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
+        TextView tvItemInfo = dialogView.findViewById(R.id.tvItemInfo);
+        TextView tvTagCount = dialogView.findViewById(R.id.tvTagCount);
+        ListView lvTags = dialogView.findViewById(R.id.lvTags);
+        TextView tvNoTags = dialogView.findViewById(R.id.tvNoTags);
+        Button btnClose = dialogView.findViewById(R.id.btnClose);
+
+        // กำหนดชื่อ Dialog
+        tvDialogTitle.setText("Scanned Tags for " + item.getProductNumber());
+
+        // แสดงข้อมูลสินค้า
+        String itemType = item.getItemType() != null ? item.getItemType() : "Unknown";
+        String itemInfo = String.format("Product: %s\nBarcode: %s\nLot: %s\nType: %s",
+                item.getProduct(),
+                item.getBarcode() != null ? item.getBarcode() : "N/A",
+                item.getLot(),
+                itemType);
+        tvItemInfo.setText(itemInfo);
+
+        // กรองแท็กตามเงื่อนไขทั้งสาม (ProductId, Lot, ItemType)
+        List<MoveOrderItem> filteredTags = new ArrayList<>();
+
+        for (MoveOrderItem tag : scannedTags) {
+            // ต้องตรงกันทั้ง ProductId, Lot และ ItemType
+            if (tag.getProductId() == item.getProductId() &&
+                    (tag.getLot() != null && tag.getLot().equals(item.getLot())) &&
+                    (tag.getItemType() != null && tag.getItemType().equals(item.getItemType()))) {
+                filteredTags.add(tag);
+            }
+        }
+
+        // แสดงจำนวนแท็ก
+        tvTagCount.setText("Total Tags: " + filteredTags.size());
+
+        // แสดงรายการแท็กหรือข้อความว่าไม่มีแท็ก
+        if (filteredTags.isEmpty()) {
+            lvTags.setVisibility(View.GONE);
+            tvNoTags.setVisibility(View.VISIBLE);
+            tvNoTags.setText("No tags scanned for this item with type: " + itemType);
+        } else {
+            lvTags.setVisibility(View.VISIBLE);
+            tvNoTags.setVisibility(View.GONE);
+
+            // ตั้งค่า adapter (การเรียงลำดับจะถูกจัดการภายใน SimpleTagAdapter)
+            MoveOrderChildTagAdapter adapter = new MoveOrderChildTagAdapter(requireContext(), filteredTags);
+            lvTags.setAdapter(adapter);
+
+            // ปรับขนาดความสูงของ ListView
+            int maxHeight = getResources().getDisplayMetrics().heightPixels * 2 / 3; // 2/3 ของความสูงหน้าจอ
+            int totalHeight = filteredTags.size() * (int) (56 * getResources().getDisplayMetrics().density);
+            ViewGroup.LayoutParams params = lvTags.getLayoutParams();
+            params.height = Math.min(totalHeight, maxHeight);
+            lvTags.setLayoutParams(params);
+        }
+
+        // สร้างและแสดง dialog
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        // ตั้งค่าปุ่มปิด
+        btnClose.setOnClickListener(v -> dialog.dismiss());
     }
+
 
     private void startScanningForItem(MoveOrderItem item) {
         // TODO: Implement scanning functionality
         Toast.makeText(requireContext(), "Scanning not implemented yet", Toast.LENGTH_SHORT).show();
     }
-
 
     //--------------------------------------获取 解析数据-------------------------------------------------
     private static final int REQUEST_CODE_ITEM_DETAIL = 1001;
@@ -1120,7 +1181,7 @@ public class MoveOrderChildFragment extends Fragment {
                     Toast.makeText(mContext, "Data sent successfully", Toast.LENGTH_SHORT).show();
 
                     loadMoveOrderItems();
-                    loadMoveOrderTransactions();
+
                 } else {
                     // Handle error
                     Toast.makeText(mContext, "Error: " + response.message(), Toast.LENGTH_SHORT).show();

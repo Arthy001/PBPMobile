@@ -24,8 +24,8 @@
                 android:layout_height="wrap_content"
                 android:text="Move Order"
                 android:padding="20dp"
-                android:layout_marginBottom="10dp"
-                android:layout_marginTop="10dp"/>
+                android:layout_marginBottom="5dp"
+                android:layout_marginTop="5dp"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPickingOrder"
@@ -33,7 +33,7 @@
                 android:layout_height="wrap_content"
                 android:text="Picking Order"
                 android:padding="20dp"
-                android:layout_marginBottom="10dp"/>
+                android:layout_marginBottom="5dp"/>
 
 <!--            <com.google.android.material.button.MaterialButton-->
 <!--                android:id="@+id/btnCreateRenantBox"-->
@@ -50,7 +50,15 @@
                 android:layout_height="wrap_content"
                 android:text="Receive to Shipping"
                 android:padding="20dp"
-                android:layout_marginBottom="10dp"/>
+                android:layout_marginBottom="5dp"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnKanban"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Kanban"
+                android:padding="20dp"
+                android:layout_marginBottom="5dp"/>
 
 
             <com.google.android.material.button.MaterialButton
@@ -59,7 +67,7 @@
                 android:layout_height="wrap_content"
                 android:text="Issue Delivery Order"
                 android:padding="20dp"
-                android:layout_marginBottom="10dp"/>
+                android:layout_marginBottom="5dp"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnFindProduct"
@@ -67,7 +75,7 @@
                 android:layout_height="wrap_content"
                 android:text="Find Product"
                 android:padding="20dp"
-                android:layout_marginBottom="10dp"/>
+                android:layout_marginBottom="5dp"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSettings"
@@ -75,7 +83,7 @@
                 android:layout_height="wrap_content"
                 android:text="Settings"
                 android:padding="20dp"
-                android:layout_marginBottom="10dp"/>
+                android:layout_marginBottom="5dp"/>
 
 
             <!-- View Menu -->

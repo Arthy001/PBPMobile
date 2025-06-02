@@ -115,12 +115,13 @@
             android:layout_marginBottom="4dp"/>
 
     </LinearLayout>
+
     <!-- Add Total Quantity Information Section -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp"
+        android:padding="0dp"
         android:background="#F5F5F5">
 
         <LinearLayout
@@ -157,6 +158,30 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="Total Success"
+                android:textSize="12sp"
+                android:textColor="@android:color/darker_gray"/>
+
+            <TextView
+                android:id="@+id/tvTotalSuccess"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#4CAF50"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Total Scan"
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray"/>
@@ -171,29 +196,6 @@
                 android:textColor="#FF9800"/>
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Total Success"
-                android:textSize="12sp"
-                android:textColor="@android:color/darker_gray"/>
-
-            <TextView
-                android:id="@+id/tvTotalSuccess"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#4CAF50"/>
-        </LinearLayout>
     </LinearLayout>
     <LinearLayout
         android:id="@+id/view_readtag"
@@ -332,7 +334,6 @@
             android:paddingTop="12dp"
             android:paddingBottom="3dp"
             android:textSize="0sp"/>
-
         <Button
             android:id="@+id/btnClear"
             android:layout_width="wrap_content"
@@ -355,45 +356,23 @@
             android:paddingBottom="3dp"
             android:textSize="0sp"/>
     </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tvData_Read"
+            android:textSize="16sp" />
 
-<!--    <LinearLayout-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:orientation="horizontal"-->
-<!--        android:padding="2dp">-->
-
-<!--        <Button-->
-<!--            android:id="@+id/btnScanRFID"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="1"-->
-<!--            android:text="Start"-->
-<!--            android:layout_marginEnd="2dp"/>-->
-<!--        <Button-->
-<!--            android:id="@+id/btnStop"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_weight="1"-->
-<!--            android:text="Stop"-->
-<!--            android:layout_marginEnd="2dp"/>-->
-<!--        <Button-->
-<!--            android:id="@+id/btnClear"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_weight="1"-->
-<!--            android:text="Clear"-->
-<!--            android:layout_marginEnd="2dp"/>-->
-
-
-<!--        <Button-->
-<!--            android:id="@+id/btnConfirm"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_weight="1"-->
-<!--            android:text="Save"-->
-<!--            android:enabled="false"-->
-<!--            android:layout_marginStart="8dp"/>-->
-
-<!--    </LinearLayout>-->
+        <EditText
+            android:id="@+id/EtData_Read"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint=""
+            android:inputType="textMultiLine"
+            android:singleLine="false" />
+    </LinearLayout>
 
 </LinearLayout>

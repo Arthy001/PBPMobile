@@ -20,6 +20,8 @@ public class PickingOrderTransaction {
     private String lot;
     private int pickingTransStatus;
 
+    private String tagRemark;
+
     // Getters and Setters
     public int getId() {
         return id;
@@ -155,5 +157,13 @@ public class PickingOrderTransaction {
 
     public void setPickingTransStatus(int pickingTransStatus) {
         this.pickingTransStatus = pickingTransStatus;
+    }
+
+    public String getTagRemark() {
+        return tagRemark;
+    }
+
+    public void setTagRemark(String tagRemark) {
+        this.tagRemark = tagRemark;
     }
 }

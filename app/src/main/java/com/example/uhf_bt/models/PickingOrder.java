@@ -12,6 +12,7 @@ public class PickingOrder {
     private String customer;
     private String warehouseSource;
     private String warehouseDestination;
+    private String pickingType;
 
     // Getters and Setters
     public int getId() {
@@ -84,6 +85,13 @@ public class PickingOrder {
 
     public void setWarehouseDestination(String warehouseDestination) {
         this.warehouseDestination = warehouseDestination;
+    }
+    public String getPickingType() {
+        return pickingType;
+    }
+
+    public void setPickingType(String pickingType) {
+        this.pickingType = pickingType;
     }
 }
 

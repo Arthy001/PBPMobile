@@ -29,7 +29,9 @@ public class ProductItem {
     private String gS1;
     private String gtiN13;
     private String barcode;
-    private Integer quantityPerUOM;
+    private double quantityPerUOM;
+    private String itemType;
+    private double  quantityInBox;
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -116,6 +118,13 @@ public class ProductItem {
     public String getBarcode() { return barcode; }
     public void setBarcode(String barcode) { this.barcode = barcode; }
 
-    public Integer getQuantityPerUOM() { return quantityPerUOM; }
-    public void setQuantityPerUOM(Integer quantityPerUOM) { this.quantityPerUOM = quantityPerUOM; }
+    public double getQuantityPerUOM() { return quantityPerUOM; }
+    public void setQuantityPerUOM(double   quantityPerUOM) { this.quantityPerUOM = quantityPerUOM; }
+
+    public String getItemType() { return itemType; }
+    public void setItemType(String itemType) { this.itemType = itemType; }
+
+    public double getQuantityInBox() { return quantityInBox; }
+    public void setQuantityInBox(double   quantityInBox) { this.quantityInBox = quantityInBox; }
+
 }

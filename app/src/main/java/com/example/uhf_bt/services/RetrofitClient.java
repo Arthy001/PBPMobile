@@ -26,8 +26,10 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetrofitClient {
     private static final String TAG = "RetrofitClient";
 
-    //private static final String BASE_URL = "http://192.168.0.12:9000/"; // Developer
-    private static final String BASE_URL = "http://192.168.1.43:5240/"; // Production
+    private static final String BASE_URL = "http://192.168.0.12:9000/"; // Developer
+
+    //private static final String BASE_URL = "http://192.168.1.45:5240/"; // Production
+    //private static final String BASE_URL = "http://10.0.0.187:5240/"; //
     public static String ipAddress = ""; // You might want to get this dynamically
     public static String token = ""; // This should be securely stored
     private static Retrofit retrofit = null;

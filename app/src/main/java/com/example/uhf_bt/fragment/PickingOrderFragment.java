@@ -97,6 +97,8 @@ public class PickingOrderFragment extends Fragment {
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Packed"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Picked"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Receive Shipping"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("จัด Kanban"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("Loading"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Shipped"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Cancelled"));
 
@@ -158,14 +160,28 @@ public class PickingOrderFragment extends Fragment {
                     }
                 }
                 break;
-            case 5: // Shipped (4)
+            case 5: // Preparing Ship (3)
                 for (PickingOrder order : allPickingOrders) {
                     if (order.getOrderStatus() != null && order.getOrderStatus() == 4) {
                         filteredList.add(order);
                     }
                 }
                 break;
-            case 6: // Cancelled (-1)
+            case 6: // Loading (4)
+                for (PickingOrder order : allPickingOrders) {
+                    if (order.getOrderStatus() != null && order.getOrderStatus() == 5) {
+                        filteredList.add(order);
+                    }
+                }
+                break;
+            case 7: // Shipped (4)
+                for (PickingOrder order : allPickingOrders) {
+                    if (order.getOrderStatus() != null && order.getOrderStatus() == 6) {
+                        filteredList.add(order);
+                    }
+                }
+                break;
+            case 8: // Cancelled (-1)
                 for (PickingOrder order : allPickingOrders) {
                     if (order.getOrderStatus() != null && order.getOrderStatus() == -1) {
                         filteredList.add(order);

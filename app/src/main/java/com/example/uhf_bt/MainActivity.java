@@ -39,6 +39,7 @@ import com.example.uhf_bt.fragment.BTRenameFragment;
 import com.example.uhf_bt.fragment.BarcodeFragment;
 import com.example.uhf_bt.fragment.FindPalletFragment;
 import com.example.uhf_bt.fragment.FindProductFragment;
+import com.example.uhf_bt.fragment.KanbanFragment;
 import com.example.uhf_bt.fragment.MoveOrderFragment;
 import com.example.uhf_bt.fragment.PickingOrderFragment;
 import com.example.uhf_bt.fragment.UHFEraseFragment;
@@ -326,7 +327,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         MaterialButton btnPickingOrder = findViewById(R.id.btnPickingOrder);
         MaterialButton btnFindProduct = findViewById(R.id.btnFindProduct);
 
-        //MaterialButton btnCreateRenant = findViewById(R.id.btnCreateRenantBox);
+        MaterialButton btnKanban = findViewById(R.id.btnKanban);
         MaterialButton btnReceiveShipping = findViewById(R.id.btnReceiveShipping);
         MaterialButton btnIssueDeliveryOrder = findViewById(R.id.btnIssueDeliveryOrder);
 
@@ -380,6 +381,16 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
             hideNavigationBar();
             getSupportFragmentManager().beginTransaction()
                     .replace(android.R.id.content, new FindPalletFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        btnKanban.setOnClickListener(v -> {
+            viewMenu.setVisibility(View.GONE);
+            mainContent.setVisibility(View.GONE);
+            hideNavigationBar();
+            getSupportFragmentManager().beginTransaction()
+                    .replace(android.R.id.content, new KanbanFragment())
                     .addToBackStack(null)
                     .commit();
         });

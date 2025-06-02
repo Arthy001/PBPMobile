@@ -2,6 +2,7 @@ package com.example.uhf_bt.adapter;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.support.v4.app.INotificationSideChannel;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +11,7 @@ import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.TextView;
 
+import com.example.uhf_bt.ColorConstants;
 import com.example.uhf_bt.R;
 import com.example.uhf_bt.models.PickingOrder;
 
@@ -67,6 +69,7 @@ public class PickingOrderAdapter extends BaseAdapter implements Filterable {
         TextView tvCustomer = view.findViewById(R.id.tvCustomer);
         TextView tvDate = view.findViewById(R.id.tvDate);
         TextView tvStatus = view.findViewById(R.id.tvStatus);
+        TextView tvPickType = view.findViewById(R.id.tvPickType);
 
         if (order.getNumber() != null) {
             tvOrderNumber.setText("Pick Order: " + order.getNumber());
@@ -85,6 +88,40 @@ public class PickingOrderAdapter extends BaseAdapter implements Filterable {
         } else {
             tvDate.setText("No Date");
         }
+        if (order.getPickingType() != null) {
+            tvPickType.setText("ประเภทการจัด: " + order.getPickingType());
+        } else {
+            tvPickType.setText("-");
+        }
+
+        if (order.getPickingType() != null) {
+            switch (order.getPickingType()) {
+                case "CD ส่งขนส่งเอกชน":
+                    tvPickType.setTextColor(Color.WHITE);
+                    tvPickType.setBackgroundColor(Color.parseColor("#00BFFF"));
+                    break;
+                case "CD ส่งร้าน":
+                    tvPickType.setTextColor(Color.WHITE);
+                    tvPickType.setBackgroundColor(Color.parseColor("#4F4F4F"));
+                    break;
+                case "CD site งาน":
+                    tvPickType.setTextColor(Color.WHITE);
+                    tvPickType.setBackgroundColor(Color.parseColor("#4F4F4F"));
+                    break;
+                case "งานด่วน":
+                    tvPickType.setTextColor(Color.WHITE);
+                    tvPickType.setBackgroundColor(Color.parseColor("#FF0000"));
+                    break;
+                default:
+                    tvPickType.setTextColor(Color.GRAY);
+                    tvPickType.setBackgroundColor(Color.WHITE);
+            }
+        }
+        else
+        {
+            tvPickType.setTextColor(Color.GRAY);
+            tvPickType.setBackgroundColor(Color.WHITE);
+        }
 
         // แสดงสถานะด้วยสีที่แตกต่างกัน
         if (order.getOrderStatus() != null) {
@@ -98,11 +135,11 @@ public class PickingOrderAdapter extends BaseAdapter implements Filterable {
                     tvStatus.setTextColor(Color.BLUE);
                     break;
                 case 1: // Packed
-                    tvStatus.setText("Packed");
+                    tvStatus.setText("Picked");
                     tvStatus.setTextColor(Color.rgb(255, 165, 0)); // สีส้ม
                     break;
                 case 2: // Picked
-                    tvStatus.setText("Picked");
+                    tvStatus.setText("Packed");
                     tvStatus.setTextColor(Color.rgb(0, 128, 0)); // สีเขียวเข้ม
                     break;
                 case 3: // ReceiveShipping

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="6dp">
+
+    <!-- Dialog Title -->
+    <TextView
+        android:id="@+id/tvDialogTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Scanned Tags"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Item Info -->
+    <TextView
+        android:id="@+id/tvItemInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Item Information"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Tag Count -->
+    <TextView
+        android:id="@+id/tvTagCount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Total Tags: 0"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#DDDDDD"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- List of Tags -->
+    <ListView
+        android:id="@+id/lvTags"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="8dp"
+        android:divider="#EEEEEE"
+        android:dividerHeight="1dp"/>
+
+    <!-- Empty State -->
+    <TextView
+        android:id="@+id/tvNoTags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No tags scanned for this item"
+        android:gravity="center"
+        android:padding="16dp"
+        android:visibility="gone"/>
+
+    <!-- Close Button -->
+    <Button
+        android:id="@+id/btnClose"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Close"/>
+
+</LinearLayout>
+
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="wrap_content"-->
+<!--    android:orientation="vertical"-->
+<!--    android:padding="6dp">-->
+
+<!--    &lt;!&ndash; Dialog Title &ndash;&gt;-->
+<!--    <TextView-->
+<!--        android:id="@+id/tvDialogTitle"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="Scanned Tags"-->
+<!--        android:textSize="18sp"-->
+<!--        android:textStyle="bold"-->
+<!--        android:layout_marginBottom="16dp"/>-->
+
+<!--    &lt;!&ndash; Item Info &ndash;&gt;-->
+<!--    <TextView-->
+<!--        android:id="@+id/tvItemInfo"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="Item Information"-->
+<!--        android:textSize="16sp"-->
+<!--        android:layout_marginBottom="8dp"/>-->
+
+<!--    &lt;!&ndash; Tag Count &ndash;&gt;-->
+<!--    <TextView-->
+<!--        android:id="@+id/tvTagCount"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="Total Tags: 0"-->
+<!--        android:textSize="14sp"-->
+<!--        android:layout_marginBottom="8dp"/>-->
+
+<!--    &lt;!&ndash; Divider &ndash;&gt;-->
+<!--    <View-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="1dp"-->
+<!--        android:background="#DDDDDD"-->
+<!--        android:layout_marginBottom="8dp"/>-->
+
+<!--    &lt;!&ndash; List of Tags &ndash;&gt;-->
+<!--    <ListView-->
+<!--        android:id="@+id/lvTags"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="0dp"-->
+<!--        android:layout_weight="1"-->
+<!--        android:layout_marginBottom="16dp"-->
+<!--        android:divider="#EEEEEE"-->
+<!--        android:dividerHeight="1dp"/>-->
+
+<!--    &lt;!&ndash; Empty State &ndash;&gt;-->
+<!--    <TextView-->
+<!--        android:id="@+id/tvNoTags"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="No tags scanned for this item"-->
+<!--        android:gravity="center"-->
+<!--        android:padding="16dp"-->
+<!--        android:visibility="gone"/>-->
+
+<!--    &lt;!&ndash; Close Button &ndash;&gt;-->
+<!--    <Button-->
+<!--        android:id="@+id/btnClose"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:text="Close"/>-->
+
+<!--</LinearLayout>-->

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="@android:color/white">
+
+    <!-- Handheld RFID Scanner (Pistol Grip Style) -->
+    <!-- Main body/barrel -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M6,8h12c1,0 2,1 2,2v4c0,1 -1,2 -2,2H6c-1,0 -2,-1 -2,-2v-4C4,9 5,8 6,8z"/>
+
+    <!-- Handle/Grip -->
+    <path
+        android:fillColor="@android:color/white"
+        android:pathData="M14,14v6c0,1 -1,2 -2,2h-2c-1,0 -2,-1 -2,-2v-6H14z"/>
+
+    <!-- Trigger -->
+    <path
+        android:fillColor="#FF5722"
+        android:pathData="M8,16h2v2H8V16z"/>
+
+    <!-- Screen/Display -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M7,9h6v2H7V9z"/>
+
+    <!-- RFID Waves/Signal -->
+    <path
+        android:fillColor="@color/transparent"
+        android:strokeColor="#4CAF50"
+        android:strokeWidth="1.5"
+        android:pathData="M18,6c2,2 2,6 0,8 M20,4c3,3 3,9 0,12"/>
+
+    <!-- Antenna tip -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M2,9h2v2H2V9z"/>
+
+</vector>

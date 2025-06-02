@@ -111,20 +111,24 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
         int textColor;
 
         switch (status) {
-            case 1:
+            case 0:
                 statusStr = "New";
                 textColor = context.getResources().getColor(android.R.color.holo_blue_dark);
                 break;
-            case 2:
+            case 1:
                 statusStr = "Picked";
                 textColor = context.getResources().getColor(android.R.color.holo_orange_dark);
                 break;
-            case 3:
+            case 2:
                 statusStr =  "Packed";
                 textColor = context.getResources().getColor(android.R.color.holo_green_dark);
                 break;
-            case 4:
+            case 3:
                 statusStr = "รับเข้าจัดส่ง";
+                textColor = context.getResources().getColor(android.R.color.holo_red_dark);
+                break;
+            case 4:
+                statusStr = "จัด kanban";
                 textColor = context.getResources().getColor(android.R.color.holo_red_dark);
                 break;
             case 5:

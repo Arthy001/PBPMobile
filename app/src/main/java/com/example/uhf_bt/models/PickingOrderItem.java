@@ -13,7 +13,7 @@ public class PickingOrderItem {
     private String orderDate;
     private int productId;
     private String product;
-
+    private String remark;
     private String productNumber;
     private String summary;
     private double unitPrice;
@@ -37,6 +37,11 @@ public class PickingOrderItem {
 
     private String boxType;
     private String sequenceNumber;
+    private String lotSuggestion;
+    private String locator;
+    private double allocatedQty;
+    private String qtyBox;
+    private String itemType;
     // Getters and Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -109,9 +114,9 @@ public class PickingOrderItem {
     public void setLot(String lot) { this.lot = lot; }
 
     public String getPallet() { return pallet; }
-    public void setPallet(String lot) { this.pallet = pallet; }
+    public void setPallet(String pallet) { this.pallet = pallet; }
 
-    public String getPalletNo() { return lot; }
+    public String getPalletNo() { return palletNo; }
     public void setPalletNo(String palletNo) { this.palletNo = palletNo; }
     public String getPalletTagId() { return palletTagId; }
     public void setPalletTagId(String palletTagId) { this.palletTagId = palletTagId; }
@@ -139,5 +144,44 @@ public class PickingOrderItem {
 
     public void setSequenceNumber(String sequenceNumber) {
         this.sequenceNumber = sequenceNumber;
+    }
+
+    public String getLotSuggestion() {
+        return lotSuggestion;
+    }
+
+    public void setLotSuggestion(String lotSuggestion) {
+        this.lotSuggestion = lotSuggestion;
+    }
+
+    public String getLocator() {
+        return locator;
+    }
+
+    public void setLocator(String locator) {
+        this.locator = locator;
+    }
+    public String getRemark() {
+        return remark;
+    }
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
+
+    public double getAllocatedQty() { return allocatedQty; }
+    public void setAllocatedQty(double allocatedQty) { this.allocatedQty = allocatedQty; }
+    public String getQtyBox() {
+        return qtyBox;
+    }
+    public void setQtyBox(String qtyBox) {
+        this.qtyBox = qtyBox;
+    }
+
+    public String getItemType() {
+        return itemType;
+    }
+
+    public void setItemType(String itemType) {
+        this.itemType = itemType;
     }
 }

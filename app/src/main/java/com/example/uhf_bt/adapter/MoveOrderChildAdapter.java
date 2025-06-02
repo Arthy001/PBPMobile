@@ -59,7 +59,7 @@ public class MoveOrderChildAdapter extends BaseAdapter implements Filterable {
             holder.tvQuantity = convertView.findViewById(R.id.tvQuantity);
             holder.tvQuantitySuccess = convertView.findViewById(R.id.tvQuantitySuccess);
             holder.tvQuantityScan = convertView.findViewById(R.id.tvQuantityScan);
-            holder.tvLotNumber = convertView.findViewById(R.id.tvLotNumber);
+            holder.tvBarcode = convertView.findViewById(R.id.tvBarcode);  // Added for barcode
             holder.tvAllocatedQty = convertView.findViewById(R.id.tvAllocatedQty);
             holder.tvSTD = convertView.findViewById(R.id.tvSTD);
             holder.tvBoxType = convertView.findViewById(R.id.tvBoxType);
@@ -75,7 +75,7 @@ public class MoveOrderChildAdapter extends BaseAdapter implements Filterable {
         holder.tvItem.setText("Item : " + item.getProductNumber());
         holder.tvProduct.setText(item.getProduct());
         holder.tvLot.setText("Lot: " + item.getLot());
-        holder.tvLotNumber.setText("LotNo: " + item.getLotNumber());
+        holder.tvBarcode.setText(item.getBarcode());  // Set the barcode text
 
         // ใช้ format ตัวเลขไม่มีทศนิยมสำหรับข้อมูลปริมาณ
         holder.tvQuantity.setText(String.format("%.0f", item.getQuantity()));
@@ -110,7 +110,7 @@ public class MoveOrderChildAdapter extends BaseAdapter implements Filterable {
         TextView tvQuantity;
         TextView tvQuantitySuccess;
         TextView tvQuantityScan;
-        TextView tvLotNumber;
+        TextView tvBarcode;           // Added for barcode
         TextView tvAllocatedQty;
         TextView tvSTD;
         TextView tvBoxType;

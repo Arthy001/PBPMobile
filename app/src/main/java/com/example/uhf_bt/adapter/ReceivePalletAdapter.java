@@ -1,6 +1,8 @@
 package com.example.uhf_bt.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.os.Build;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,19 +18,24 @@ import com.example.uhf_bt.R;
 import com.example.uhf_bt.models.PickingOrderItem;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
-public class PickingOrderChildAdapter extends BaseAdapter implements Filterable {
+public class ReceivePalletAdapter extends BaseAdapter implements Filterable {
     private Context context;
     private List<PickingOrderItem> originalItems;
     private List<PickingOrderItem> filteredItems;
     private LayoutInflater inflater;
-    private ItemFilter itemFilter;
+    private ReceivePalletAdapter.ItemFilter itemFilter;
 
     private boolean isPalletLocked = false;
     private String selectedPallet = "";
 
-    public PickingOrderChildAdapter(Context context, List<PickingOrderItem> items) {
+    public ReceivePalletAdapter(Context context, List<PickingOrderItem> items) {
         this.context = context;
         this.originalItems = new ArrayList<>(items != null ? items : new ArrayList<>());
         this.filteredItems = new ArrayList<>(items != null ? items : new ArrayList<>());
@@ -45,65 +52,86 @@ public class PickingOrderChildAdapter extends BaseAdapter implements Filterable 
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder holder;
+        ReceivePalletAdapter.ViewHolder holder;
 
         if (convertView == null) {
-            convertView = inflater.inflate(R.layout.item_picking_order_child, parent, false);
-            holder = new ViewHolder();
+            convertView = inflater.inflate(R.layout.item_receive_pallet, parent, false);
+            holder = new ReceivePalletAdapter.ViewHolder();
             holder.tvPallet = convertView.findViewById(R.id.tvPallet);
             holder.tvItem = convertView.findViewById(R.id.tvItem);
-            holder.tvProduct = convertView.findViewById(R.id.tvProduct);
             holder.tvQuantity = convertView.findViewById(R.id.tvQuantity);
             holder.tvQuantitySuccess = convertView.findViewById(R.id.tvQuantitySuccess);
             holder.tvQuantityScan = convertView.findViewById(R.id.tvQuantityScan);
             holder.ivStatus = convertView.findViewById(R.id.ivStatus);
+            holder.tvOrder = convertView.findViewById(R.id.tvOrder);
+            holder.tvCustomer = convertView.findViewById(R.id.tvCustomer);
             holder.tvSequenceNumber = convertView.findViewById(R.id.tvSequenceNumber);
+            holder.tvAllocatedQty = convertView.findViewById(R.id.tvAllocatedQty);
+            holder.tvQtyBox = convertView.findViewById(R.id.tvQtyBox);
             convertView.setTag(holder);
         } else {
-            holder = (ViewHolder) convertView.getTag();
+            holder = (ReceivePalletAdapter.ViewHolder) convertView.getTag();
         }
 
         PickingOrderItem item = getItem(position);
 
         if (item != null) {
-            // Safely set text with null checks
+            // *** เปลี่ยนการแสดงผล Pallet และ DO ให้ชัดเจนขึ้น ***
             holder.tvPallet.setText(String.format("Pallet : %s",
                     item.getPallet() != null ? item.getPallet() : ""));
-            holder.tvItem.setText(String.format("Item : %s",
-                    item.getProductNumber() != null ? item.getProductNumber() : ""));
-            holder.tvProduct.setText(item.getProduct() != null ? item.getProduct() : "");
-            holder.tvQuantity.setText(String.format("Quantity: %.2f", item.getQuantity()));
-            holder.tvQuantitySuccess.setText(String.format("Success: %.2f", item.getQuantitySuccess()));
-            holder.tvQuantityScan.setText(String.format("Scan: %.2f", item.getQuantityScan()));
 
-            // Set BoxType icon
+            holder.tvQuantity.setText(String.format("%.0f", item.getQuantity()));
+            holder.tvQuantitySuccess.setText(String.format("%.0f", item.getQuantitySuccess()));
+            holder.tvQuantityScan.setText(String.format("%.0f", item.getQuantityScan()));
+
+            // *** ปรับปรุงการแสดง DO ให้เด่นขึ้น ***
+            String doText = item.getPickingOrder();
+            if (doText != null && doText.contains(",")) {
+                // หากมีหลาย DO ให้แสดงจำนวน
+                String[] doArray = doText.split(",");
+                holder.tvOrder.setText(String.format("DO: %s (+%d more)",
+                        doArray[0].trim(), doArray.length - 1));
+                holder.tvOrder.setTextColor(Color.parseColor("#FF9800")); // Orange for multiple DO
+            } else {
+                holder.tvOrder.setText(String.format("DO: %s", doText != null ? doText : ""));
+                holder.tvOrder.setTextColor(ColorConstants.TEXT_PRIMARY);
+            }
+
+            holder.tvCustomer.setText(String.format("ลูกค้า: %s", item.getCustomer()));
+            holder.tvAllocatedQty.setText(String.format("%.0f", item.getAllocatedQty()));
+            holder.tvQtyBox.setText(String.format("%s", item.getQtyBox()));
+            holder.tvSequenceNumber.setText(item.getSequenceNumber());
+
+            // *** ปรับปรุงการแสดง Item information ***
             if (item.getBoxType() != null) {
                 String boxType = item.getBoxType().toLowerCase();
-                if (boxType.equals("fullbox")) {
-                    holder.ivStatus.setImageResource(R.drawable.ic_fullbox);
-                    holder.ivStatus.setVisibility(View.VISIBLE);
+                if (boxType.equals("full box")) {
+                    // สำหรับ full box แสดง product number และ box type
+                    holder.tvItem.setText(String.format("Item : %s [%s]",
+                            item.getProductNumber(), item.getBoxType()));
+                    holder.ivStatus.setVisibility(View.GONE);
                 } else if (boxType.equals("renant")) {
+                    // สำหรับ renant แสดง product number, box type และ remark
+                    String displayText = String.format("Item : %s [%s]",
+                            item.getProductNumber(), item.getBoxType());
+                    if (item.getRemark() != null && !item.getRemark().isEmpty()) {
+                        displayText += "\n" + item.getRemark();
+                    }
+                    holder.tvItem.setText(displayText);
                     holder.ivStatus.setImageResource(R.drawable.ic_renant);
                     holder.ivStatus.setVisibility(View.VISIBLE);
                 } else {
+                    // สำหรับ box type อื่นๆ
+                    holder.tvItem.setText(String.format("Item : %s [%s]",
+                            item.getProductNumber(), item.getBoxType()));
                     holder.ivStatus.setVisibility(View.GONE);
                 }
-
-                // Set SequenceNumber
-                if (item.getSequenceNumber() != null && !item.getSequenceNumber().isEmpty()) {
-                    holder.tvSequenceNumber.setText(item.getSequenceNumber());
-                    holder.tvSequenceNumber.setVisibility(View.VISIBLE);
-                } else {
-                    holder.tvSequenceNumber.setVisibility(View.GONE);
-                }
-
             } else {
-                holder.ivStatus.setVisibility(View.GONE);
-                holder.tvSequenceNumber.setVisibility(View.GONE);
-
+                holder.tvItem.setText(String.format("Item : %s", item.getProductNumber()));
+                holder.tvSequenceNumber.setText("-");
             }
 
-            // Set background color
+            // *** ปรับปรุงการแสดงสี background ตามสถานะ ***
             int backgroundColor = ColorConstants.getMoveOrderItemBackground(
                     item.getQuantity(),
                     item.getQuantitySuccess(),
@@ -111,34 +139,101 @@ public class PickingOrderChildAdapter extends BaseAdapter implements Filterable 
             );
             convertView.setBackgroundColor(backgroundColor);
 
+            // *** เพิ่มการแสดง border สำหรับ DO ที่แตกต่าง ***
+            if (position > 0) {
+                PickingOrderItem previousItem = getItem(position - 1);
+                if (previousItem != null &&
+                        !Objects.equals(item.getPickingOrder(), previousItem.getPickingOrder())) {
+                    // เพิ่ม divider สำหรับ DO ใหม่
+                    convertView.setPadding(0, 8, 0, 0);
+                } else {
+                    convertView.setPadding(0, 0, 0, 0);
+                }
+            } else {
+                convertView.setPadding(0, 0, 0, 0);
+            }
+
             // Set text colors
             holder.tvPallet.setTextColor(ColorConstants.TEXT_PRIMARY);
             holder.tvItem.setTextColor(ColorConstants.TEXT_PRIMARY);
-            holder.tvProduct.setTextColor(ColorConstants.TEXT_PRIMARY);
-            holder.tvQuantity.setTextColor(ColorConstants.TEXT_SECONDARY);
-            holder.tvQuantitySuccess.setTextColor(ColorConstants.TEXT_SECONDARY);
-            holder.tvQuantityScan.setTextColor(ColorConstants.TEXT_SECONDARY);
             holder.tvSequenceNumber.setTextColor(ColorConstants.TEXT_PRIMARY);
+            holder.tvCustomer.setTextColor(ColorConstants.TEXT_PRIMARY);
         }
 
         return convertView;
     }
 
+    // *** เพิ่ม method สำหรับนับจำนวน DO ที่แตกต่างกัน ***
+    public int getUniqueDOCount() {
+        if (filteredItems == null || filteredItems.isEmpty()) {
+            return 0;
+        }
+
+        Set<String> uniqueDOs = new HashSet<>();
+        for (PickingOrderItem item : filteredItems) {
+            if (item.getPickingOrder() != null) {
+                // Handle multiple DOs in single item
+                String[] doArray = item.getPickingOrder().split(",");
+                for (String doNumber : doArray) {
+                    uniqueDOs.add(doNumber.trim());
+                }
+            }
+        }
+
+        return uniqueDOs.size();
+    }
+
+    // *** เพิ่ม method สำหรับแสดงข้อมูล DO ***
+    public String getDOSummary() {
+        if (filteredItems == null || filteredItems.isEmpty()) {
+            return "No DOs";
+        }
+
+        Map<String, Integer> doItemCount = new HashMap<>();
+
+        for (PickingOrderItem item : filteredItems) {
+            if (item.getPickingOrder() != null) {
+                String[] doArray = item.getPickingOrder().split(",");
+                for (String doNumber : doArray) {
+                    String trimmedDO = doNumber.trim();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        doItemCount.put(trimmedDO, doItemCount.getOrDefault(trimmedDO, 0) + 1);
+                    }
+                }
+            }
+        }
+
+        StringBuilder summary = new StringBuilder();
+        for (Map.Entry<String, Integer> entry : doItemCount.entrySet()) {
+            if (summary.length() > 0) {
+                summary.append(", ");
+            }
+            summary.append(entry.getKey()).append("(").append(entry.getValue()).append(")");
+        }
+
+        return summary.toString();
+    }
+
+
     private static class ViewHolder {
         TextView tvPallet;
         TextView tvItem;
-        TextView tvProduct;
+        //TextView tvProduct;
         TextView tvQuantity;
         TextView tvQuantitySuccess;
         TextView tvQuantityScan;
         ImageView ivStatus;
         TextView tvSequenceNumber;
+        TextView tvOrder;
+        TextView tvCustomer;
+        TextView tvAllocatedQty;
+        TextView tvQtyBox;
     }
 
     @Override
     public Filter getFilter() {
         if (itemFilter == null) {
-            itemFilter = new ItemFilter();
+            itemFilter = new ReceivePalletAdapter.ItemFilter();
         }
         return itemFilter;
     }
@@ -221,7 +316,7 @@ public class PickingOrderChildAdapter extends BaseAdapter implements Filterable 
 
     public void updateItems(List<PickingOrderItem> newItems) {
         this.originalItems = new ArrayList<>(newItems != null ? newItems : new ArrayList<>());
-         this.filteredItems = new ArrayList<>(newItems != null ? newItems : new ArrayList<>());
+        this.filteredItems = new ArrayList<>(newItems != null ? newItems : new ArrayList<>());
         notifyDataSetChanged();
     }
 
