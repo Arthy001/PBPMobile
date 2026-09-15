@@ -5,6 +5,7 @@
     android:orientation="vertical"
     android:padding="12dp"
     android:layout_marginBottom="4dp"
+    android:descendantFocusability="blocksDescendants"
     android:background="@android:color/white">
 
     <!-- Row 1: DO Number & Picking Type -->
@@ -84,10 +85,13 @@
             android:layout_marginEnd="8dp" />
 
         <HorizontalScrollView
+            android:id="@+id/hsvBadges"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:scrollbars="none">
+            android:scrollbars="none"
+            android:focusable="false"
+            android:clickable="false">
 
             <LinearLayout
                 android:id="@+id/layoutBadges"

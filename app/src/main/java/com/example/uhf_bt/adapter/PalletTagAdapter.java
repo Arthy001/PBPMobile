@@ -44,6 +44,16 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
         }
     }
 
+    public interface OnItemClickListener {
+        void onItemClick(PalletGroupSummary item, int position);
+    }
+
+    private OnItemClickListener onItemClickListener;
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.onItemClickListener = listener;
+    }
+
     @Override
     public int getCount() {
         return filteredGroupList.size();
@@ -72,6 +82,7 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
             holder.tvProductCount = convertView.findViewById(R.id.tvProductCount);
             holder.tvTotalBoxes = convertView.findViewById(R.id.tvTotalBoxes);
             holder.tvPalletCount = convertView.findViewById(R.id.tvPalletCount);
+            holder.hsvBadges = convertView.findViewById(R.id.hsvBadges);
             holder.layoutBadges = convertView.findViewById(R.id.layoutBadges);
             convertView.setTag(holder);
         } else {
@@ -103,7 +114,30 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
                 holder.tvPalletCount.setText(item.getTotalPallets() + " พาเลท");
 
                 // Populate Status Badges
-                populateStatusBadges(holder.layoutBadges, item.getStatusCountMap());
+                populateStatusBadges(holder.layoutBadges, item.getStatusCountMap(), item, position);
+
+                // Set click listeners
+                convertView.setOnClickListener(v -> {
+                    if (onItemClickListener != null) {
+                        onItemClickListener.onItemClick(item, position);
+                    }
+                });
+
+                if (holder.hsvBadges != null) {
+                    holder.hsvBadges.setOnClickListener(v -> {
+                        if (onItemClickListener != null) {
+                            onItemClickListener.onItemClick(item, position);
+                        }
+                    });
+                }
+
+                if (holder.layoutBadges != null) {
+                    holder.layoutBadges.setOnClickListener(v -> {
+                        if (onItemClickListener != null) {
+                            onItemClickListener.onItemClick(item, position);
+                        }
+                    });
+                }
 
             } catch (Exception e) {
                 Log.e(TAG, "Error binding data to view at position " + position, e);
@@ -113,7 +147,7 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
         return convertView;
     }
 
-    private void populateStatusBadges(LinearLayout container, Map<Integer, Integer> statusCountMap) {
+    private void populateStatusBadges(LinearLayout container, Map<Integer, Integer> statusCountMap, PalletGroupSummary item, int position) {
         container.removeAllViews();
         if (statusCountMap == null || statusCountMap.isEmpty()) return;
 
@@ -143,6 +177,12 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             params.setMargins(0, 0, dpToPx(4), 0);
             badge.setLayoutParams(params);
+
+            badge.setOnClickListener(v -> {
+                if (onItemClickListener != null) {
+                    onItemClickListener.onItemClick(item, position);
+                }
+            });
 
             container.addView(badge);
         }
@@ -226,6 +266,7 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
         TextView tvProductCount;
         TextView tvTotalBoxes;
         TextView tvPalletCount;
+        android.widget.HorizontalScrollView hsvBadges;
         LinearLayout layoutBadges;
     }
 }

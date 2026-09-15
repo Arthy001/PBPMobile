@@ -208,17 +208,24 @@ public class PalletChildFragment extends Fragment {
                     List<PickingOrderTransaction> transactions = response.body();
 
                     if (!transactions.isEmpty()) {
-                        // Create a map to count transactions per picking order item
+                        // Reset all QuantitySuccess first to 0
+                        for (PickingOrderItem item : itemList) {
+                            item.setQuantitySuccess(0);
+                        }
+
+                        // Create a map to count transactions per picking order item with TagStatus >= 5
                         Map<Integer, Integer> transactionCounts = new HashMap<>();
 
-                        // Count transactions per picking order item
+                        // Count transactions per picking order item with TagStatus >= 5 (ShippingReceive or higher)
                         for (PickingOrderTransaction transaction : transactions) {
-                            int pickingOrderItemId = transaction.getPickingOrderItemId();
-                            Integer currentCount = transactionCounts.get(pickingOrderItemId);
-                            if (currentCount == null) {
-                                transactionCounts.put(pickingOrderItemId, 1);
-                            } else {
-                                transactionCounts.put(pickingOrderItemId, currentCount + 1);
+                            if (transaction.getTagStatus() >= 5) {
+                                int pickingOrderItemId = transaction.getPickingOrderItemId();
+                                Integer currentCount = transactionCounts.get(pickingOrderItemId);
+                                if (currentCount == null) {
+                                    transactionCounts.put(pickingOrderItemId, 1);
+                                } else {
+                                    transactionCounts.put(pickingOrderItemId, currentCount + 1);
+                                }
                             }
                         }
 
@@ -237,6 +244,7 @@ public class PalletChildFragment extends Fragment {
                                     adapter.updateItems(itemList);
                                     adapter.notifyDataSetChanged();
                                 }
+                                updateTotalQuantities();
                             });
                         }
 
@@ -357,45 +365,47 @@ public class PalletChildFragment extends Fragment {
         //adapter=new UHFReadTagFragment.MyAdapter(mContext);
         //LvTags.setAdapter(adapter);
 
-        mContext.uhf.setKeyEventCallback(new KeyEventCallback() {
-            @Override
-            public void onKeyDown(int keycode) {
-                Log.d(TAG, "  keycode =" + keycode + "   ,isExit=" + isExit);
-                if (!isExit && mContext.uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
-                    if(keycode==3){
-                        mContext.isKeyDownUP=true;
-                        startThread();
-                    } else{
-                        if(!mContext.isKeyDownUP){
-                            if(keycode==1) {
-                                if (mContext.isScanning) {
-                                    stop();
-                                } else {
-                                    startThread();
+        if (mContext != null && mContext.uhf != null) {
+            mContext.uhf.setKeyEventCallback(new KeyEventCallback() {
+                @Override
+                public void onKeyDown(int keycode) {
+                    Log.d(TAG, "  keycode =" + keycode + "   ,isExit=" + isExit);
+                    if (!isExit && mContext.uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
+                        if(keycode==3){
+                            mContext.isKeyDownUP=true;
+                            startThread();
+                        } else{
+                            if(!mContext.isKeyDownUP){
+                                if(keycode==1) {
+                                    if (mContext.isScanning) {
+                                        stop();
+                                    } else {
+                                        startThread();
+                                    }
                                 }
                             }
-                        }
-                        if(keycode==2) {
-                            if (mContext.isScanning) {
-                                stop();
-                                SystemClock.sleep(100);
+                            if(keycode==2) {
+                                if (mContext.isScanning) {
+                                    stop();
+                                    SystemClock.sleep(100);
+                                }
+                                //MR20
+                                //inventory();
                             }
-                            //MR20
-                            //inventory();
                         }
+
                     }
-
                 }
-            }
 
-            @Override
-            public void onKeyUp(int keycode) {
-                Log.d(TAG, "  keycode =" + keycode + "   ,isExit=" + isExit);
-                if(keycode==4) {
-                    stop();
+                @Override
+                public void onKeyUp(int keycode) {
+                    Log.d(TAG, "  keycode =" + keycode + "   ,isExit=" + isExit);
+                    if(keycode==4) {
+                        stop();
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     private void setupSearchView() {
@@ -472,38 +482,63 @@ public class PalletChildFragment extends Fragment {
     private void loadPalletDetail() {
         showLoading(true);
 
-        apiService.getPalletDetailByTagId(palletTagId).enqueue(new Callback<List<PickingOrderItem>>() {
-            @Override
-            public void onResponse(Call<List<PickingOrderItem>> call, Response<List<PickingOrderItem>> response) {
-                showLoading(false);
+        if (pickingOrderId != null && !pickingOrderId.isEmpty()) {
+            apiService.getPickingOrderItemsByPickingOrderId(pickingOrderId).enqueue(new Callback<List<PickingOrderItem>>() {
+                @Override
+                public void onResponse(Call<List<PickingOrderItem>> call, Response<List<PickingOrderItem>> response) {
+                    showLoading(false);
 
-                if (response.isSuccessful() && response.body() != null) {
-                    List<PickingOrderItem> items = response.body();
-                    if (!items.isEmpty()) {
-                        // เลือกรายการแรกหรือประมวลผลทั้งลิสต์ตามความเหมาะสม
-
-                        itemList = items;
-                        //pickingOrderId =  items.getId();
-                        loadPickingOrderTransactions();
-
-
-                        updateUI(itemList);
+                    if (response.isSuccessful() && response.body() != null) {
+                        List<PickingOrderItem> items = response.body();
+                        if (!items.isEmpty()) {
+                            itemList = items;
+                            loadPickingOrderTransactions();
+                            updateUI(itemList);
+                        } else {
+                            showEmptyState();
+                        }
                     } else {
-                        showEmptyState();
+                        Log.e(TAG, "Error loading picking order items: " + response.code());
+                        showError("Failed to load picking order items");
                     }
-                } else {
-                    Log.e(TAG, "Error loading pallet detail: " + response.code());
-                    showError("Failed to load pallet detail");
                 }
-            }
 
-            @Override
-            public void onFailure(Call<List<PickingOrderItem>> call, Throwable t) {
-                Log.e(TAG, "Network error loading pallet detail", t);
-                showLoading(false);
-                showError("Network error: " + t.getMessage());
-            }
-        });
+                @Override
+                public void onFailure(Call<List<PickingOrderItem>> call, Throwable t) {
+                    Log.e(TAG, "Network error loading picking order items", t);
+                    showLoading(false);
+                    showError("Network error: " + t.getMessage());
+                }
+            });
+        } else {
+            apiService.getPalletDetailByTagId(palletTagId).enqueue(new Callback<List<PickingOrderItem>>() {
+                @Override
+                public void onResponse(Call<List<PickingOrderItem>> call, Response<List<PickingOrderItem>> response) {
+                    showLoading(false);
+
+                    if (response.isSuccessful() && response.body() != null) {
+                        List<PickingOrderItem> items = response.body();
+                        if (!items.isEmpty()) {
+                            itemList = items;
+                            loadPickingOrderTransactions();
+                            updateUI(itemList);
+                        } else {
+                            showEmptyState();
+                        }
+                    } else {
+                        Log.e(TAG, "Error loading pallet detail: " + response.code());
+                        showError("Failed to load pallet detail");
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<List<PickingOrderItem>> call, Throwable t) {
+                    Log.e(TAG, "Network error loading pallet detail", t);
+                    showLoading(false);
+                    showError("Network error: " + t.getMessage());
+                }
+            });
+        }
     }
 
 //    private void loadPickingOrderItems() {

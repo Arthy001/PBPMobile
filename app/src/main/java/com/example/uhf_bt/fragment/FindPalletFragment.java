@@ -385,6 +385,16 @@ public class FindPalletFragment extends Fragment {
         adapter = new PalletTagAdapter(getContext());
         listView.setAdapter(adapter);
 
+        adapter.setOnItemClickListener((group, position) -> {
+            if (group != null) {
+                openPalletChild(
+                        group.getFirstPalletTagNumber(),
+                        group.getPickingNumber(),
+                        String.valueOf(group.getPickingOrderId())
+                );
+            }
+        });
+
         listView.setOnItemClickListener((parent, view, position, id) -> {
             PalletGroupSummary group = adapter.getItem(position);
             if (group != null) {

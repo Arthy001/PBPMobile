@@ -136,6 +136,9 @@ public interface ApiService {
     @GET("api/mobile/mobilepickingorderitem")
     Call<List<PickingOrderItem>> getPickingOrderItems(@Query("pickingorderid") String pickingOrderId);
 
+    @GET("api/mobile/MobilePickingOrderItem/by-picking-order/{pickingOrderId}")
+    Call<List<PickingOrderItem>> getPickingOrderItemsByPickingOrderId(@Path("pickingOrderId") String pickingOrderId);
+
     @GET("api/mobile/mobilePickingOrderItem/pallet-tagids")
     Call<List<PalletTag>> getPalletTags();
 
