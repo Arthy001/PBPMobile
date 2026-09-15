@@ -109,13 +109,14 @@ public class FindPalletFragment extends Fragment {
         // เพิ่ม tabs ตามสถานะของ Pallet
         statusTabLayout.addTab(statusTabLayout.newTab().setText("All"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("New"));
-        statusTabLayout.addTab(statusTabLayout.newTab().setText("Picked"));
-        statusTabLayout.addTab(statusTabLayout.newTab().setText("Packed"));
-        statusTabLayout.addTab(statusTabLayout.newTab().setText("รับเข้าจัดส่ง"));
-        statusTabLayout.addTab(statusTabLayout.newTab().setText("จัด Kanban"));
-        statusTabLayout.addTab(statusTabLayout.newTab().setText("โหลดสินค้า"));
-        statusTabLayout.addTab(statusTabLayout.newTab().setText("จัดส่งแล้ว"));
-        statusTabLayout.addTab(statusTabLayout.newTab().setText("Cancel"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("Pick"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("Pack"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("ReceiveShipping"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("RFIDLoading"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("RFIDLoadingSuccess"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("Loading"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("Shipped"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("Cancelled"));
 
         statusTabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -168,56 +169,63 @@ public class FindPalletFragment extends Fragment {
             case 0: // All
                 filteredList = new ArrayList<>(allPalletTags);
                 break;
-            case 1: // New (0)
+            case 1: // New (Register = 0)
                 for (PalletTag pallet : allPalletTags) {
                     if (pallet.getPalletStatus() == 0) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
-            case 2: // Picked (1)
+            case 2: // Pick (1)
                 for (PalletTag pallet : allPalletTags) {
                     if (pallet.getPalletStatus() == 1) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
-            case 3: // Packed (2)
+            case 3: // Pack (2)
                 for (PalletTag pallet : allPalletTags) {
                     if (pallet.getPalletStatus() == 2) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
-            case 4: // รับเข้าจัดส่ง (3)
+            case 4: // ReceiveShipping (3)
                 for (PalletTag pallet : allPalletTags) {
                     if (pallet.getPalletStatus() == 3) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
-            case 5: // PreparingSHip (4)
+            case 5: // RFIDLoading (4)
                 for (PalletTag pallet : allPalletTags) {
                     if (pallet.getPalletStatus() == 4) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
-            case 6: // Loading (5)
+            case 6: // RFIDLoadingSuccess (5)
                 for (PalletTag pallet : allPalletTags) {
                     if (pallet.getPalletStatus() == 5) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
-            case 7: // จัดส่งแล้ว (5)
+            case 7: // Loading (6)
                 for (PalletTag pallet : allPalletTags) {
                     if (pallet.getPalletStatus() == 6) {
                         filteredList.add(pallet);
                     }
                 }
                 break;
-            case 8: // Cancel (-1)
+            case 8: // Shipped (7)
+                for (PalletTag pallet : allPalletTags) {
+                    if (pallet.getPalletStatus() == 7) {
+                        filteredList.add(pallet);
+                    }
+                }
+                break;
+            case 9: // Cancelled (-1)
                 for (PalletTag pallet : allPalletTags) {
                     if (pallet.getPalletStatus() == -1) {
                         filteredList.add(pallet);

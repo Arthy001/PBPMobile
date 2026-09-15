@@ -9,9 +9,11 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Filter;
 import android.widget.Filterable;
+import android.graphics.Color;
 import android.widget.TextView;
 
 import com.example.uhf_bt.R;
+import com.example.uhf_bt.models.PalletStatus;
 import com.example.uhf_bt.models.PalletTag;
 
 import java.util.ArrayList;
@@ -120,35 +122,39 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
                 textColor = context.getResources().getColor(android.R.color.holo_blue_dark);
                 break;
             case 1:
-                statusStr = "Picked";
+                statusStr = "Pick";
                 textColor = context.getResources().getColor(android.R.color.holo_orange_dark);
                 break;
             case 2:
-                statusStr =  "Packed";
+                statusStr = "Pack";
                 textColor = context.getResources().getColor(android.R.color.holo_green_dark);
                 break;
             case 3:
-                statusStr = "รับเข้าจัดส่ง";
-                textColor = context.getResources().getColor(android.R.color.holo_red_dark);
+                statusStr = "ReceiveShipping";
+                textColor = Color.parseColor("#009688");
                 break;
             case 4:
-                statusStr = "จัด kanban";
-                textColor = context.getResources().getColor(android.R.color.holo_red_dark);
+                statusStr = "RFIDLoading";
+                textColor = Color.parseColor("#3F51B5");
                 break;
             case 5:
-                statusStr = "โหลดสินค้า";
-                textColor = context.getResources().getColor(android.R.color.holo_red_dark);
+                statusStr = "RFIDLoadingSuccess";
+                textColor = Color.parseColor("#4CAF50");
                 break;
             case 6:
-                statusStr = "จัดส่งแล้ว";
-                textColor = context.getResources().getColor(android.R.color.holo_red_dark);
+                statusStr = "Loading";
+                textColor = Color.parseColor("#FF9800");
+                break;
+            case 7:
+                statusStr = "Shipped";
+                textColor = Color.parseColor("#9C27B0");
                 break;
             case -1:
-                statusStr = "Cancel";
+                statusStr = "Cancelled";
                 textColor = context.getResources().getColor(android.R.color.holo_red_dark);
                 break;
             default:
-                statusStr = "Unknown";
+                statusStr = "Unknown (" + status + ")";
                 textColor = context.getResources().getColor(android.R.color.darker_gray);
         }
 

@@ -38,6 +38,7 @@ import com.example.uhf_bt.R;
 import com.example.uhf_bt.Utils;
 import com.example.uhf_bt.adapter.ReceivePalletAdapter;
 import com.example.uhf_bt.models.Kanban;
+import com.example.uhf_bt.models.PalletStatus;
 import com.example.uhf_bt.models.PickingOrderItem;
 import com.example.uhf_bt.models.ProductItem;
 import com.example.uhf_bt.models.ResponseDto;
@@ -1169,15 +1170,7 @@ public class ScanKanbanFragment extends Fragment {
     }
 
     private String getStatusName(int status) {
-        switch (status) {
-            case 1: return "Ready";
-            case 2: return "Preparing";
-            case 3: return "Success";
-            case 4: return "Loading";
-            case 5: return "Shipped";
-            case -1: return "Cancel";
-            default: return "Unknown";
-        }
+        return PalletStatus.getDescription(status);
     }
 
     // RFID Methods
