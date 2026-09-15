@@ -114,10 +114,10 @@ public class FindPalletFragment extends Fragment {
         statusTabLayout.addTab(statusTabLayout.newTab().setText("New"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Pick"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Pack"));
-        statusTabLayout.addTab(statusTabLayout.newTab().setText("ReceiveShipping"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("รับเข้าจัดส่ง"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("RFIDLoading"));
-        statusTabLayout.addTab(statusTabLayout.newTab().setText("RFIDLoadingSuccess"));
-        statusTabLayout.addTab(statusTabLayout.newTab().setText("Loading"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("RFID SUCCESS"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("โหลดขึ้นรถ"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Shipped"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Cancelled"));
 
@@ -267,6 +267,48 @@ public class FindPalletFragment extends Fragment {
             showEmptyState();
         } else {
             hideEmptyState();
+        }
+    }
+
+    private void updateTabCounts(List<PalletGroupSummary> allGroups) {
+        if (statusTabLayout == null) return;
+
+        int allCount = allGroups != null ? allGroups.size() : 0;
+        int newCount = 0, pickCount = 0, packCount = 0, receiveCount = 0;
+        int rfidLoadingCount = 0, rfidSuccessCount = 0, loadingCount = 0, shippedCount = 0, cancelCount = 0;
+
+        if (allGroups != null) {
+            for (PalletGroupSummary group : allGroups) {
+                if (group.hasStatus(0)) newCount++;
+                if (group.hasStatus(1)) pickCount++;
+                if (group.hasStatus(2)) packCount++;
+                if (group.hasStatus(3)) receiveCount++;
+                if (group.hasStatus(4)) rfidLoadingCount++;
+                if (group.hasStatus(5)) rfidSuccessCount++;
+                if (group.hasStatus(6)) loadingCount++;
+                if (group.hasStatus(7)) shippedCount++;
+                if (group.hasStatus(-1)) cancelCount++;
+            }
+        }
+
+        setTabText(0, "All (" + allCount + ")");
+        setTabText(1, "New (" + newCount + ")");
+        setTabText(2, "Pick (" + pickCount + ")");
+        setTabText(3, "Pack (" + packCount + ")");
+        setTabText(4, "รับเข้าจัดส่ง (" + receiveCount + ")");
+        setTabText(5, "RFIDLoading (" + rfidLoadingCount + ")");
+        setTabText(6, "RFID SUCCESS (" + rfidSuccessCount + ")");
+        setTabText(7, "โหลดขึ้นรถ (" + loadingCount + ")");
+        setTabText(8, "Shipped (" + shippedCount + ")");
+        setTabText(9, "Cancelled (" + cancelCount + ")");
+    }
+
+    private void setTabText(int position, String text) {
+        if (statusTabLayout != null) {
+            TabLayout.Tab tab = statusTabLayout.getTabAt(position);
+            if (tab != null) {
+                tab.setText(text);
+            }
         }
     }
 
@@ -449,6 +491,9 @@ public class FindPalletFragment extends Fragment {
                 if (response.isSuccessful() && response.body() != null) {
                     allPalletTags = response.body();
 
+                    List<PalletGroupSummary> allGroups = groupPalletTags(allPalletTags);
+                    updateTabCounts(allGroups);
+
                     // กรองตามแท็บที่เลือกอยู่
                     int selectedTabPosition = statusTabLayout.getSelectedTabPosition();
                     filterPalletsByStatus(selectedTabPosition);
@@ -459,6 +504,7 @@ public class FindPalletFragment extends Fragment {
                 } else {
                     Log.e(TAG, "Error loading pallet tags: " + response.code());
                     allPalletTags = new ArrayList<>();
+                    updateTabCounts(new ArrayList<>());
                     filterPalletsByStatus(statusTabLayout.getSelectedTabPosition());
                     showError("Failed to load pallet tags");
                 }
@@ -469,6 +515,7 @@ public class FindPalletFragment extends Fragment {
                 Log.e(TAG, "Network error loading pallet tags", t);
                 showLoading(false);
                 allPalletTags = new ArrayList<>();
+                updateTabCounts(new ArrayList<>());
                 filterPalletsByStatus(statusTabLayout.getSelectedTabPosition());
                 showError("Network error: " + t.getMessage());
             }

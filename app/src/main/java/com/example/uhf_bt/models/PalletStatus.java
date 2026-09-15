@@ -5,10 +5,10 @@ public enum PalletStatus {
     REGISTER(0, "New"),
     PICK(1, "Pick"),
     PACK(2, "Pack"),
-    RECEIVE_SHIPPING(3, "ReceiveShipping"),
+    RECEIVE_SHIPPING(3, "รับเข้าจัดส่ง"),
     RFID_LOADING(4, "RFIDLoading"),
-    RFID_LOADING_SUCCESS(5, "RFIDLoadingSuccess"),
-    LOADING(6, "Loading"),
+    RFID_LOADING_SUCCESS(5, "RFID SUCCESS"),
+    LOADING(6, "โหลดขึ้นรถ"),
     SHIPPED(7, "Shipped");
 
     private final int value;
