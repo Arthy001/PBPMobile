@@ -13,8 +13,8 @@ public class PalletTag {
     @SerializedName("createdAtUtc")
     private String createdAtUtc;
 
-    @SerializedName("pickingOrder")
-    private String pickingOrder;
+    @SerializedName("pickingNumber")
+    private String pickingNumber;
 
     @SerializedName("orderTagId")
     private String orderTagId;
@@ -55,14 +55,14 @@ public class PalletTag {
     @SerializedName("total")
     private double total;
 
-    @SerializedName("pallet")
-    private String pallet;
+    @SerializedName("palletName")
+    private String palletName;
 
-    @SerializedName("palletNo")
-    private String palletNo;
+    @SerializedName("palletNumber")
+    private String palletNumber;
 
-    @SerializedName("palletTagId")
-    private String palletTagId;
+    @SerializedName("palletTagNumber")
+    private String palletTagNumber;
 
     @SerializedName("boxType")
     private String boxType;
@@ -84,11 +84,22 @@ public class PalletTag {
     public void setPalletStatus(int palletStatus) { this.palletStatus = palletStatus; }
     public  int getPalletStatus() { return palletStatus; }
 
+    @SerializedName("pickingType")
+    private String pickingType;
+
+    public String getPickingType() {
+        return pickingType;
+    }
+
+    public void setPickingType(String pickingType) {
+        this.pickingType = pickingType;
+    }
+
     // Getters
     public long getId() { return id; }
     public String getRowGuid() { return rowGuid; }
     public String getCreatedAtUtc() { return createdAtUtc; }
-    public String getPickingOrder() { return pickingOrder; }
+    public String getPickingNumber() { return pickingNumber; }
     public String getOrderTagId() { return orderTagId; }
     public String getWarehouseSourceName() { return warehouseSourceName; }
     public String getWarehouseDestinationName() { return warehouseDestinationName; }
@@ -102,9 +113,9 @@ public class PalletTag {
     public double getUnitPrice() { return unitPrice; }
     public double getQuantity() { return quantity; }
     public double getTotal() { return total; }
-    public String getPallet() { return pallet; }
-    public String getPalletNo() { return palletNo; }
-    public String getPalletTagId() { return palletTagId; }
+    public String getPalletName() { return palletName; }
+    public String getPalletNumber() { return palletNumber; }
+    public String getPalletTagNumber() { return palletTagNumber; }
     public String getBoxType() { return boxType; }
     public String getSequenceNumber() { return sequenceNumber; }
 
@@ -112,7 +123,7 @@ public class PalletTag {
     public void setId(long id) { this.id = id; }
     public void setRowGuid(String rowGuid) { this.rowGuid = rowGuid; }
     public void setCreatedAtUtc(String createdAtUtc) { this.createdAtUtc = createdAtUtc; }
-    public void setPickingOrder(String pickingOrder) { this.pickingOrder = pickingOrder; }
+    public void setPickingNumber(String pickingNumber) { this.pickingNumber = pickingNumber; }
     public void setOrderTagId(String orderTagId) { this.orderTagId = orderTagId; }
     public void setWarehouseSourceName(String warehouseSourceName) { this.warehouseSourceName = warehouseSourceName; }
     public void setWarehouseDestinationName(String warehouseDestinationName) { this.warehouseDestinationName = warehouseDestinationName; }
@@ -126,9 +137,9 @@ public class PalletTag {
     public void setUnitPrice(double unitPrice) { this.unitPrice = unitPrice; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
     public void setTotal(double total) { this.total = total; }
-    public void setPallet(String pallet) { this.pallet = pallet; }
-    public void setPalletNo(String palletNo) { this.palletNo = palletNo; }
-    public void setPalletTagId(String palletTagId) { this.palletTagId = palletTagId; }
+    public void setPalletName(String palletName) { this.palletName = palletName; }
+    public void setPalletNumber(String palletNumber) { this.palletNumber = palletNumber; }
+    public void setPalletTagNumber(String palletTagNumber) { this.palletTagNumber = palletTagNumber; }
     public void setBoxType(String boxType) { this.boxType = boxType; }
     public void setSequenceNumber(String sequenceNumber) { this.sequenceNumber = sequenceNumber; }
 }

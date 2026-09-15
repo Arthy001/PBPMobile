@@ -24,8 +24,14 @@ import com.example.uhf_bt.services.ApiService;
 import com.example.uhf_bt.services.RetrofitClient;
 import com.google.android.material.tabs.TabLayout;
 
+import android.app.DatePickerDialog;
+import android.widget.DatePicker;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -44,6 +50,8 @@ public class FindPalletFragment extends Fragment {
     private TabLayout statusTabLayout;
     private List<PalletTag> allPalletTags; // เก็บรายการทั้งหมดไว้สำหรับการกรอง
     private Button btnReceivePallet; // เพิ่มตัวแปรสำหรับปุ่มรับพาแลท
+    private TextView datePickerTextView;
+    String currentDate;
 
     public static FindPalletFragment newInstance(String param1, String param2) {
         FindPalletFragment fragment = new FindPalletFragment();
@@ -72,6 +80,16 @@ public class FindPalletFragment extends Fragment {
         apiService = RetrofitClient.getClient().create(ApiService.class);
         allPalletTags = new ArrayList<>();
 
+        // 1. รับวันที่ปัจจุบัน ถ้ายังไม่มีการเลือก
+        if (currentDate == null) {
+            Calendar calendar = Calendar.getInstance();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            currentDate = dateFormat.format(calendar.getTime());
+        }
+
+        // 2. ตั้งค่า TextView ให้แสดงวันที่ปัจจุบันหรือที่เลือก
+        datePickerTextView.setText(currentDate);
+
         return view;
     }
 
@@ -84,6 +102,7 @@ public class FindPalletFragment extends Fragment {
         searchView = view.findViewById(R.id.searchView);
         statusTabLayout = view.findViewById(R.id.statusTabLayout);
         btnReceivePallet = view.findViewById(R.id.btnReceivePallet); // เพิ่มการอ้างอิงปุ่มรับพาแลท
+        datePickerTextView = view.findViewById(R.id.datePickerTextView);
     }
 
     private void setupStatusTabs() {
@@ -94,7 +113,7 @@ public class FindPalletFragment extends Fragment {
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Packed"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("รับเข้าจัดส่ง"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("จัด Kanban"));
-        statusTabLayout.addTab(statusTabLayout.newTab().setText("จัดสินค้า"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("โหลดสินค้า"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("จัดส่งแล้ว"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Cancel"));
 
@@ -138,8 +157,8 @@ public class FindPalletFragment extends Fragment {
     }
 
     private void filterPalletsByStatus(int tabPosition) {
-        if (allPalletTags == null || allPalletTags.isEmpty()) {
-            return;
+        if (allPalletTags == null) {
+            allPalletTags = new ArrayList<>();
         }
 
         List<PalletTag> filteredList = new ArrayList<>();
@@ -233,6 +252,39 @@ public class FindPalletFragment extends Fragment {
                 getActivity().onBackPressed();
             }
         });
+
+        datePickerTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showDatePickerDialog();
+            }
+        });
+    }
+
+    private void showDatePickerDialog() {
+        int year, month, day;
+        if (currentDate != null && currentDate.length() == 10) {
+            String[] parts = currentDate.split("-");
+            year = Integer.parseInt(parts[0]);
+            month = Integer.parseInt(parts[1]) - 1;
+            day = Integer.parseInt(parts[2]);
+        } else {
+            final Calendar c = Calendar.getInstance();
+            year = c.get(Calendar.YEAR);
+            month = c.get(Calendar.MONTH);
+            day = c.get(Calendar.DAY_OF_MONTH);
+        }
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(),
+                new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
+                        currentDate = String.format(Locale.US, "%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay);
+                        datePickerTextView.setText(currentDate);
+                        loadPalletTags(currentDate);
+                    }
+                }, year, month, day);
+        datePickerDialog.show();
     }
 
     private void setupSearchView() {
@@ -282,7 +334,7 @@ public class FindPalletFragment extends Fragment {
             searchIcon.setLayoutParams(params);
         }
 
-        EditText searchEditText = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
+        EditText searchEditText = searchView.findViewById(com.example.uhf_bt.R.id.search_src_text);
         if (searchEditText != null) {
             searchEditText.setTextColor(Color.WHITE);
             searchEditText.setHintTextColor(Color.parseColor("#80FFFFFF"));
@@ -302,11 +354,15 @@ public class FindPalletFragment extends Fragment {
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
             PalletTag palletTag = adapter.getItem(position);
-            openPalletChild(String.valueOf(palletTag.getPalletTagId()), String.valueOf(palletTag.getPickingOrder()));
+            openPalletChild(
+                    String.valueOf(palletTag.getPalletTagNumber()),
+                    String.valueOf(palletTag.getPickingNumber()),
+                    String.valueOf(palletTag.getPickingOrderId())
+            );
         });
     }
 
-    private void openPalletChild(String palletTagid, String PickingOrder) {
+    private void openPalletChild(String palletTagid, String PickingOrder, String pickinkOrderId) {
 
         // ล้างค่าค้นหาก่อนเปิด Fragment ใหม่
         if (searchView != null) {
@@ -328,6 +384,7 @@ public class FindPalletFragment extends Fragment {
         Bundle args = new Bundle();
         args.putString("PalletTagId", palletTagid);
         args.putString("PickingOrder", PickingOrder);
+        args.putString("pickingOrderId", pickinkOrderId);
         detailFragment.setArguments(args);
 
         if (getActivity() != null) {
@@ -338,9 +395,9 @@ public class FindPalletFragment extends Fragment {
         }
     }
 
-    private void loadPalletTags() {
+    private void loadPalletTags(String date) {
         showLoading(true);
-        apiService.getPalletTags().enqueue(new Callback<List<PalletTag>>() {
+        apiService.getPalletTagsByDate(date).enqueue(new Callback<List<PalletTag>>() {
             @Override
             public void onResponse(Call<List<PalletTag>> call, Response<List<PalletTag>> response) {
                 showLoading(false);
@@ -356,6 +413,8 @@ public class FindPalletFragment extends Fragment {
                     }
                 } else {
                     Log.e(TAG, "Error loading pallet tags: " + response.code());
+                    allPalletTags = new ArrayList<>();
+                    filterPalletsByStatus(statusTabLayout.getSelectedTabPosition());
                     showError("Failed to load pallet tags");
                 }
             }
@@ -364,6 +423,8 @@ public class FindPalletFragment extends Fragment {
             public void onFailure(Call<List<PalletTag>> call, Throwable t) {
                 Log.e(TAG, "Network error loading pallet tags", t);
                 showLoading(false);
+                allPalletTags = new ArrayList<>();
+                filterPalletsByStatus(statusTabLayout.getSelectedTabPosition());
                 showError("Network error: " + t.getMessage());
             }
         });
@@ -400,7 +461,7 @@ public class FindPalletFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadPalletTags();
+        loadPalletTags(currentDate);
     }
 
     public void refreshData() {
@@ -408,7 +469,7 @@ public class FindPalletFragment extends Fragment {
             searchView.setQuery("", false);
             searchView.clearFocus();
         }
-        loadPalletTags();
+        loadPalletTags(currentDate);
     }
 }
 

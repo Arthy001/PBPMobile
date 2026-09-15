@@ -1,12 +1,17 @@
 package com.example.uhf_bt.fragment;
 
+import android.app.DatePickerDialog;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -23,8 +28,11 @@ import com.example.uhf_bt.services.ApiService;
 import com.example.uhf_bt.services.RetrofitClient;
 import com.google.android.material.tabs.TabLayout;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -43,6 +51,11 @@ public class PickingOrderFragment extends Fragment {
     private TabLayout statusTabLayout;
     private List<PickingOrder> allPickingOrders; // เก็บรายการทั้งหมดไว้สำหรับการกรอง
 
+    private TextView datePickerTextView; // ประกาศตัวแปรสำหรับ TextView
+
+    String currentDate;
+    private int selectedTabPosition = 0;
+
     public static PickingOrderFragment newInstance(String param1, String param2) {
         PickingOrderFragment fragment = new PickingOrderFragment();
         Bundle args = new Bundle();
@@ -53,6 +66,9 @@ public class PickingOrderFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && getActivity() != null) {
+            getActivity().getWindow().setStatusBarColor(ContextCompat.getColor(getActivity(), R.color.pastel2));
+        }
     }
 
     @Override
@@ -69,6 +85,19 @@ public class PickingOrderFragment extends Fragment {
         apiService = RetrofitClient.getClient().create(ApiService.class);
         allPickingOrders = new ArrayList<>();
 
+        // 1. รับวันที่ปัจจุบัน ถ้ายังไม่มีการเลือก
+        if (currentDate == null) {
+            Calendar calendar = Calendar.getInstance();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            currentDate = dateFormat.format(calendar.getTime());
+        }
+
+        // 2. ตั้งค่า TextView ให้แสดงวันที่ปัจจุบันหรือที่เลือก
+        datePickerTextView.setText(currentDate);
+
+        // 3. เรียกใช้ฟังก์ชัน loadPickingOrders ด้วยวันที่ปัจจุบันหรือที่เลือก
+        //loadPickingOrders(currentDate);
+
         return view;
     }
 
@@ -80,7 +109,10 @@ public class PickingOrderFragment extends Fragment {
         toolbar_title = view.findViewById(R.id.toolbar_title);
         searchView = view.findViewById(R.id.searchView);
         statusTabLayout = view.findViewById(R.id.statusTabLayout);
+        datePickerTextView = view.findViewById(R.id.datePickerTextView);
+
     }
+
 
     private void setupBackButton() {
         btnBack.setOnClickListener(v -> {
@@ -88,24 +120,64 @@ public class PickingOrderFragment extends Fragment {
                 getActivity().onBackPressed();
             }
         });
+
+        datePickerTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showDatePickerDialog();
+            }
+        });
+    }
+
+    // เพิ่มฟังก์ชัน showDatePickerDialog เพื่อให้ผู้ใช้สามารถเลือกวันที่ได้
+    private void showDatePickerDialog() {
+        int year, month, day;
+        if (currentDate != null && currentDate.length() == 10) {
+            String[] parts = currentDate.split("-");
+            year = Integer.parseInt(parts[0]);
+            month = Integer.parseInt(parts[1]) - 1;
+            day = Integer.parseInt(parts[2]);
+        } else {
+            final Calendar c = Calendar.getInstance();
+            year = c.get(Calendar.YEAR);
+            month = c.get(Calendar.MONTH);
+            day = c.get(Calendar.DAY_OF_MONTH);
+        }
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(),
+                new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
+                        currentDate = String.format(Locale.US, "%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay);
+                        datePickerTextView.setText(currentDate);
+                        loadPickingOrders(currentDate); // เรียกใช้ฟังก์ชันอีกครั้งด้วยวันที่ที่ผู้ใช้เลือก
+                    }
+                }, year, month, day);
+        datePickerDialog.show();
     }
 
     private void setupStatusTabs() {
         // เพิ่ม tabs ตามสถานะของ PickingOrder
         statusTabLayout.addTab(statusTabLayout.newTab().setText("All"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("New"));
-        statusTabLayout.addTab(statusTabLayout.newTab().setText("Packed"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Picked"));
+        statusTabLayout.addTab(statusTabLayout.newTab().setText("Packed"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Receive Shipping"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("จัด Kanban"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Loading"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Shipped"));
         statusTabLayout.addTab(statusTabLayout.newTab().setText("Cancelled"));
 
+        TabLayout.Tab savedTab = statusTabLayout.getTabAt(selectedTabPosition);
+        if (savedTab != null) {
+            savedTab.select();
+        }
+
         statusTabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
-                filterOrdersByStatus(tab.getPosition());
+                selectedTabPosition = tab.getPosition();
+                filterOrdersByStatus(selectedTabPosition);
             }
 
             @Override
@@ -121,8 +193,8 @@ public class PickingOrderFragment extends Fragment {
     }
 
     private void filterOrdersByStatus(int tabPosition) {
-        if (allPickingOrders == null || allPickingOrders.isEmpty()) {
-            return;
+        if (allPickingOrders == null) {
+            allPickingOrders = new ArrayList<>();
         }
 
         List<PickingOrder> filteredList = new ArrayList<>();
@@ -254,7 +326,7 @@ public class PickingOrderFragment extends Fragment {
             searchIcon.setLayoutParams(params);
         }
 
-        EditText searchEditText = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
+        EditText searchEditText = searchView.findViewById(com.example.uhf_bt.R.id.search_src_text);
         if (searchEditText != null) {
             searchEditText.setTextColor(Color.WHITE);
             searchEditText.setHintTextColor(Color.parseColor("#80FFFFFF"));
@@ -309,9 +381,9 @@ public class PickingOrderFragment extends Fragment {
         }
     }
 
-    private void loadPickingOrders() {
+    private void loadPickingOrders(String date) {
         showLoading(true);
-        apiService.getPickingOrders().enqueue(new Callback<List<PickingOrder>>() {
+        apiService.getPickingOrdersbyDate(date).enqueue(new Callback<List<PickingOrder>>() {
             @Override
             public void onResponse(Call<List<PickingOrder>> call, Response<List<PickingOrder>> response) {
                 showLoading(false);
@@ -327,6 +399,8 @@ public class PickingOrderFragment extends Fragment {
                     }
                 } else {
                     Log.e(TAG, "Error loading picking orders: " + response.code());
+                    allPickingOrders = new ArrayList<>();
+                    filterOrdersByStatus(statusTabLayout.getSelectedTabPosition());
                     showError("Failed to load picking orders");
                 }
             }
@@ -335,6 +409,8 @@ public class PickingOrderFragment extends Fragment {
             public void onFailure(Call<List<PickingOrder>> call, Throwable t) {
                 Log.e(TAG, "Network error loading picking orders", t);
                 showLoading(false);
+                allPickingOrders = new ArrayList<>();
+                filterOrdersByStatus(statusTabLayout.getSelectedTabPosition());
                 showError("Network error: " + t.getMessage());
             }
         });
@@ -364,7 +440,7 @@ public class PickingOrderFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadPickingOrders();
+        loadPickingOrders(currentDate);
     }
 
     public void refreshData() {
@@ -372,7 +448,7 @@ public class PickingOrderFragment extends Fragment {
             searchView.setQuery("", false);
             searchView.clearFocus();
         }
-        loadPickingOrders();
+        loadPickingOrders(currentDate);
     }
 }
 
@@ -514,7 +590,7 @@ public class PickingOrderFragment extends Fragment {
 //            searchIcon.setLayoutParams(params);
 //        }
 //
-//        EditText searchEditText = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
+//        EditText searchEditText = searchView.findViewById(com.example.uhf_bt.R.id.search_src_text);
 //        if (searchEditText != null) {
 //            searchEditText.setTextColor(Color.WHITE);
 //            searchEditText.setHintTextColor(Color.parseColor("#80FFFFFF"));

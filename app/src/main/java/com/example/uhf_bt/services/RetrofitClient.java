@@ -25,31 +25,37 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
     private static final String TAG = "RetrofitClient";
-
-    private static final String BASE_URL = "http://192.168.0.12:9000/"; // Developer
-
-    //private static final String BASE_URL = "http://192.168.1.45:5240/"; // Production
-    //private static final String BASE_URL = "http://10.0.0.187:5240/"; //
+    //private static final String BASE_URL = "http://192.168.0//.12:9000/"; // Production
+    private static final String BASE_URL = "http://192.168.1.40:6000/"; // localhost
     public static String ipAddress = ""; // You might want to get this dynamically
     public static String token = ""; // This should be securely stored
     private static Retrofit retrofit = null;
+    
+    // Set to true only when debugging and dealing with small responses
+    // WARNING: Enabling this with large API responses will cause OutOfMemoryError
+    private static final boolean ENABLE_LOGGING = false;
 
     public static Retrofit getClient() {
         if (retrofit == null) {
-            HttpLoggingInterceptor logging = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
-                @Override
-                public void log(String message) {
-                    Log.d(TAG, message);
-                }
-            });
-            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-
-            OkHttpClient client = new OkHttpClient.Builder()
-                    .addInterceptor(logging)
+            OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
                     .connectTimeout(120, TimeUnit.SECONDS)
                     .readTimeout(120, TimeUnit.SECONDS)
-                    .writeTimeout(120, TimeUnit.SECONDS)
-                    .build();
+                    .writeTimeout(120, TimeUnit.SECONDS);
+            
+            // Only add logging interceptor if explicitly enabled
+            // Disabled by default to prevent OutOfMemoryError with large responses
+            if (ENABLE_LOGGING) {
+                HttpLoggingInterceptor logging = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
+                    @Override
+                    public void log(String message) {
+                        Log.d(TAG, message);
+                    }
+                });
+                logging.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+                clientBuilder.addInterceptor(logging);
+            }
+            
+            OkHttpClient client = clientBuilder.build();
 
             // สร้าง Gson ที่มีการกำหนดรูปแบบสำหรับการแปลงวันที่
             Gson gson = new GsonBuilder()
@@ -59,7 +65,7 @@ public class RetrofitClient {
                             try {
                                 String dateStr = json.getAsString();
                                 // รองรับรูปแบบวันที่ "2025-05-03T00:00:00"
-                                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+                                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
                                 return format.parse(dateStr);
                             } catch (ParseException e) {
                                 Log.e(TAG, "Date parse error: " + e.getMessage());
@@ -78,52 +84,3 @@ public class RetrofitClient {
         return retrofit;
     }
 }
-//package com.example.uhf_bt.services;
-//
-//import android.content.Context;
-//import android.content.SharedPreferences;
-//import android.util.Log;
-//import okhttp3.OkHttpClient;
-//import okhttp3.logging.HttpLoggingInterceptor;
-//import retrofit2.Retrofit;
-//import retrofit2.converter.gson.GsonConverterFactory;
-//import java.util.concurrent.TimeUnit;
-//
-//public class RetrofitClient {
-//    private static final String TAG = "RetrofitClient";
-//
-//    //private static final String BASE_URL = "http://192.168.0.12:9000/"; // Developer
-//    private static final String BASE_URL = "http://192.168.1.43:5240/"; // Production
-//    public static String ipAddress = ""; // You might want to get this dynamically
-//    public static String token = ""; // This should be securely stored
-//    private static Retrofit retrofit = null;
-//
-//
-//    public static Retrofit getClient() {
-//        if (retrofit == null) {
-//            HttpLoggingInterceptor logging = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
-//                @Override
-//                public void log(String message) {
-//                    Log.d(TAG, message);
-//                }
-//            });
-//            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-//
-//            OkHttpClient client = new OkHttpClient.Builder()
-//                    .addInterceptor(logging)
-//                    .connectTimeout(120, TimeUnit.SECONDS)
-//                    .readTimeout(120, TimeUnit.SECONDS)
-//                    .writeTimeout(120, TimeUnit.SECONDS)
-//                    .build();
-//
-//            retrofit = new Retrofit.Builder()
-//                    .baseUrl(BASE_URL) // Replace with your actual base URL
-//                    .addConverterFactory(GsonConverterFactory.create())
-//                    .client(client)
-//                    .build();
-//        }
-//        return retrofit;
-//    }
-//
-//
-//}

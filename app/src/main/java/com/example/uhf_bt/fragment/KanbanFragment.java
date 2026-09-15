@@ -1,9 +1,11 @@
 package com.example.uhf_bt.fragment;
 
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.appcompat.widget.SearchView;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.util.Log;
@@ -65,6 +67,9 @@ public class KanbanFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && getActivity() != null) {
+            getActivity().getWindow().setStatusBarColor(ContextCompat.getColor(getActivity(), R.color.pastel4));
+        }
     }
 
     @Override
@@ -159,42 +164,42 @@ public class KanbanFragment extends Fragment {
                 break;
             case 1: // Ready (0)
                 for (Kanban kanban : allKanban) {
-                    if (kanban.getStatus() == 1) {
+                    if (kanban.getKanbanStatus() == 1) {
                         filteredList.add(kanban);
                     }
                 }
                 break;
             case 2: // Preparing (1)
                 for (Kanban kanban : allKanban) {
-                    if (kanban.getStatus() == 2) {
+                    if (kanban.getKanbanStatus() == 2) {
                         filteredList.add(kanban);
                     }
                 }
                 break;
             case 3: // Success (2)
                 for (Kanban kanban : allKanban) {
-                    if (kanban.getStatus() == 3) {
+                    if (kanban.getKanbanStatus() == 3) {
                         filteredList.add(kanban);
                     }
                 }
                 break;
             case 4: // Loading (3)
                 for (Kanban kanban : allKanban) {
-                    if (kanban.getStatus() == 4) {
+                    if (kanban.getKanbanStatus() == 4) {
                         filteredList.add(kanban);
                     }
                 }
                 break;
             case 5: // Shipp (3)
                 for (Kanban kanban : allKanban) {
-                    if (kanban.getStatus() == 5) {
+                    if (kanban.getKanbanStatus() == 5) {
                         filteredList.add(kanban);
                     }
                 }
                 break;
             case 6: // Cancel (3)
                 for (Kanban kanban : allKanban) {
-                    if (kanban.getStatus() == -1) {
+                    if (kanban.getKanbanStatus() == -1) {
                         filteredList.add(kanban);
                     }
                 }
@@ -276,7 +281,7 @@ public class KanbanFragment extends Fragment {
             searchIcon.setLayoutParams(params);
         }
 
-        EditText searchEditText = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
+        EditText searchEditText = searchView.findViewById(com.example.uhf_bt.R.id.search_src_text);
         if (searchEditText != null) {
             searchEditText.setTextColor(Color.WHITE);
             searchEditText.setHintTextColor(Color.parseColor("#80FFFFFF"));
@@ -296,11 +301,16 @@ public class KanbanFragment extends Fragment {
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
             Kanban kanban = adapter.getItem(position);
-            openKanbanPreparing(String.valueOf(kanban.getId()), String.valueOf(kanban.getKanbanNo()));
+            openKanbanDetail(
+                    String.valueOf(kanban.getId()),
+                    String.valueOf(kanban.getKanbanNo()),
+                    String.valueOf(kanban.getKanbanTagId()),
+                    String.valueOf(kanban.getNumber()),
+                    String.valueOf(kanban.getKanbanStatus()));
         });
     }
 
-    private void openKanbanPreparing(String kanbanId, String kanbanNo) {
+    private void openKanbanDetail(String kanbanId, String kanbanNo, String kanbanTagId, String number, String kanbanStatus) {
 
         // ล้างค่าค้นหาก่อนเปิด Fragment ใหม่
         if (searchView != null) {
@@ -318,10 +328,13 @@ public class KanbanFragment extends Fragment {
             searchView.setLayoutParams(params);
         }
 
-        KanbanPreparingFragment detailFragment = new KanbanPreparingFragment();
+        KanbanDetailFragment detailFragment = new KanbanDetailFragment();
         Bundle args = new Bundle();
         args.putString("kanbanId", kanbanId);
         args.putString("kanbanNo", kanbanNo);
+        args.putString("kanbanTagId", kanbanTagId);
+        args.putString("number", number);
+        args.putString("kanbanStatus", kanbanStatus);
         detailFragment.setArguments(args);
 
         if (getActivity() != null) {

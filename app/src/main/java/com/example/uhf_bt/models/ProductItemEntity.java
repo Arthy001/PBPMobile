@@ -17,7 +17,8 @@ public class ProductItemEntity {
     private String lotNumber;
     private String warehouseName;
     private Integer productItemStatus;
-    private boolean isScanned = false;
+    private boolean isScanned = false; // For ProductItemFragment (Search/Global)
+    private boolean isScannedStockCount = false; // For StockCountFragment (Local Count)
     private String lastUpdateDate;
     private boolean isNotDeleted = true;
 
@@ -48,6 +49,9 @@ public class ProductItemEntity {
 
     public boolean isScanned() { return isScanned; }
     public void setScanned(boolean scanned) { isScanned = scanned; }
+
+    public boolean isScannedStockCount() { return isScannedStockCount; }
+    public void setScannedStockCount(boolean scanned) { isScannedStockCount = scanned; }
 
     public String getLastUpdateDate() { return lastUpdateDate; }
     public void setLastUpdateDate(String lastUpdateDate) { this.lastUpdateDate = lastUpdateDate; }

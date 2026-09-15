@@ -23,6 +23,7 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -38,10 +39,11 @@ import android.widget.Toast;
 import com.example.uhf_bt.fragment.BTRenameFragment;
 import com.example.uhf_bt.fragment.BarcodeFragment;
 import com.example.uhf_bt.fragment.FindPalletFragment;
-import com.example.uhf_bt.fragment.FindProductFragment;
 import com.example.uhf_bt.fragment.KanbanFragment;
 import com.example.uhf_bt.fragment.MoveOrderFragment;
 import com.example.uhf_bt.fragment.PickingOrderFragment;
+import com.example.uhf_bt.fragment.ProductItemFragment;
+import com.example.uhf_bt.fragment.StockCountFragment;
 import com.example.uhf_bt.fragment.UHFEraseFragment;
 import com.example.uhf_bt.fragment.UHFKillFragment;
 import com.example.uhf_bt.fragment.UHFLocationFragment;
@@ -51,6 +53,7 @@ import com.example.uhf_bt.fragment.UHFReadTagFragment;
 import com.example.uhf_bt.fragment.UHFSetFragment;
 import com.example.uhf_bt.fragment.UHFUpdataFragment;
 import com.example.uhf_bt.fragment.UHFWriteFragment;
+import com.example.uhf_bt.fragment.VehicleFragment;
 import com.example.uhf_bt.models.UserProfile;
 import com.example.uhf_bt.request.LoginRequest;
 import com.example.uhf_bt.response.LoginResponse;
@@ -86,15 +89,19 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MainActivity extends BaseActivity implements View.OnClickListener {
+    public static String globalUserId = "";
 
     private SharedPreferences sharedPreferences;
     private ApiService apiService;
     private View viewMenu, viewTabhost;
-    private LinearLayout mainContent,viewLogin;
+    private LinearLayout mainContent,viewLogin, globalStatusOverlay;
     private MaterialButton btnLogin;
     private EditText etUsername, etPassword;
-    private TextView tvDeviceId;
+    private TextView tvDeviceId, tvGlobalUser, tvGlobalPower;
     private FrameLayout loadingOverlay;
+    
+    // Permission Management
+    private com.example.uhf_bt.utils.PermissionManager permissionManager;
     private static final int PERMISSION_REQUEST_CODE = 1;
     public boolean isScanning = false;
     public String remoteBTName = "";
@@ -138,6 +145,22 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     private Runnable sessionTimeoutRunnable;
     private long lastActivityTime;
 
+    // Registered Bluetooth devices (MAC addresses)
+    private static final List<String> REGISTERED_DEVICES = new ArrayList<String>() {{
+        add("CF:4E:DF:42:74:F2"); // matchpoint
+        add("D0:B4:D1:4A:E7:EE"); // matchpoint
+        add("EC:7A:B9:12:3A:01"); // MR20
+        add("C1:81:58:A1:13:A7"); //pb pipe
+        add("E1:44:27:F4:10:11"); // pb pipe   
+        add("F9:16:9C:DB:BE:49"); // pb pipe
+        add("F2:D8:0B:97:60:74"); // pb pipe
+        add("DD:EF:08:CE:BD:33"); // pb pipe new
+        add("C0:B5:4C:4B:2A:29"); // pb pipe new
+        add("C7:18:1F:29:52:79"); // pb pipe new
+        add("DC:E8:27:32:EC:01"); // pb pipe new  2026-08-10
+
+    }};
+
     private Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -155,6 +178,9 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimary));
+        }
 
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -166,7 +192,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
         initViews();
         setupLoginButton();
-        setupMenuButtons();
+        //setupMenuButtons(); // Moved to after login to avoid NullPointerException
 
         checkReadWritePermission();
         checkLocationEnable();
@@ -181,16 +207,22 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
 
         sharedPreferences = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+        
+        // Initialize Permission Manager
+        permissionManager = new com.example.uhf_bt.utils.PermissionManager(sharedPreferences);
 
         if (sharedPreferences.getBoolean("isLoggedIn", false)) {
             String plant_name = sharedPreferences.getString("plant_name", "-");
 
             RetrofitClient.ipAddress =  sharedPreferences.getString("ip_address", "").toString();
             RetrofitClient.token =  sharedPreferences.getString("token", "").toString();
+            globalUserId = sharedPreferences.getString("userId", "");
             viewLogin.setVisibility(View.GONE);
             mainContent.setVisibility(View.VISIBLE);
             mTabHost.setVisibility(View.GONE);
 
+            // Setup menu buttons and apply permissions when restoring session
+            setupMenuButtons();
 
             if (getSupportActionBar() != null) {
                 getSupportActionBar().show();
@@ -214,8 +246,44 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
         apiService = RetrofitClient.getClient().create(ApiService.class);
 
+        mHandler.post(statusUpdateRunnable);
 
     }
+
+    private Runnable fadeOutRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (globalStatusOverlay != null) {
+                globalStatusOverlay.animate().alpha(0.3f).setDuration(500).start();
+            }
+        }
+    };
+
+    private Runnable statusUpdateRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (sharedPreferences != null && sharedPreferences.getBoolean("isLoggedIn", false)) {
+                if (globalStatusOverlay.getVisibility() != View.VISIBLE) {
+                    globalStatusOverlay.setAlpha(1.0f);
+                    globalStatusOverlay.setVisibility(View.VISIBLE);
+                    mHandler.removeCallbacks(fadeOutRunnable);
+                    mHandler.postDelayed(fadeOutRunnable, 15000);
+                }
+                String username = sharedPreferences.getString("username", "Unknown");
+                tvGlobalUser.setText(username);
+                if (uhf != null && uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
+                    tvGlobalPower.setText(uhf.getPower() + " dBm");
+                } else {
+                    tvGlobalPower.setText("N/A");
+                }
+            } else {
+                if (globalStatusOverlay != null) {
+                    globalStatusOverlay.setVisibility(View.GONE);
+                }
+            }
+            mHandler.postDelayed(this, 5000); // Update every 5 seconds
+        }
+    };
 
     private void resetSessionTimer() {
         lastActivityTime = System.currentTimeMillis();
@@ -241,6 +309,18 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
             }
         };
         sessionTimeoutHandler.postDelayed(sessionTimeoutRunnable, 60000);
+    }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // กำหนดสีของ MainActivity
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimary)); // หรือสีที่คุณต้องการ
+        }
+
     }
 
     @Override
@@ -326,6 +406,8 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         MaterialButton btnMoveOrder = findViewById(R.id.btnMoveOrder);
         MaterialButton btnPickingOrder = findViewById(R.id.btnPickingOrder);
         MaterialButton btnFindProduct = findViewById(R.id.btnFindProduct);
+        MaterialButton btnStockCount = findViewById(R.id.btnStockCount);
+        MaterialButton btnCheckStock = findViewById(R.id.btnCheckStock);
 
         MaterialButton btnKanban = findViewById(R.id.btnKanban);
         MaterialButton btnReceiveShipping = findViewById(R.id.btnReceiveShipping);
@@ -370,7 +452,27 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
             mainContent.setVisibility(View.GONE);
             hideNavigationBar();
             getSupportFragmentManager().beginTransaction()
-                    .replace(android.R.id.content, new FindProductFragment())
+                    .replace(android.R.id.content, new ProductItemFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        btnCheckStock.setOnClickListener(v -> {
+            viewMenu.setVisibility(View.GONE);
+            mainContent.setVisibility(View.GONE);
+            hideNavigationBar();
+            getSupportFragmentManager().beginTransaction()
+                    .replace(android.R.id.content, new com.example.uhf_bt.fragment.CheckStockFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        btnStockCount.setOnClickListener(v -> {
+            viewMenu.setVisibility(View.GONE);
+            mainContent.setVisibility(View.GONE);
+            hideNavigationBar();
+            getSupportFragmentManager().beginTransaction()
+                    .replace(android.R.id.content, new StockCountFragment())
                     .addToBackStack(null)
                     .commit();
         });
@@ -394,9 +496,37 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
                     .addToBackStack(null)
                     .commit();
         });
+        btnIssueDeliveryOrder.setOnClickListener(v -> {
+            viewMenu.setVisibility(View.GONE);
+            mainContent.setVisibility(View.GONE);
+            hideNavigationBar();
+            getSupportFragmentManager().beginTransaction()
+                    .replace(android.R.id.content, new VehicleFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        // Apply permission-based visibility to menu buttons
+        permissionManager.applyToButton(btnMoveOrder, com.example.uhf_bt.utils.PermissionManager.PERM_MOVE_ORDER);
+        permissionManager.applyToButton(btnPickingOrder, com.example.uhf_bt.utils.PermissionManager.PERM_PICK_ORDER);
+        permissionManager.applyToButton(btnReceiveShipping, com.example.uhf_bt.utils.PermissionManager.PERM_GOODS_RECEIVE);
+        permissionManager.applyToButton(btnKanban, com.example.uhf_bt.utils.PermissionManager.PERM_RFID_LOADING);
+        permissionManager.applyToButton(btnIssueDeliveryOrder, com.example.uhf_bt.utils.PermissionManager.PERM_DELIVERY);
+        permissionManager.applyToButton(btnFindProduct, com.example.uhf_bt.utils.PermissionManager.PERM_FIND_PRODUCT);
+        permissionManager.applyToButton(btnStockCount, com.example.uhf_bt.utils.PermissionManager.PERM_STOCK_COUNT);
+        
+        // Let's assume we want btnCheckStock to be visible even if permission is missing, or we can apply PERM_CHECK_STOCK 
+        // We will apply the permission, but for testing if it's missing it won't show.
+        // Actually, let's just make it always visible for now, or use PERM_CHECK_STOCK.
+        // permissionManager.applyToButton(btnCheckStock, com.example.uhf_bt.utils.PermissionManager.PERM_CHECK_STOCK);
+        btnCheckStock.setVisibility(View.VISIBLE);
 
         getSupportFragmentManager().addOnBackStackChangedListener(() -> {
             if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.colorPrimary));
+                }
                 mainContent.setVisibility(View.VISIBLE);
                 viewMenu.setVisibility(View.VISIBLE);
                 viewTabhost.setVisibility(View.GONE);
@@ -436,6 +566,78 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         viewTabhost = findViewById(R.id.view_tabhost);
         viewLogin = findViewById(R.id.view_login);
         loadingOverlay = findViewById(R.id.loadingOverlay);
+
+        // Inflate overlay and add to DecorView so it floats above all fragments
+        FrameLayout decorView = (FrameLayout) getWindow().getDecorView();
+        globalStatusOverlay = (LinearLayout) getLayoutInflater().inflate(R.layout.overlay_status, decorView, false);
+        tvGlobalUser = globalStatusOverlay.findViewById(R.id.tvGlobalUser);
+        tvGlobalPower = globalStatusOverlay.findViewById(R.id.tvGlobalPower);
+
+        // Position at bottom-right initially
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM | Gravity.END);
+        params.setMargins(0, 0, 48, 96);
+        globalStatusOverlay.setLayoutParams(params);
+        decorView.addView(globalStatusOverlay);
+
+        // Make the overlay draggable (works above all views including ListView)
+        globalStatusOverlay.setOnTouchListener(new View.OnTouchListener() {
+            private float initialX;
+            private float initialY;
+            private float initialTouchX;
+            private float initialTouchY;
+            private int lastAction;
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        v.setAlpha(1.0f);
+                        mHandler.removeCallbacks(fadeOutRunnable);
+                        initialX = v.getX();
+                        initialY = v.getY();
+                        initialTouchX = event.getRawX();
+                        initialTouchY = event.getRawY();
+                        lastAction = MotionEvent.ACTION_DOWN;
+                        return true;
+                    case MotionEvent.ACTION_MOVE:
+                        float dx = event.getRawX() - initialTouchX;
+                        float dy = event.getRawY() - initialTouchY;
+                        float newX = initialX + dx;
+                        float newY = initialY + dy;
+
+                        // Clamp so at least half the bubble stays visible
+                        View parent = (View) v.getParent();
+                        if (parent != null) {
+                            float minX = -(v.getWidth() / 2f);
+                            float maxX = parent.getWidth() - (v.getWidth() / 2f);
+                            float minY = -(v.getHeight() / 2f);
+                            float maxY = parent.getHeight() - (v.getHeight() / 2f);
+                            if (newX < minX) newX = minX;
+                            if (newX > maxX) newX = maxX;
+                            if (newY < minY) newY = minY;
+                            if (newY > maxY) newY = maxY;
+                        }
+
+                        v.setX(newX);
+                        v.setY(newY);
+                        lastAction = MotionEvent.ACTION_MOVE;
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        if (lastAction == MotionEvent.ACTION_DOWN) {
+                            v.performClick();
+                        }
+                        mHandler.removeCallbacks(fadeOutRunnable);
+                        mHandler.postDelayed(fadeOutRunnable, 15000);
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
+
         btnLogin = findViewById(R.id.btnLogin);
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
@@ -639,6 +841,35 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
                         disconnect(true);
                     }
                     String deviceAddress = data.getStringExtra(BluetoothDevice.EXTRA_DEVICE);
+                    
+                    // Log the device address for debugging
+                    Log.d(TAG, "Selected device address: " + deviceAddress);
+                    
+                    // Validate if device is registered
+                    if (!isDeviceRegistered(deviceAddress)) {
+                        // Extract last 12 characters for display (MAC address)
+                        String macSuffix = deviceAddress.length() >= 12 ? 
+                            deviceAddress.substring(deviceAddress.length() - 12).replace(":", "") : 
+                            deviceAddress.replace(":", "");
+                        
+                        Log.w(TAG, "Unregistered device attempted to connect: " + deviceAddress);
+                        
+                        // Show alert for unregistered device
+                        String alertMessage = "R6 (" + macSuffix + ") ไม่ได้ลงทะเบียนไว้\n\nกรุณาเลือกอุปกรณ์ที่ลงทะเบียนแล้วเท่านั้น";
+                        
+                        // Show Toast as well to ensure user sees the message
+                        Toast.makeText(this, alertMessage, Toast.LENGTH_LONG).show();
+                        
+                        // Also show alert dialog
+                        Utils.alert(this, 
+                            R.string.app_name,
+                            alertMessage, 
+                            R.drawable.webtext);
+                        return;
+                    }
+                    
+                    Log.d(TAG, "Device is registered, proceeding with connection");
+                    
                     mDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(deviceAddress);
                     if(data.getBooleanExtra("isSearch",true)){
                         uhf.startScanBTDevices(new ScanBTCallback() {
@@ -687,8 +918,18 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
                 if (response.isSuccessful() && response.body() != null) {
                     UserProfile userProfile = response.body();
+                    
+                    // Store permissions
+                    if (userProfile.getPermissions() != null) {
+                        permissionManager.setPermissions(userProfile.getPermissions());
+                        Log.d(TAG, "Stored " + userProfile.getPermissions().size() + " permissions");
+                    } else {
+                        Log.w(TAG, "No permissions received from API");
+                        permissionManager.setPermissions(new ArrayList<>());
+                    }
                     LoginResponse loginResponse = new LoginResponse();
                     loginResponse.setUser(userProfile.getFullName());
+                    loginResponse.setId(userProfile.getId());
 
                     handleSuccessfulLogin(loginResponse);
                 } else {
@@ -731,6 +972,8 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
 
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putBoolean("isLoggedIn", true);
+            editor.putString("userId", loginResponse.getId());
+            globalUserId = loginResponse.getId();
             editor.putString("username", loginResponse.getUser());
             editor.putString("ip_address", "");
             editor.putString("token", "");
@@ -739,6 +982,9 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
             loadingOverlay.setVisibility(View.GONE);
             viewLogin.setVisibility(View.GONE);
             mainContent.setVisibility(View.VISIBLE);
+            
+            // Setup menu buttons and apply permissions after login
+            setupMenuButtons();
 
             if (getSupportActionBar() != null) {
                 getSupportActionBar().show();
@@ -1159,6 +1405,56 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
             }
         }
 
+    }
+
+    /**
+     * Check if a Bluetooth device is registered
+     * @param deviceAddress MAC address of the device (can be with or without colons)
+     * @return true if device is registered, false otherwise
+     */
+    private boolean isDeviceRegistered(String deviceAddress) {
+        Log.d(TAG, "=== isDeviceRegistered called ===");
+        Log.d(TAG, "Input deviceAddress: " + deviceAddress);
+        
+        if (deviceAddress == null || deviceAddress.isEmpty()) {
+            Log.w(TAG, "Device address is null or empty");
+            return false;
+        }
+        
+        // Normalize the address to uppercase with colons
+        String normalizedAddress = deviceAddress.toUpperCase().trim();
+        Log.d(TAG, "After uppercase/trim: " + normalizedAddress);
+        
+        // If address doesn't have colons, add them
+        if (!normalizedAddress.contains(":")) {
+            Log.d(TAG, "Address has no colons, length: " + normalizedAddress.length());
+            if (normalizedAddress.length() == 12) {
+                normalizedAddress = normalizedAddress.substring(0, 2) + ":" +
+                                  normalizedAddress.substring(2, 4) + ":" +
+                                  normalizedAddress.substring(4, 6) + ":" +
+                                  normalizedAddress.substring(6, 8) + ":" +
+                                  normalizedAddress.substring(8, 10) + ":" +
+                                  normalizedAddress.substring(10, 12);
+                Log.d(TAG, "Formatted address: " + normalizedAddress);
+            }
+        }
+        
+        Log.d(TAG, "Final normalized address: " + normalizedAddress);
+        Log.d(TAG, "Registered devices list:");
+        for (String registeredDevice : REGISTERED_DEVICES) {
+            Log.d(TAG, "  - " + registeredDevice);
+        }
+        
+        // Check if the normalized address is in the registered list
+        for (String registeredDevice : REGISTERED_DEVICES) {
+            if (registeredDevice.equalsIgnoreCase(normalizedAddress)) {
+                Log.d(TAG, "✓ Device IS registered!");
+                return true;
+            }
+        }
+        
+        Log.w(TAG, "✗ Device NOT registered!");
+        return false;
     }
 
 }

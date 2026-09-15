@@ -1,5 +1,7 @@
 package com.example.uhf_bt.models;
 
+import java.util.List;
+
 public class UserProfile {
     private String id;
     private String fullName;
@@ -15,6 +17,7 @@ public class UserProfile {
     private boolean isOnline;
     private String selectedCompany;
     private String createdAtUtc;
+    private List<String> permissions;
 
     // Getters
     public String getId() { return id; }
@@ -22,4 +25,8 @@ public class UserProfile {
     public String getUserType() { return userType; }
     public boolean isDefaultAdmin() { return isDefaultAdmin; }
     public String getSelectedCompany() { return selectedCompany; }
+    public List<String> getPermissions() { return permissions; }
+    
+    // Setters
+    public void setPermissions(List<String> permissions) { this.permissions = permissions; }
 }

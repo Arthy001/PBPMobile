@@ -68,10 +68,10 @@ public class PalletChildAdapter extends BaseAdapter implements Filterable {
         if (item != null) {
             // Safely set text with null checks
             holder.tvPallet.setText(String.format("Pallet : %s",
-                    item.getPallet() != null ? item.getPallet() : ""));
+                    item.getPalletName() != null ? item.getPalletName() : ""));
             holder.tvItem.setText(String.format("Item : %s",
                     item.getProductNumber() != null ? item.getProductNumber() : ""));
-            holder.tvProduct.setText(item.getProduct() != null ? item.getProduct() : "");
+            holder.tvProduct.setText(item.getProductName() != null ? item.getProductName() : "");
             holder.tvQuantity.setText(String.format("Quantity: %.2f", item.getQuantity()));
             holder.tvQuantitySuccess.setText(String.format("Success: %.2f", item.getQuantitySuccess()));
             holder.tvQuantityScan.setText(String.format("Scan: %.2f", item.getQuantityScan()));
@@ -160,17 +160,17 @@ public class PalletChildAdapter extends BaseAdapter implements Filterable {
                     for (PickingOrderItem item : originalItems) {
                         if (item != null) {
                             if (isPalletLocked) {
-                                if (item.getPallet() != null &&
-                                        item.getPallet().equals(selectedPallet)) {
+                                if (item.getPalletName() != null &&
+                                        item.getPalletName().equals(selectedPallet)) {
                                     filteredList.add(item);
                                 }
                             } else {
-                                if ((item.getProduct() != null &&
-                                        item.getProduct().toLowerCase().contains(filterPattern)) ||
+                                if ((item.getProductName() != null &&
+                                        item.getProductName().toLowerCase().contains(filterPattern)) ||
                                         (item.getLotNumber() != null &&
                                                 item.getLotNumber().toLowerCase().contains(filterPattern)) ||
-                                        (item.getPallet() != null &&
-                                                item.getPallet().toLowerCase().contains(filterPattern))) {
+                                        (item.getPalletName() != null &&
+                                                item.getPalletName().toLowerCase().contains(filterPattern))) {
                                     filteredList.add(item);
                                 }
                             }

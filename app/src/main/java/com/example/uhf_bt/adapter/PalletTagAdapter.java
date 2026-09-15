@@ -66,8 +66,9 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
             holder.tvProductNumber = convertView.findViewById(R.id.tvProductNumber);
             holder.tvPalletInfo = convertView.findViewById(R.id.tvPalletInfo);
             holder.tvQuantity = convertView.findViewById(R.id.tvQuantity);
-            holder.tvPalletTagId = convertView.findViewById(R.id.tvPalletTagId);
+            holder.tvPalletTagNumber = convertView.findViewById(R.id.tvPalletTagNumber);
             holder.tvStatus = convertView.findViewById(R.id.tvStatus);
+            holder.tvPickingType = convertView.findViewById(R.id.tvPickingType);
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
@@ -77,7 +78,7 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
         if (item != null) {
             try {
                 // Set picking order and customer
-                holder.tvPickingOrder.setText("DO: " + item.getPickingOrder());
+                holder.tvPickingOrder.setText("DO: " + item.getPickingNumber());
                 holder.tvCustomer.setText("ลูกค้า: " + item.getCustomer());
 
                 // Set product details
@@ -86,15 +87,18 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
 
                 // Set pallet info and quantity
                 String palletInfo = String.format("Pallet: %s (%s)",
-                        item.getPallet(), item.getPalletNo());
+                        item.getPalletName(), item.getPalletNumber());
                 holder.tvPalletInfo.setText(palletInfo);
                 holder.tvQuantity.setText(String.format("QTY: %.2f", item.getQuantity()));
 
                 // Set tag ID
-                holder.tvPalletTagId.setText("Pallet Tag: "  + item.getPalletTagId());
+                holder.tvPalletTagNumber.setText("Pallet Tag: "  + item.getPalletTagNumber());
 
                 // Set status with color
                 setStatus(holder.tvStatus, item.getPalletStatus());
+
+                // Set PickingType
+                holder.tvPickingType.setText(item.getPickingType());
 
             } catch (Exception e) {
                 Log.e(TAG, "Error binding data to view at position " + position, e);
@@ -175,11 +179,12 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
 
                     for (PalletTag tag : palletTags) {
                         if (tag != null && (
-                                containsIgnoreCase(tag.getPickingOrder(), filterPattern) ||
-                                        containsIgnoreCase(tag.getPalletTagId(), filterPattern) ||
+                                containsIgnoreCase(tag.getPickingNumber(), filterPattern) ||
+                                        containsIgnoreCase(tag.getPalletTagNumber(), filterPattern) ||
                                         containsIgnoreCase(tag.getProduct(), filterPattern) ||
                                         containsIgnoreCase(tag.getProductNumber(), filterPattern) ||
-                                        containsIgnoreCase(tag.getPalletNo(), filterPattern) ||
+                                        containsIgnoreCase(tag.getPalletNumber(), filterPattern) ||
+                                        containsIgnoreCase(tag.getPickingType(), filterPattern) ||
                                         containsIgnoreCase(tag.getCustomer(), filterPattern))) {
                             filtered.add(tag);
                         }
@@ -219,7 +224,7 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
 //
 //                    for (PalletTag tag : palletTags) {
 //                        if (tag != null && (
-//                                containsIgnoreCase(tag.getPickingOrder(), filterPattern) ||
+//                                containsIgnoreCase(tag.getPickingNumber(), filterPattern) ||
 //                                        containsIgnoreCase(tag.getPalletTagId(), filterPattern) ||
 //                                        containsIgnoreCase(tag.getProduct(), filterPattern) ||
 //                                        containsIgnoreCase(tag.getProductNumber(), filterPattern) ||
@@ -254,7 +259,8 @@ public class PalletTagAdapter extends BaseAdapter implements Filterable {
         TextView tvProductNumber;
         TextView tvPalletInfo;
         TextView tvQuantity;
-        TextView tvPalletTagId;
+        TextView tvPalletTagNumber;
         TextView tvStatus;
+        TextView tvPickingType;
     }
 }

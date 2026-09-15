@@ -64,8 +64,8 @@ public class PickingComponentAdapter extends BaseAdapter {
 
         // Set values
         holder.tvComponentCode.setText(component.getComponentCode());
-        holder.tvQuantityRequired.setText(String.valueOf(component.getQuantityRequired()));
-        holder.tvQuantityPicked.setText(String.valueOf(component.getQuantityPicked()));
+        holder.tvQuantityRequired.setText(String.format("%.0f", component.getQuantityRequired()));
+        holder.tvQuantityPicked.setText(String.format("%.0f", component.getQuantityPicked()));
 
         // Set item background color based on completion status
         if (component.isComplete()) {

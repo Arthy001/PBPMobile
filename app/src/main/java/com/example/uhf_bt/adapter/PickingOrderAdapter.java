@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Filter;
 import android.widget.Filterable;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.uhf_bt.ColorConstants;
@@ -32,7 +33,7 @@ public class PickingOrderAdapter extends BaseAdapter implements Filterable {
         this.context = context;
         this.pickingOrders = new ArrayList<>();
         this.originalPickingOrders = new ArrayList<>();
-        this.dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        this.dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
     }
 
     public void setPickingOrders(List<PickingOrder> pickingOrders) {
@@ -147,6 +148,14 @@ public class PickingOrderAdapter extends BaseAdapter implements Filterable {
                     tvStatus.setTextColor(Color.rgb(128, 0, 128)); // สีม่วง
                     break;
                 case 4: // Shipped
+                    tvStatus.setText("จัด Kanban");
+                    tvStatus.setTextColor(Color.BLACK);
+                    break;
+                case 5: // Shipped
+                    tvStatus.setText("Loading");
+                    tvStatus.setTextColor(Color.BLACK);
+                    break;
+                case 6: // Shipped
                     tvStatus.setText("Shipped");
                     tvStatus.setTextColor(Color.BLACK);
                     break;

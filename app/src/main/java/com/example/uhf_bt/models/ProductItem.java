@@ -16,12 +16,12 @@ public class ProductItem {
     private String productGroupName;
     private String unitMeasure;
     private Integer stock;
-    private String tagId;
+    private String tagNumber;
     private String lotNumber;
     private String lot;
     private Integer warehouseId;
     private String warehouseName;
-    private Integer itemStatus;
+    private Integer productItemStatus;
     private String createDate;
     private String lastUpdateDate;
     private Double unitPrice;
@@ -32,6 +32,8 @@ public class ProductItem {
     private double quantityPerUOM;
     private String itemType;
     private double  quantityInBox;
+
+    private boolean isScanned = false;
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -79,8 +81,8 @@ public class ProductItem {
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
 
-    public String getTagId() { return tagId; }
-    public void setTagId(String tagId) { this.tagId = tagId; }
+    public String getTagNumber() { return tagNumber; }
+    public void setTagNumber(String tagNumber) { this.tagNumber = tagNumber; }
 
     public String getLotNumber() { return lotNumber; }
     public void setLotNumber(String lotNumber) { this.lotNumber = lotNumber; }
@@ -94,8 +96,8 @@ public class ProductItem {
     public String getWarehouseName() { return warehouseName; }
     public void setWarehouseName(String warehouseName) { this.warehouseName = warehouseName; }
 
-    public Integer getItemStatus() { return itemStatus; }
-    public void setItemStatus(Integer itemStatus) { this.itemStatus = itemStatus; }
+    public Integer getProductItemStatus() { return productItemStatus; }
+    public void setProductItemStatus(Integer productItemStatus) { this.productItemStatus = productItemStatus; }
 
     public String getCreateDate() { return createDate; }
     public void setCreateDate(String createDate) { this.createDate = createDate; }
@@ -126,5 +128,11 @@ public class ProductItem {
 
     public double getQuantityInBox() { return quantityInBox; }
     public void setQuantityInBox(double   quantityInBox) { this.quantityInBox = quantityInBox; }
+    public boolean isScanned() {
+        return isScanned;
+    }
 
+    public void setScanned(boolean scanned) {
+        isScanned = scanned;
+    }
 }

@@ -52,6 +52,13 @@
             android:textSize="12sp"
             android:textStyle="bold"
             android:layout_marginBottom="4dp"/>
+        <TextView
+            android:id="@+id/tvTotalBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
 
         <!-- Quantities Row 2 -->
         <LinearLayout

@@ -15,6 +15,8 @@ import com.example.uhf_bt.ColorConstants;
 import com.example.uhf_bt.R;
 import com.example.uhf_bt.models.PickingOrderItem;
 
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,6 +61,7 @@ public class PickingOrderChildAdapter extends BaseAdapter implements Filterable 
             holder.ivStatus = convertView.findViewById(R.id.ivStatus);
 
             holder.tvLotSuggestion = convertView.findViewById(R.id.tvLotSuggestion);
+            holder.tvTotalBox = convertView.findViewById(R.id.tvTotalBox);
             holder.tvLocator = convertView.findViewById(R.id.tvLocator);
             holder.tvSequenceNumber = convertView.findViewById(R.id.tvSequenceNumber);
             holder.tvAllocatedQty = convertView.findViewById(R.id.tvAllocatedQty);
@@ -73,13 +76,14 @@ public class PickingOrderChildAdapter extends BaseAdapter implements Filterable 
         if (item != null) {
             // Safely set text with null checks
             holder.tvPallet.setText(String.format("Pallet : %s",
-                    item.getPallet() != null ? item.getPallet() : ""));
+                    item.getPalletName() != null ? item.getPalletName() : ""));
 
             //holder.tvProduct.setText(item.getProduct() != null ? item.getProduct() : "");
             holder.tvQuantity.setText(String.format("%.0f", item.getQuantity()));
             holder.tvQuantitySuccess.setText(String.format("%.0f", item.getQuantitySuccess()));
             holder.tvQuantityScan.setText(String.format("%.0f", item.getQuantityScan()));
             holder.tvLotSuggestion.setText(String.format("แนะนำ: %s", item.getLotSuggestion()));
+            holder.tvTotalBox.setText(String.format("จำนวนกล่องทั้งรายการ: %s", item.getTotalBox()));
             holder.tvLocator.setText(String.format("Locator: %s", item.getLocator()));
             holder.tvAllocatedQty.setText(String.format("%.0f", item.getAllocatedQty()));
             holder.tvQtyBox.setText(String.format("%s", item.getQtyBox()));
@@ -93,7 +97,11 @@ public class PickingOrderChildAdapter extends BaseAdapter implements Filterable 
                     holder.ivStatus.setVisibility(View.GONE);
                 } else if (boxType.equals("renant")) {
                     holder.tvItem.setText(String.format("Item : %s \r\n%s" ,item.getProductNumber(), item.getRemark()));
-                    holder.ivStatus.setImageResource(R.drawable.ic_renant);
+                    if ((item.getQuantitySuccess() >= item.getQuantity() && item.getQuantity() > 0) || item.isComponentComplete()) {
+                        holder.ivStatus.setImageResource(R.drawable.ic_check_circle);
+                    } else {
+                        holder.ivStatus.setImageResource(R.drawable.ic_renant);
+                    }
                     holder.ivStatus.setVisibility(View.VISIBLE);
                 } else {
                     holder.ivStatus.setVisibility(View.GONE);
@@ -150,6 +158,7 @@ public class PickingOrderChildAdapter extends BaseAdapter implements Filterable 
         TextView tvLocator;
         TextView tvAllocatedQty;
         TextView tvQtyBox;
+        TextView tvTotalBox;
     }
 
     @Override
@@ -177,17 +186,17 @@ public class PickingOrderChildAdapter extends BaseAdapter implements Filterable 
                     for (PickingOrderItem item : originalItems) {
                         if (item != null) {
                             if (isPalletLocked) {
-                                if (item.getPallet() != null &&
-                                        item.getPallet().equals(selectedPallet)) {
+                                if (item.getPalletName() != null &&
+                                        item.getPalletName().equals(selectedPallet)) {
                                     filteredList.add(item);
                                 }
                             } else {
-                                if ((item.getProduct() != null &&
-                                        item.getProduct().toLowerCase().contains(filterPattern)) ||
+                                if ((item.getProductName() != null &&
+                                        item.getProductName().toLowerCase().contains(filterPattern)) ||
                                         (item.getLotNumber() != null &&
                                                 item.getLotNumber().toLowerCase().contains(filterPattern)) ||
-                                        (item.getPallet() != null &&
-                                                item.getPallet().toLowerCase().contains(filterPattern))) {
+                                        (item.getPalletName() != null &&
+                                                item.getPalletName().toLowerCase().contains(filterPattern))) {
                                     filteredList.add(item);
                                 }
                             }

@@ -19,13 +19,37 @@
             android:textSize="14sp"
             android:gravity="start"/>
 
-        <TextView
-            android:id="@+id/tvPickQty"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="14sp"
-            android:gravity="end"/>
+            android:layout_weight="1.5"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <TextView
+                android:id="@+id/tvReqQty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:layout_marginEnd="8dp"/>
+
+            <TextView
+                android:id="@+id/tvPickedQty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="#4CAF50"
+                android:textStyle="bold"
+                android:layout_marginEnd="8dp"/>
+
+            <TextView
+                android:id="@+id/tvScanQty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="#FF9800"
+                android:textStyle="bold"/>
+        </LinearLayout>
 
     </LinearLayout>
 
@@ -55,7 +79,7 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/tvTagId"
+        android:id="@+id/tvTagNumber"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="12sp" />

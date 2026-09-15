@@ -26,8 +26,8 @@ public class Kanban {
     private String number;
     @SerializedName("kanbanType")
     private int kanbanType;
-    @SerializedName("status")
-    private int status;
+    @SerializedName("kanbanStatus")
+    private int kanbanStatus;
 
 
     // Getters
@@ -39,7 +39,7 @@ public class Kanban {
     public String getKanbanTagId() { return kanbanTagId; }
     public String getNumber() { return number; }
     public  int getKanbanType() { return kanbanType; }
-    public int getStatus() { return status; }
+    public int getKanbanStatus() { return kanbanStatus; }
 
     // Setters
     public void setId(long id) { this.id = id; }
@@ -47,8 +47,8 @@ public class Kanban {
     public void setCreatedAtUtc(String createdAtUtc) { this.createdAtUtc = createdAtUtc; }
     public void setKanbanNo(String kanbanNo) { this.kanbanNo = kanbanNo; }
     public void setKanbanName(String kanbanName) { this.kanbanName = kanbanName; }
-    public void setKanbanTagId(String kanbanTagId) { this.kanbanTagId = kanbanName; }
+    public void setKanbanTagId(String kanbanTagId) { this.kanbanTagId = kanbanTagId; }
     public void setNumber(String number) { this.number = number; }
     public  void setKanbanType(int kanbanType) { this.kanbanType = kanbanType; }
-    public void setStatus(int palletStatus) { this.status = status; }
+    public void setKanbanStatus(int kanbanStatus) { this.kanbanStatus = kanbanStatus; }
 }

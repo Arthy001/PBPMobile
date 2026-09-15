@@ -1,0 +1,34 @@
+# Standard Android build artifacts
+.gradle/
+.idea/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.iml
+local.properties
+
+# Android App Specific
+app/libs/
+app/*.jks
+app/*.keystore
+
+# Large binary files and installers
+*.apk
+*.bin
+*.exe
+*.zip
+*.tar.gz
+*.rar
+
+# Gradle wrapper
+gradle/
+gradlew
+gradlew.bat
+
+# Standard ignores
+node_modules/
+.git/
+.DS_Store
+*.log
+*.tmp

@@ -13,14 +13,27 @@ public class PickingOrderTransaction {
     private int pickingOrderItemId;
     private int productId;
 
-    private String tagId;
+    private String tagNumber;
     private String summary;
     private double quantity;
+
+    private double allocatedQty;
     private String lotNumber;
     private String lot;
     private int pickingTransStatus;
+    private int tagStatus;
 
     private String tagRemark;
+
+    private String itemType;
+
+    public int getTagStatus() {
+        return tagStatus;
+    }
+
+    public void setTagStatus(int tagStatus) {
+        this.tagStatus = tagStatus;
+    }
 
     // Getters and Setters
     public int getId() {
@@ -94,6 +107,13 @@ public class PickingOrderTransaction {
     public void setProduct(String product) {
         this.product = product;
     }
+    public String getItemType() {
+        return itemType;
+    }
+
+    public void setItemType(String itemType) {
+        this.itemType = itemType;
+    }
 
     public String getPickingOrderId() {
         return pickingOrderId;
@@ -111,12 +131,12 @@ public class PickingOrderTransaction {
         this.productId = productId;
     }
 
-    public String getTagId() {
-        return tagId;
+    public String getTagNumber() {
+        return tagNumber;
     }
 
-    public void setTagId(String tagId) {
-        this.tagId = tagId;
+    public void setTagNumber(String tagNumber) {
+        this.tagNumber = tagNumber;
     }
 
     public String getSummary() {
@@ -130,9 +150,16 @@ public class PickingOrderTransaction {
     public double getQuantity() {
         return quantity;
     }
+    public double getAllocatedQty() {
+        return allocatedQty;
+    }
 
     public void setQuantity(double quantity) {
         this.quantity = quantity;
+    }
+
+    public void setAllocatedQty(double allocatedQty) {
+        this.allocatedQty = allocatedQty;
     }
 
     public String getLotNumber() {

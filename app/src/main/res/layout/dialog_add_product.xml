@@ -23,6 +23,15 @@
         android:layout_marginBottom="4dp"/>
 
     <TextView
+        android:id="@+id/tvTagNumber"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="แท็ก: XXXX"
+        android:textSize="14sp"
+        android:textColor="@color/black"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
         android:id="@+id/tvLot"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -35,6 +44,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="เลขที่ Lot: XXXX"
+        android:textSize="14sp"
+        android:layout_marginBottom="4dp"/>
+
+    <TextView
+        android:id="@+id/tvQuantityInBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="จำนวนในกล่อง: XX"
         android:textSize="14sp"
         android:layout_marginBottom="12dp"/>
 

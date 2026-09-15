@@ -35,9 +35,14 @@ import com.example.uhf_bt.MainActivity;
 import com.example.uhf_bt.R;
 import com.example.uhf_bt.Utils;
 import com.example.uhf_bt.adapter.PickingOrderChildAdapter;
+import com.example.uhf_bt.adapter.TagStatusAdapter;
 import com.example.uhf_bt.models.PickingOrderItem;
 import com.example.uhf_bt.models.PickingOrderTransaction;
+import com.example.uhf_bt.models.PickingTagDto;
 import com.example.uhf_bt.models.ProductItem;
+import com.example.uhf_bt.models.ResponseDto;
+import com.example.uhf_bt.models.TagDto;
+import com.example.uhf_bt.models.TagStatusItem;
 import com.example.uhf_bt.services.ApiService;
 import com.example.uhf_bt.services.RetrofitClient;
 import com.example.uhf_bt.tool.CheckUtils;
@@ -103,11 +108,12 @@ public class PalletChildFragment extends Fragment {
         // Required empty public constructor
     }
 
-    public static PalletChildFragment newInstance(String palletTagId, String pickingOrder) {
+    public static PalletChildFragment newInstance(String palletTagId, String pickingOrder, String pickingOrderId) {
         PalletChildFragment fragment = new PalletChildFragment();
         Bundle args = new Bundle();
         args.putString("PalletTagId", palletTagId);
         args.putString("PickingOrder", pickingOrder);
+        args.putString("pickingOrderId", pickingOrderId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -117,6 +123,7 @@ public class PalletChildFragment extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             palletTagId = getArguments().getString("PalletTagId");
+            pickingOrderId = getArguments().getString("pickingOrderId");
         }
         apiService = RetrofitClient.getClient().create(ApiService.class);
         tempList = new ArrayList<>();
@@ -132,9 +139,6 @@ public class PalletChildFragment extends Fragment {
         setupListView();
         setupButtonListeners();
         loadPalletDetail();
-        //loadPickingOrderItems();
-        //loadPickingOrderTransactions(); // Add this line
-        //loadProductItemStock();
         return view;
     }
 
@@ -188,7 +192,7 @@ public class PalletChildFragment extends Fragment {
         // Update UI with formatted values
         if (tvTotalQty != null && tvTotalScan != null && tvTotalSuccess != null) {
             tvTotalQty.setText(String.format("%.0f", totalQty));
-            tvTotalScan.setText(String.format("%.0f", totalScan));
+            tvTotalScan.setText(String.format("%.0f", totalSuccess));
             tvTotalSuccess.setText(String.format("%.0f", totalSuccess));
         }
     }
@@ -240,11 +244,14 @@ public class PalletChildFragment extends Fragment {
                         tempList = new ArrayList<>();
                         for (PickingOrderTransaction trans : transactions) {
                             PickingOrderItem item = new PickingOrderItem();
+                            item.setId(trans.getPickingOrderItemId());
+                            item.setPickingOrderItemId(trans.getPickingOrderItemId());
                             item.setProductId(trans.getProductId());
                             item.setQuantity(trans.getQuantity());
-                            item.setTagId(trans.getTagId());
+                            item.setTagNumber(trans.getTagNumber());
                             item.setLotNumber(trans.getLotNumber());
                             item.setLot(trans.getLot());
+                            item.setTagStatus(trans.getTagStatus());
                             tempList.add(item);
                         }
                     }
@@ -429,7 +436,7 @@ public class PalletChildFragment extends Fragment {
         });
 
         // Customize SearchView appearance
-        EditText searchEditText = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
+        EditText searchEditText = searchView.findViewById(com.example.uhf_bt.R.id.search_src_text);
         if (searchEditText != null) {
             searchEditText.setTextColor(Color.WHITE);
             searchEditText.setHintTextColor(Color.parseColor("#80FFFFFF"));
@@ -476,6 +483,10 @@ public class PalletChildFragment extends Fragment {
                         // เลือกรายการแรกหรือประมวลผลทั้งลิสต์ตามความเหมาะสม
 
                         itemList = items;
+                        //pickingOrderId =  items.getId();
+                        loadPickingOrderTransactions();
+
+
                         updateUI(itemList);
                     } else {
                         showEmptyState();
@@ -582,7 +593,7 @@ public class PalletChildFragment extends Fragment {
 
         PickingOrderItem firstItem = items.get(0);
         if (firstItem != null) {
-            tvOrderNo.setText("Order No: " + (firstItem.getPickingOrder() != null ? firstItem.getPickingOrder() : ""));
+            tvOrderNo.setText("Order No: " + (firstItem.getPickingNumber() != null ? firstItem.getPickingNumber() : ""));
             tvCustomer.setText("Customer: " + (firstItem.getCustomer() != null ? firstItem.getCustomer() : ""));
             tvOrderDate.setText("Order Date: " + (firstItem.getOrderDate() != null ? firstItem.getOrderDate() : ""));
         }
@@ -606,8 +617,8 @@ public class PalletChildFragment extends Fragment {
             // Get unique pallets
             Set<String> uniquePallets = new HashSet<>();
             for (PickingOrderItem item : items) {
-                if (item.getPallet() != null && !item.getPallet().isEmpty()) {
-                    uniquePallets.add(item.getPallet());
+                if (item.getPalletName() != null && !item.getPalletName().isEmpty()) {
+                    uniquePallets.add(item.getPalletName());
                 }
             }
 
@@ -619,17 +630,136 @@ public class PalletChildFragment extends Fragment {
     }
 
     private void handleItemClick(PickingOrderItem item) {
-        new AlertDialog.Builder(requireContext())
-                .setTitle(item.getProduct())
-                .setMessage(String.format("Quantity: %d\nUnit Price: ฿%.2f\nTotal: ฿%.2f",
-                        item.getQuantity(),
-                        item.getUnitPrice(),
-                        item.getTotal()))
-                .setPositiveButton("Scan", (dialog, which) -> {
-                    startScanningForItem(item);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+        if (item == null || getContext() == null) return;
+        showTagStatusDialog(item);
+    }
+
+    private void showTagStatusDialog(PickingOrderItem item) {
+        if (getContext() == null) return;
+
+        View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_tag_status, null);
+        TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
+        TextView tvDialogSubtitle = dialogView.findViewById(R.id.tvDialogSubtitle);
+        TextView tvDialogSummary = dialogView.findViewById(R.id.tvDialogSummary);
+        ListView lvDialogTags = dialogView.findViewById(R.id.lvDialogTags);
+        Button btnDialogClose = dialogView.findViewById(R.id.btnDialogClose);
+
+        tvDialogTitle.setText(item.getProductName() != null ? item.getProductName() : "รายละเอียดสินค้า");
+        tvDialogSubtitle.setText("รหัสสินค้า: " + (item.getProductNumber() != null ? item.getProductNumber() : "-"));
+
+        Set<String> confirmedTags = new HashSet<>();
+        Map<String, Integer> confirmedTagStatusMap = new HashMap<>();
+
+        // 1. รวบรวมแท็กที่สแกนรับเข้าแล้วจาก tempList / transactions ของไอเทมชิ้นนี้ใน Pallet
+        if (tempList != null) {
+            for (PickingOrderItem transItem : tempList) {
+                if (transItem.getPickingOrderItemId() == item.getId() ||
+                        (transItem.getProductId() == item.getProductId() && transItem.getPickingOrderItemId() == 0)) {
+                    if (transItem.getTagNumber() != null && !transItem.getTagNumber().isEmpty()) {
+                        String tNum = transItem.getTagNumber().trim();
+                        confirmedTags.add(tNum);
+                        confirmedTagStatusMap.put(tNum, transItem.getTagStatus());
+                    }
+                }
+            }
+        }
+
+        int targetQuantity = (int) item.getQuantity();
+        if (targetQuantity <= 0) {
+            targetQuantity = Math.max(1, (int) item.getQuantitySuccess());
+        }
+
+        List<String> orderTags = new ArrayList<>();
+
+        // 2. ดึงแท็กทั้งหมดของไอเทมนี้ที่ส่งมาจาก API (getPalletDetailByTagId)
+        if (itemList != null) {
+            for (PickingOrderItem listItem : itemList) {
+                if (listItem.getId() == item.getId() || listItem.getProductId() == item.getProductId()) {
+                    if (listItem.getTagNumber() != null && !listItem.getTagNumber().isEmpty()) {
+                        String[] tagsArr = listItem.getTagNumber().split(",");
+                        for (String tag : tagsArr) {
+                            String trimmed = tag.trim();
+                            if (!trimmed.isEmpty() && !orderTags.contains(trimmed)) {
+                                orderTags.add(trimmed);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        List<String> finalTagNumbers = new ArrayList<>();
+
+        // ลำดับที่ 1: ใส่แท็กที่สแกนสำเร็จแล้วก่อน
+        for (String tag : confirmedTags) {
+            if (!finalTagNumbers.contains(tag) && finalTagNumbers.size() < targetQuantity) {
+                finalTagNumbers.add(tag);
+            }
+        }
+
+        // ลำดับที่ 2: ใส่แท็กที่ระบุมาจาก API ออเดอร์
+        for (String tag : orderTags) {
+            if (!finalTagNumbers.contains(tag) && finalTagNumbers.size() < targetQuantity) {
+                finalTagNumbers.add(tag);
+            }
+        }
+
+        List<TagStatusItem> tagStatusList = new ArrayList<>();
+        int receivedCount = 0;
+
+        for (String tagNum : finalTagNumbers) {
+            boolean isReceived = false;
+            if (confirmedTagStatusMap.containsKey(tagNum)) {
+                int status = confirmedTagStatusMap.get(tagNum);
+                // เช็คว่า TagStatus >= 5 (ShippingReceive = 5) หรือไม่
+                if (status >= 5) {
+                    isReceived = true;
+                } else if (status == 0) { // กรณี API ยังไม่ได้ระบุค่า status ให้ fallback เช็คว่าอยู่ใน confirmedTags
+                    isReceived = true;
+                }
+            }
+
+            if (isReceived) {
+                receivedCount++;
+            }
+            tagStatusList.add(new TagStatusItem(tagNum, isReceived));
+        }
+
+        // ลำดับที่ 3: หาก API ไม่ได้ส่ง TagNumber ตั้งต้นมา ให้ใส่ Placeholder แท็กเท่าจำนวนที่ยังขาดอยู่
+        if (tagStatusList.size() < targetQuantity) {
+            int missingCount = targetQuantity - tagStatusList.size();
+            int currentSuccess = (int) item.getQuantitySuccess();
+            for (int i = 1; i <= missingCount; i++) {
+                int indexNumber = tagStatusList.size() + 1;
+                boolean isReceived = indexNumber <= currentSuccess;
+                if (isReceived) {
+                    receivedCount++;
+                }
+                tagStatusList.add(new TagStatusItem("Tag #" + indexNumber, isReceived));
+            }
+        }
+
+        tvDialogSummary.setText(String.format("รับแล้ว %d / %d แท็ก", receivedCount, tagStatusList.size()));
+
+        TagStatusAdapter tagStatusAdapter = new TagStatusAdapter(requireContext(), tagStatusList);
+        lvDialogTags.setAdapter(tagStatusAdapter);
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(dialogView)
+                .create();
+
+        btnDialogClose.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            android.util.DisplayMetrics displayMetrics = new android.util.DisplayMetrics();
+            requireActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+            int width = (int) (displayMetrics.widthPixels * 0.98);
+            int height = (int) (displayMetrics.heightPixels * 0.98);
+            dialog.getWindow().setLayout(width, height);
+        }
     }
 
     private void startScanningForItem(PickingOrderItem item) {
@@ -799,13 +929,13 @@ public class PalletChildFragment extends Fragment {
             mContext.addConnectStatusNotice(mConnectStatus);
 
             // Try to set TagFocus immediately if connected
-            if (uhf != null && uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
-                try {
-                    uhf.setTagFocus(true);
-                } catch (Exception e) {
-                    Log.e(TAG, "Error setting TagFocus in onAttach: " + e.getMessage());
-                }
-            }
+//            if (uhf != null && uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
+//                try {
+//                    uhf.setTagFocus(true);
+//                } catch (Exception e) {
+//                    Log.e(TAG, "Error setting TagFocus in onAttach: " + e.getMessage());
+//                }
+//            }
         }
     }
 
@@ -883,13 +1013,13 @@ public class PalletChildFragment extends Fragment {
         }
     }
 
-    private PickingOrderItem findItemInTempListByTagId(String tagId) {
-        if (tempList == null || tempList.isEmpty() || tagId == null) {
+    private PickingOrderItem findItemInTempListByTagId(String tagNumber) {
+        if (tempList == null || tempList.isEmpty() || tagNumber == null) {
             return null;
         }
 
         for (PickingOrderItem item : tempList) {
-            if (item.getTagId() != null && item.getTagId().equals(tagId)) {
+            if (item.getTagNumber() != null && item.getTagNumber().equals(tagNumber)) {
                 return item;
             }
         }
@@ -898,13 +1028,13 @@ public class PalletChildFragment extends Fragment {
     }
 
 
-    private ProductItem findItemStockByTagId(String tagId) {
-        if (stockList == null || stockList.isEmpty() || tagId == null) {
+    private ProductItem findItemStockByTagId(String tagNumber) {
+        if (stockList == null || stockList.isEmpty() || tagNumber == null) {
             return null;
         }
 
         for (ProductItem item : stockList) {
-            if (item.getTagId() != null && item.getTagId().equals(tagId)) {
+            if (item.getTagNumber() != null && item.getTagNumber().equals(tagNumber)) {
                 return item;
             }
         }
@@ -984,7 +1114,7 @@ public class PalletChildFragment extends Fragment {
                             // Check if this tag was already scanned
                             boolean tagAlreadyScanned = false;
                             for (PickingOrderItem scannedItem : scannedTags) {
-                                if (scannedItem.getTagId().equals(qrCode)) {
+                                if (scannedItem.getTagNumber().equals(qrCode)) {
                                     tagAlreadyScanned = true;
                                     break;
                                 }
@@ -1000,7 +1130,7 @@ public class PalletChildFragment extends Fragment {
                                 newScannedItem.setPickingOrderItemId(item.getPickingOrderItemId());
                                 newScannedItem.setProductId(item.getProductId());
                                 newScannedItem.setQuantity(0.5);
-                                newScannedItem.setTagId(qrCode.trim());
+                                newScannedItem.setTagNumber(qrCode.trim());
                                 newScannedItem.setLotNumber("20241031PD4-L08");
                                 newScannedItem.setLot("241031");
                                 //newScannedItem.setId(pickingItemId);
@@ -1011,7 +1141,7 @@ public class PalletChildFragment extends Fragment {
                                 if (getActivity() != null) {
                                     getActivity().runOnUiThread(() -> {
                                         String message = String.format("Found Item: %s, Lot: %s\nScanned: %.0f + Success: %.0f / Required: %.0f",
-                                                item.getProduct(),
+                                                item.getProductName(),
                                                 item.getLot(),
                                                 item.getQuantityScan(),
                                                 item.getQuantitySuccess(),
@@ -1100,7 +1230,7 @@ public class PalletChildFragment extends Fragment {
                         // Check if this tag was already scanned
                         boolean tagAlreadyScanned = false;
                         for (PickingOrderItem scannedItem : scannedTags) {
-                            if (scannedItem.getTagId().equals(qrCode)) {
+                            if (scannedItem.getTagNumber().equals(qrCode)) {
                                 tagAlreadyScanned = true;
                                 break;
                             }
@@ -1114,7 +1244,7 @@ public class PalletChildFragment extends Fragment {
                             PickingOrderItem newScannedItem = new PickingOrderItem();
                             newScannedItem.setProductId(item.getProductId());
                             newScannedItem.setQuantity(1);
-                            newScannedItem.setTagId(qrCode.trim());
+                            newScannedItem.setTagNumber(qrCode.trim());
                             newScannedItem.setLotNumber(foundItem.getLotNumber());
                             newScannedItem.setLot(foundItem.getLot());
                             newScannedItem.setId(item.getPickingOrderItemId());
@@ -1125,7 +1255,7 @@ public class PalletChildFragment extends Fragment {
                             if (getActivity() != null) {
                                 getActivity().runOnUiThread(() -> {
                                     String message = String.format("Found Item: %s, Lot: %s\nScanned: %.0f + Success: %.0f / Required: %.0f",
-                                            item.getProduct(),
+                                            item.getProductName(),
                                             item.getLot(),
                                             item.getQuantityScan(),
                                             item.getQuantitySuccess(),
@@ -1226,11 +1356,11 @@ public class PalletChildFragment extends Fragment {
         }
 
         // Set TagFocus to true before starting inventory with try-catch
-        try {
-            mContext.uhf.setTagFocus(true);
-        } catch (Exception ex) {
-            Log.e(TAG, "Error setting TagFocus: " + ex.getMessage());
-        }
+//        try {
+//            mContext.uhf.setTagFocus(true);
+//        } catch (Exception ex) {
+//            Log.e(TAG, "Error setting TagFocus: " + ex.getMessage());
+//        }
 
         // Time handling
         String time = etTime.getText().toString();
@@ -1408,21 +1538,65 @@ public class PalletChildFragment extends Fragment {
 
     private void confirmPickingOrderTransaction() {
 
-        // Make API call
-        String url = "http://30.0.1.111:5240/api/PickingOrderTransactionChild";
+        List<PickingTagDto> sendTags = new ArrayList<>();
 
+        if (scannedTags != null && !scannedTags.isEmpty()) {
+            // **แก้ไข: สร้าง MoveTagDto object ใหม่ในแต่ละรอบของลูป**
+            for (PickingOrderItem scannedTag : scannedTags) {
+                PickingTagDto item = new PickingTagDto(); // สร้างใหม่ในทุกรอบ
+                item.setPickingOrderItemId(scannedTag.getId());
+                item.setTagNumber(scannedTag.getTagNumber());
+                sendTags.add(item);
+            }
+        }
+
+        if (sendTags.isEmpty()) {
+            Toast.makeText(mContext, "No scanned tags to confirm", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String userId = MainActivity.globalUserId;
         // Create Retrofit service or similar HTTP client
-        Call<List<PickingOrderItem>> call = apiService.createPickingOrderTransaction(
+        Call<List<ResponseDto>> call = apiService.createPickingOrderTransaction(
                 pickingOrderId,
-                scannedTags
+                userId,
+                sendTags
         );
 
-        call.enqueue(new Callback<List<PickingOrderItem>>() {
+        call.enqueue(new Callback<List<ResponseDto>>() {
             @Override
-            public void onResponse(Call<List<PickingOrderItem>> call, Response<List<PickingOrderItem>> response) {
+            public void onResponse(Call<List<ResponseDto>> call, Response<List<ResponseDto>> response) {
                 if (response.isSuccessful()) {
-                    // Handle success
-                    Toast.makeText(mContext, "Data sent successfully", Toast.LENGTH_SHORT).show();
+
+                    List<ResponseDto> results = response.body();
+
+                    // เช็คว่าทุกรายการ success หรือไม่
+                    boolean allSuccess = true;
+                    StringBuilder errorMessages = new StringBuilder();
+
+                    for (ResponseDto result : results) {
+                        if (!result.getIsSuccess()) {
+                            allSuccess = false;
+                            errorMessages.append("• ").append(result.getMessage()).append("\n");
+                        }
+                    }
+
+                    if (allSuccess) {
+                        // Handle success
+                        Toast.makeText(mContext, "Data successfully", Toast.LENGTH_LONG).show();
+                        btnConfirm.setEnabled(false);
+                    } else {
+                        // มีรายการที่ไม่สำเร็จ
+                        String errorMsg = "Error:\n\n" + errorMessages.toString();
+
+                        new AlertDialog.Builder(requireContext())
+                                .setTitle("Pick Errors")
+                                .setMessage(errorMsg)
+                                .setPositiveButton("OK", null)
+                                .show();
+
+                        Toast.makeText(mContext, "Confirm Kaban failed ", Toast.LENGTH_SHORT).show();
+                    }
                 } else {
                     // Handle error
                     Toast.makeText(mContext, "Error: " + response.message(), Toast.LENGTH_SHORT).show();
@@ -1430,7 +1604,7 @@ public class PalletChildFragment extends Fragment {
             }
 
             @Override
-            public void onFailure(Call<List<PickingOrderItem>> call, Throwable t) {
+            public void onFailure(Call<List<ResponseDto>> call, Throwable t) {
                 // Handle failure
                 Toast.makeText(mContext, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }

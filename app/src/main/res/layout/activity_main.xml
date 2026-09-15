@@ -16,120 +16,266 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:background="@color/backgroundColor">
 
+            <!-- Move Order Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnMoveOrder"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="64dp"
                 android:text="Move Order"
-                android:padding="20dp"
-                android:layout_marginBottom="5dp"
-                android:layout_marginTop="5dp"/>
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/pastel1"
+                app:cornerRadius="16dp"
+                app:elevation="8dp"
+                app:icon="@drawable/ic_move"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/white"
+                android:layout_marginBottom="12dp"
+                android:layout_marginTop="8dp"/>
 
+            <!-- Picking Order Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPickingOrder"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="64dp"
                 android:text="Picking Order"
-                android:padding="20dp"
-                android:layout_marginBottom="5dp"/>
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/pastel2"
+                app:cornerRadius="16dp"
+                app:elevation="8dp"
+                app:icon="@drawable/ic_shopping_cart"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/white"
+                android:layout_marginBottom="12dp"/>
 
-<!--            <com.google.android.material.button.MaterialButton-->
-<!--                android:id="@+id/btnCreateRenantBox"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:text="Create Renant Box"-->
-<!--                android:padding="20dp"-->
-<!--                android:visibility="invisible"-->
-<!--                android:layout_marginBottom="10dp"/>-->
-
+            <!-- Receive to Shipping Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnReceiveShipping"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Receive to Shipping"
-                android:padding="20dp"
-                android:layout_marginBottom="5dp"/>
+                android:layout_height="64dp"
+                android:text="รับสินค้าเข้าจัดส่ง"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/pastel3"
+                app:cornerRadius="16dp"
+                app:elevation="8dp"
+                app:icon="@drawable/ic_assignment"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/white"
+                android:layout_marginBottom="12dp"/>
 
+            <!-- Kanban Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnKanban"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Kanban"
-                android:padding="20dp"
-                android:layout_marginBottom="5dp"/>
+                android:layout_height="64dp"
+                android:text="RFID Loading"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/pastel4"
+                app:cornerRadius="16dp"
+                app:elevation="8dp"
+                app:icon="@drawable/ic_dashboard"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/white"
+                android:layout_marginBottom="12dp"/>
 
-
+            <!-- Issue Delivery Order Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnIssueDeliveryOrder"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Issue Delivery Order"
-                android:padding="20dp"
-                android:layout_marginBottom="5dp"/>
+                android:layout_height="64dp"
+                android:text="จัดส่งสินค้า"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/pastel5"
+                app:cornerRadius="16dp"
+                app:elevation="8dp"
+                app:icon="@drawable/ic_local_shipping"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/white"
+                android:layout_marginBottom="12dp"/>
 
+            <!-- Find Product Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnFindProduct"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="64dp"
                 android:text="Find Product"
-                android:padding="20dp"
-                android:layout_marginBottom="5dp"/>
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/pastel6"
+                app:cornerRadius="16dp"
+                app:elevation="8dp"
+                app:icon="@drawable/ic_search"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/white"
+                android:layout_marginBottom="12dp"/>
 
+            <!-- Check Stock Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCheckStock"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:text="Check Stock"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/pastel7"
+                app:cornerRadius="16dp"
+                app:elevation="8dp"
+                app:icon="@drawable/ic_assignment"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/white"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Stock Count Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStockCount"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:text="Stock Count"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/pastel7"
+                app:cornerRadius="16dp"
+                app:elevation="8dp"
+                app:icon="@drawable/ic_assignment"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/white"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Settings Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSettings"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="64dp"
                 android:text="Settings"
-                android:padding="20dp"
-                android:layout_marginBottom="5dp"/>
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/gray"
+                app:cornerRadius="16dp"
+                app:elevation="8dp"
+                app:icon="@drawable/ic_settings"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/white"
+                android:layout_marginBottom="20dp"/>
 
+            <!-- Bluetooth Connection Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
 
-            <!-- View Menu -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_connect"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/Connect"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/white"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:maxLines="2"
+                    android:ellipsize="none"
+                    app:backgroundTint="@color/lightblue"
+                    app:cornerRadius="12dp"
+                    app:elevation="4dp"
+                    app:icon="@drawable/ic_wifi"
+                    app:iconGravity="textStart"
+                    app:iconSize="18dp"
+                    app:iconPadding="6dp"
+                    app:iconTint="@color/white" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_search"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/title_search"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/white"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:maxLines="2"
+                    android:ellipsize="none"
+                    app:backgroundTint="@color/blue2"
+                    app:cornerRadius="12dp"
+                    app:elevation="4dp"
+                    app:icon="@drawable/ic_bluetooth_searching"
+                    app:iconGravity="textStart"
+                    app:iconSize="18dp"
+                    app:iconPadding="6dp"
+                    app:iconTint="@color/white" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:gravity="center_vertical"
+                android:background="@drawable/text_background"
+                android:textColor="@color/textColorPrimary"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"/>
+
+            <!-- Hidden view_menu for compatibility -->
             <LinearLayout
                 android:id="@+id/view_menu"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="0dp"
                 android:orientation="vertical"
-                android:visibility="visible">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="16dp">
-
-                    <Button
-                        android:id="@+id/btn_connect"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="4dp"
-                        android:text="@string/Connect" />
-
-                    <Button
-                        android:id="@+id/btn_search"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="4dp"
-                        android:text="@string/title_search" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/tvAddress"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="48dp"
-                    android:paddingLeft="4dp"
-                    android:paddingRight="4dp"
-                    android:gravity="center_vertical"
-                    android:layout_marginBottom="16dp"/>
-            </LinearLayout>
+                android:visibility="visible"/>
         </LinearLayout>
     </ScrollView>
-
     <!-- TabHost View - แยกออกมาจาก mainContent -->
     <LinearLayout
         android:id="@+id/view_tabhost"
@@ -214,7 +360,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Username or Email"
-                android:text="admin@gmail.com"
+                android:text=""
                 android:inputType="textEmailAddress"/>
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -228,7 +374,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Password"
-                android:text="123456"
+                android:text=""
                 android:inputType="textPassword"/>
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -260,4 +406,5 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"/>
     </FrameLayout>
-</FrameLayout>
+
+</FrameLayout>

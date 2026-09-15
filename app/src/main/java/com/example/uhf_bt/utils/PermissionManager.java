@@ -20,6 +20,7 @@ public class PermissionManager {
     public static final String PERM_DELIVERY = "Permissions.Mobile.Delivery.View";
     public static final String PERM_FIND_PRODUCT = "Permissions.Mobile.FindProduct.View";
     public static final String PERM_STOCK_COUNT = "Permissions.Mobile.StockCount.View";
+    public static final String PERM_CHECK_STOCK = "Permissions.Mobile.CheckStock.View";
 
     private List<String> userPermissions = new ArrayList<>();
     private SharedPreferences sharedPreferences;

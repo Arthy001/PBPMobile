@@ -1,5 +1,7 @@
 package com.example.uhf_bt.fragment;
 
+import static com.example.uhf_bt.services.Settings.appMode;
+
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -12,6 +14,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.os.Handler;
@@ -40,6 +43,7 @@ import com.example.uhf_bt.adapter.ReceivePalletAdapter;
 import com.example.uhf_bt.models.PalletTag;
 import com.example.uhf_bt.models.PickingOrderItem;
 import com.example.uhf_bt.models.ProductItem;
+import com.example.uhf_bt.models.ResponseDto;
 import com.example.uhf_bt.services.ApiService;
 import com.example.uhf_bt.services.RetrofitClient;
 import com.example.uhf_bt.tool.CheckUtils;
@@ -75,9 +79,10 @@ public class KanbanPreparingFragment extends Fragment {
     private List<String> pendingProductTags = new ArrayList<>();
     private boolean isPalletScanned = false;
     private EditText EtData_Read;
-    private TextView tvKanbanTagId;
-    private Button BtRead;
-    private LinearLayout viewAction ;
+    private EditText tvKanbanTagId;
+    private Button BtRead,btnScanBarcode, BtRead2;
+    private EditText tvBarcode;
+    private LinearLayout viewAction ,view_barcode;
     private TextView tvTotalQty, tvTotalScan, tvTotalSuccess;
     private ImageView ivNotification;
     private TextView tvNotificationCount;
@@ -130,6 +135,7 @@ public class KanbanPreparingFragment extends Fragment {
                         btClear.setEnabled(true);
                         btStop.setEnabled(false);
                         btScanRFID.setEnabled(true);
+                        btnConfirm.setEnabled(true);
                         //btInventory.setEnabled(true);
                         //btInventoryPerMinute.setEnabled(true);
                     } else {
@@ -237,6 +243,10 @@ public class KanbanPreparingFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && getActivity() != null) {
+            getActivity().getWindow().setStatusBarColor(ContextCompat.getColor(getActivity(), R.color.pastel4));
+        }
+
         if (getArguments() != null) {
             //pickingOrderId = getArguments().getString("PickingOrderId");
         }
@@ -299,11 +309,24 @@ public class KanbanPreparingFragment extends Fragment {
 
         EtData_Read = view.findViewById(R.id.EtData_Read);
         BtRead =  view.findViewById(R.id.btnRead);
+        BtRead2 = view.findViewById(R.id.btnRead2);
         //EtData_QTY = view.findViewById(R.id.EtData_QTY);
         btScanRFID = view.findViewById(R.id.btnScanRFID);
         btStop = view.findViewById(R.id.btnStop);
         btClear = view.findViewById(R.id.btnClear);
         btnConfirm = view.findViewById(R.id.btnConfirm);
+
+        tvBarcode = view.findViewById(R.id.tvBarcode);
+        btnScanBarcode = view.findViewById(R.id.btnScanBarcode);
+        view_barcode = view.findViewById(R.id.view_barcode);
+
+        if (appMode == "RFID" )
+        {
+            view_barcode.setVisibility(View.GONE);
+            BtRead2.setVisibility(View.GONE);
+        }
+
+
 
         tvTotalPickingOrder = view.findViewById(R.id.tvTotalPickingOrder);
         tvTotalPallet = view.findViewById(R.id.tvTotalPallet);
@@ -429,7 +452,7 @@ public class KanbanPreparingFragment extends Fragment {
             ComponentDetailsFragment detailFragment = new ComponentDetailsFragment();
             Bundle args = new Bundle();
             args.putString("pickingOrderId", pickingOrderId);
-            args.putString("productName", item.getProduct());
+            args.putString("productName", item.getProductName());
             args.putString("remarkString", item.getRemark());
             args.putString("pickingOrderItemId", String.valueOf(item.getPickingOrderItemId()));
             detailFragment.setArguments(args);
@@ -444,7 +467,7 @@ public class KanbanPreparingFragment extends Fragment {
         } else {
             // Use the existing dialog for items without remarks
             new AlertDialog.Builder(requireContext())
-                    .setTitle(item.getProduct())
+                    .setTitle(item.getProductName())
                     .setMessage(String.format("Quantity: %d\nUnit Price: ฿%.2f\nTotal: ฿%.2f",
                             item.getQuantity(),
                             item.getUnitPrice(),
@@ -497,10 +520,12 @@ public class KanbanPreparingFragment extends Fragment {
     @SuppressLint("NewApi")
     private void setupButtonListeners() {
         BtRead.setOnClickListener( v -> read());
+        BtRead2.setOnClickListener( v -> read2());
         btScanRFID.setOnClickListener(v -> scanRFID());
         btStop.setOnClickListener(v -> stop());
         btClear.setOnClickListener(v -> clearRFID());
         btnConfirm.setOnClickListener(v -> confirmPickingOrderTransaction());
+        btnScanBarcode.setOnClickListener(v -> scanBarcode());
 
         // เพิ่ม Long Click สำหรับดูรายการ Pallet ที่สแกนแล้ว
         btClear.setOnLongClickListener(v -> {
@@ -636,6 +661,12 @@ public class KanbanPreparingFragment extends Fragment {
         builder.show();
     }
 
+    private void scanBarcode()
+    {
+        String barcode= String.valueOf(tvBarcode.getText());
+        if (barcode != null) processQrCode(barcode);
+    }
+
     // *** เพิ่ม method สำหรับ manual test pending tags ***
     private void testPendingTagsFlow() {
         // Clear everything first
@@ -695,7 +726,7 @@ public class KanbanPreparingFragment extends Fragment {
         });
 
         // Customize SearchView appearance
-        EditText searchEditText = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
+        EditText searchEditText = searchView.findViewById(com.example.uhf_bt.R.id.search_src_text);
         if (searchEditText != null) {
             searchEditText.setTextColor(Color.WHITE);
             searchEditText.setHintTextColor(Color.parseColor("#80FFFFFF"));
@@ -740,10 +771,10 @@ public class KanbanPreparingFragment extends Fragment {
     }
 
     // 3. ปรับปรุง loadPickingOrderItems ให้รองรับหลาย Pallet
-    private void loadPickingOrderItems(String palletTagId) {
+    private void loadPickingOrderItems(String palletTagNumber) {
         // ตรวจสอบว่า Pallet นี้เคยสแกนแล้วหรือไม่
-        if (scannedPallets.contains(palletTagId)) {
-            String msg = "Pallet " + palletTagId + " already scanned!";
+        if (scannedPallets.contains(palletTagNumber)) {
+            String msg = "Pallet " + palletTagNumber + " already scanned!";
             Toast.makeText(mContext, msg, Toast.LENGTH_SHORT).show();
             notificationMessages.add(msg);
             hasNotifications = true;
@@ -757,7 +788,7 @@ public class KanbanPreparingFragment extends Fragment {
 
         showLoading(true);
 
-        apiService.getPickingOrderItemByPalletTagId(palletTagId).enqueue(new Callback<List<PickingOrderItem>>() {
+        apiService.getPickingOrderItemByPalletTagNumber(palletTagNumber).enqueue(new Callback<List<PickingOrderItem>>() {
             @Override
             public void onResponse(Call<List<PickingOrderItem>> call, Response<List<PickingOrderItem>> response) {
                 showLoading(false);
@@ -766,17 +797,41 @@ public class KanbanPreparingFragment extends Fragment {
                     List<PickingOrderItem> newPalletItems = response.body();
 
                     if (newPalletItems.isEmpty()) {
-                        String msg = "No items found for Pallet: " + palletTagId;
+                        String msg = "No items found for Pallet: " + palletTagNumber;
                         Toast.makeText(mContext, msg, Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    // เพิ่มส่วนนี้: สร้าง ProductItem จาก PickingOrderItem และ add ใส่ stockList
+                    for (PickingOrderItem pickingItem : newPalletItems)
+                    {
+                        int palletStatus = pickingItem.getPalletStatus();
+                        if (palletStatus == 3)
+                        {
+                            break;
+                        }
+                        else if( palletStatus < 3 )
+                        {
+                            Toast.makeText(mContext, "พาเลทนี้ยังไม่รับเข้าจัดส่ง!", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        else if ( palletStatus > 3)
+                        {
+                            Toast.makeText(mContext, "พาเลทนี้จัด Kanban ไปแล้ว!", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        else
+                        {
+                            Toast.makeText(mContext, "ไม่พบสถานะพาเลท!", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                    }
+
+                        // เพิ่มส่วนนี้: สร้าง ProductItem จาก PickingOrderItem และ add ใส่ stockList
                     addPickingOrderItemsToStockList(newPalletItems);
 
                     // เพิ่ม Pallet ใหม่เข้าไปในรายการ
-                    scannedPallets.add(palletTagId);
-                    palletItemsMap.put(palletTagId, new ArrayList<>(newPalletItems));
+                    scannedPallets.add(palletTagNumber);
+                    palletItemsMap.put(palletTagNumber, new ArrayList<>(newPalletItems));
 
                     // Set pallet scanned flag
                     isPalletScanned = true;
@@ -801,7 +856,7 @@ public class KanbanPreparingFragment extends Fragment {
                     updateUI(dataList);
 
                     // แสดงข้อความสำเร็จ
-                    String successMsg = "Added Pallet: " + palletTagId + " (" + newPalletItems.size() + " items)";
+                    String successMsg = "Added Pallet: " + palletTagNumber + " (" + newPalletItems.size() + " items)";
                     Toast.makeText(mContext, successMsg, Toast.LENGTH_SHORT).show();
 
                     // อัพเดท Total counts
@@ -828,7 +883,7 @@ public class KanbanPreparingFragment extends Fragment {
 
                 } else {
                     Log.e(TAG, "Error loading picking order items: " + response.code());
-                    showError("Failed to load picking order items for Pallet: " + palletTagId);
+                    showError("Failed to load picking order items for Pallet: " + palletTagNumber);
                 }
             }
 
@@ -855,7 +910,7 @@ public class KanbanPreparingFragment extends Fragment {
 
                     if (item.getQuantityScan() > 0 || item.getQuantitySuccess() > 0) {
                         Log.d(TAG, "Item with scan data - " + item.getProductNumber() +
-                                ", DO: " + item.getPickingOrder() +
+                                ", DO: " + item.getPickingNumber() +
                                 ", Scan: " + item.getQuantityScan() +
                                 ", Success: " + item.getQuantitySuccess());
                     }
@@ -891,7 +946,7 @@ public class KanbanPreparingFragment extends Fragment {
         // แสดงรายละเอียด DO
         Map<String, Integer> doCount = new HashMap<>();
         for (PickingOrderItem item : itemList) {
-            String doNumber = item.getPickingOrder();
+            String doNumber = item.getPickingNumber();
             if (doNumber != null) {
                 doCount.put(doNumber, doCount.getOrDefault(doNumber, 0) + 1);
             }
@@ -905,8 +960,8 @@ public class KanbanPreparingFragment extends Fragment {
         info.append("\nGrouped Items (by DO):\n");
         String currentDO = "";
         for (PickingOrderItem item : groupedByDO) {
-            if (!item.getPickingOrder().equals(currentDO)) {
-                currentDO = item.getPickingOrder();
+            if (!item.getPickingNumber().equals(currentDO)) {
+                currentDO = item.getPickingNumber();
                 info.append("\n--- DO: ").append(currentDO).append(" ---\n");
             }
             info.append("  ").append(item.getProductNumber())
@@ -947,16 +1002,17 @@ public class KanbanPreparingFragment extends Fragment {
         }
 
         for (PickingOrderItem pickingItem : pickingOrderItems) {
-            // จัดการ TagId ที่อาจมีหลายค่า (comma-separated)
-            String tagIds = pickingItem.getTagId();
-            if (tagIds != null && !tagIds.isEmpty()) {
-                // Split TagId by comma and process each one
-                String[] tagArray = tagIds.split(",");
 
-                for (String tagId : tagArray) {
-                    String trimmedTagId = tagId.trim();
-                    if (!trimmedTagId.isEmpty()) {
-                        processIndividualTagId(trimmedTagId, pickingItem);
+            // จัดการ TagNUmber ที่อาจมีหลายค่า (comma-separated)
+            String tagNumbers = pickingItem.getTagNumber();
+            if (tagNumbers != null && !tagNumbers.isEmpty()) {
+                // Split TagNumber by comma and process each one
+                String[] tagArray = tagNumbers.split(",");
+
+                for (String tagNumber : tagArray) {
+                    String trimmedTagNumber = tagNumber.trim();
+                    if (!trimmedTagNumber.isEmpty()) {
+                        processIndividualTagNumber(trimmedTagNumber, pickingItem);
                     }
                 }
             }
@@ -994,13 +1050,13 @@ public class KanbanPreparingFragment extends Fragment {
 
 
     // *** เพิ่ม method สำหรับจัดการ TagId แต่ละตัว ***
-    private void processIndividualTagId(String tagId, PickingOrderItem pickingItem) {
-        // ตรวจสอบว่า TagId มีอยู่แล้วใน stockList หรือไม่
+    private void processIndividualTagNumber(String tagNumber, PickingOrderItem pickingItem) {
+        // ตรวจสอบว่า TagNumber มีอยู่แล้วใน stockList หรือไม่
         boolean tagExists = false;
         ProductItem existingItem = null;
 
         for (ProductItem item : stockList) {
-            if (tagId.equals(item.getTagId())) {
+            if (tagNumber.equals(item.getTagNumber())) {
                 tagExists = true;
                 existingItem = item;
                 break;
@@ -1010,14 +1066,14 @@ public class KanbanPreparingFragment extends Fragment {
         if (tagExists && existingItem != null) {
             // อัพเดทข้อมูลถ้าจำเป็น
             updateExistingProductItem(existingItem, pickingItem);
-            Log.d(TAG, "Updated existing item in stockList - TagId: " + tagId);
+            Log.d(TAG, "Updated existing item in stockList - TagNumber: " + tagNumber);
         } else {
-            // สร้าง ProductItem ใหม่สำหรับ TagId นี้
+            // สร้าง ProductItem ใหม่สำหรับ TagNumber นี้
             ProductItem newProductItem = createProductItemFromPickingOrderItem(pickingItem);
-            newProductItem.setTagId(tagId); // Set specific TagId
+            newProductItem.setTagNumber(tagNumber); // Set specific TagNumber
             stockList.add(newProductItem);
 
-            Log.d(TAG, "Added to stockList - TagId: " + tagId +
+            Log.d(TAG, "Added to stockList - TagId: " + tagNumber +
                     ", Product: " + pickingItem.getProductNumber());
         }
     }
@@ -1032,7 +1088,7 @@ public class KanbanPreparingFragment extends Fragment {
 
         productItem.setProductId(pickingItem.getProductId());
         productItem.setProductNumber(pickingItem.getProductNumber());
-        productItem.setProductName(pickingItem.getProduct());
+        productItem.setProductName(pickingItem.getProductName());
         productItem.setBarcode(pickingItem.getBarcode());
 
         // Set ข้อมูลเพิ่มเติม
@@ -1042,7 +1098,7 @@ public class KanbanPreparingFragment extends Fragment {
         productItem.setQuantityInBox(pickingItem.getAllocatedQty()); // Map AllocatedQty -> QuantityInBox
 
         // Set สถานะเป็น Active (1) เพื่อให้ใช้ในการสแกนได้
-        productItem.setItemStatus(1);
+        productItem.setProductItemStatus(1);
 
         // Set ข้อมูลอื่นๆ ถ้ามี
 //        if (pickingItem.getLocator() != null) {
@@ -1055,8 +1111,8 @@ public class KanbanPreparingFragment extends Fragment {
 //        }
 
         // เพิ่มข้อมูล Picking Order สำหรับการอ้างอิง
-//        if (pickingItem.getPickingOrder() != null) {
-//            productItem.setPickingOrder(pickingItem.getPickingOrder());
+//        if (pickingItem.getPickingNumber() != null) {
+//            productItem.setPickingOrder(pickingItem.getPickingNumber());
 //        }
 
         return productItem;
@@ -1085,7 +1141,7 @@ public class KanbanPreparingFragment extends Fragment {
         }
 
 
-        Log.d(TAG, "Updated existing item in stockList - TagId: " + pickingItem.getTagId());
+        Log.d(TAG, "Updated existing item in stockList - TagId: " + pickingItem.getTagNumber());
     }
 
     // 4. เพิ่ม method สำหรับ group items
@@ -1101,7 +1157,7 @@ public class KanbanPreparingFragment extends Fragment {
                 // เพิ่ม condition สำหรับ PickingOrder (DO)
                 if (data.getProductId() == trans.getProductId() &&
                         data.getBoxType() != null && data.getBoxType().equals(trans.getBoxType()) &&
-                        data.getPickingOrder() != null && data.getPickingOrder().equals(trans.getPickingOrder())) {
+                        data.getPickingNumber() != null && data.getPickingNumber().equals(trans.getPickingNumber())) {
                     found = true;
                     existingItem = data;
                     break;
@@ -1114,14 +1170,14 @@ public class KanbanPreparingFragment extends Fragment {
                 existingItem.setAllocatedQty(existingItem.getAllocatedQty() + trans.getAllocatedQty());
 
                 // Combine tag IDs
-                String existingTagIds = existingItem.getTagId();
-                String newTagId = trans.getTagId();
-                if (existingTagIds != null && !existingTagIds.isEmpty()) {
+                String existingtagNumbers = existingItem.getTagNumber();
+                String newTagId = trans.getTagNumber();
+                if (existingtagNumbers != null && !existingtagNumbers.isEmpty()) {
                     if (newTagId != null && !newTagId.isEmpty()) {
-                        existingItem.setTagId(existingTagIds + "," + newTagId);
+                        existingItem.setTagNumber(existingtagNumbers + "," + newTagId);
                     }
                 } else {
-                    existingItem.setTagId(newTagId);
+                    existingItem.setTagNumber(newTagId);
                 }
 
                 // Combine other fields as needed
@@ -1135,7 +1191,7 @@ public class KanbanPreparingFragment extends Fragment {
                     existingItem.setQuantitySuccess(existingItem.getQuantitySuccess() + trans.getQuantitySuccess());
                 }
 
-                Log.d(TAG, "Grouped item - DO: " + trans.getPickingOrder() +
+                Log.d(TAG, "Grouped item - DO: " + trans.getPickingNumber() +
                         ", Product: " + trans.getProductNumber() +
                         ", BoxType: " + trans.getBoxType() +
                         ", New Qty: " + existingItem.getQuantity() +
@@ -1152,7 +1208,7 @@ public class KanbanPreparingFragment extends Fragment {
 
                 dataList.add(newItem);
 
-                Log.d(TAG, "New grouped item - DO: " + trans.getPickingOrder() +
+                Log.d(TAG, "New grouped item - DO: " + trans.getPickingNumber() +
                         ", Product: " + trans.getProductNumber() +
                         ", BoxType: " + trans.getBoxType() +
                         ", Qty: " + newItem.getQuantity() +
@@ -1168,11 +1224,11 @@ public class KanbanPreparingFragment extends Fragment {
         dataList.sort((item1, item2) -> {
             // First sort by PickingOrder (DO)
             int doComparison = 0;
-            if (item1.getPickingOrder() != null && item2.getPickingOrder() != null) {
-                doComparison = item1.getPickingOrder().compareTo(item2.getPickingOrder());
-            } else if (item1.getPickingOrder() != null) {
+            if (item1.getPickingNumber() != null && item2.getPickingNumber() != null) {
+                doComparison = item1.getPickingNumber().compareTo(item2.getPickingNumber());
+            } else if (item1.getPickingNumber() != null) {
                 doComparison = -1;
-            } else if (item2.getPickingOrder() != null) {
+            } else if (item2.getPickingNumber() != null) {
                 doComparison = 1;
             }
 
@@ -1220,26 +1276,26 @@ public class KanbanPreparingFragment extends Fragment {
                 existingItem.setAllocatedQty(existingItem.getAllocatedQty() + trans.getAllocatedQty());
 
                 // Combine tag IDs
-                String existingTagIds = existingItem.getTagId();
-                String newTagId = trans.getTagId();
-                if (existingTagIds != null && !existingTagIds.isEmpty()) {
+                String existingtagNumbers = existingItem.getTagNumber();
+                String newTagId = trans.getTagNumber();
+                if (existingtagNumbers != null && !existingtagNumbers.isEmpty()) {
                     if (newTagId != null && !newTagId.isEmpty()) {
-                        existingItem.setTagId(existingTagIds + "," + newTagId);
+                        existingItem.setTagNumber(existingtagNumbers + "," + newTagId);
                     }
                 } else {
-                    existingItem.setTagId(newTagId);
+                    existingItem.setTagNumber(newTagId);
                 }
 
                 // Combine picking orders
-                String existingDO = existingItem.getPickingOrder();
-                String newDO = trans.getPickingOrder();
+                String existingDO = existingItem.getPickingNumber();
+                String newDO = trans.getPickingNumber();
                 if (newDO != null && !newDO.isEmpty()) {
                     if (existingDO != null && !existingDO.isEmpty()) {
                         if (!existingDO.contains(newDO)) {
-                            existingItem.setPickingOrder(existingDO + ", " + newDO);
+                            existingItem.setPickingNumber(existingDO + ", " + newDO);
                         }
                     } else {
-                        existingItem.setPickingOrder(newDO);
+                        existingItem.setPickingNumber(newDO);
                     }
                 }
 
@@ -1329,7 +1385,7 @@ public class KanbanPreparingFragment extends Fragment {
             PickingOrderItem tempItem = new PickingOrderItem();
             tempItem.setProductId(trans.getProductId());
             tempItem.setQuantity(trans.getQuantity());
-            tempItem.setTagId(trans.getTagId());
+            tempItem.setTagNumber(trans.getTagNumber());
             tempItem.setLotNumber(trans.getLotNumber());
             tempItem.setLot(trans.getLot());
             tempList.add(tempItem);
@@ -1341,9 +1397,9 @@ public class KanbanPreparingFragment extends Fragment {
         // Count unique picking orders
         Set<String> uniquePickingOrders = new HashSet<>();
         for (PickingOrderItem item : itemList) {
-            if (item.getPickingOrder() != null) {
+            if (item.getPickingNumber() != null) {
                 // Handle multiple DOs in single item
-                String[] doArray = item.getPickingOrder().split(",");
+                String[] doArray = item.getPickingNumber().split(",");
                 for (String doNumber : doArray) {
                     uniquePickingOrders.add(doNumber.trim());
                 }
@@ -1373,8 +1429,8 @@ public class KanbanPreparingFragment extends Fragment {
             List<PickingOrderItem> items = adapter.getFilteredItems();
             if (items != null) {
                 for (PickingOrderItem item : items) {
-                    if (item.getPickingOrder() != null &&
-                            item.getPickingOrder().contains(doNumber)) {
+                    if (item.getPickingNumber() != null &&
+                            item.getPickingNumber().contains(doNumber)) {
                         result.add(item);
                     }
                 }
@@ -1396,8 +1452,8 @@ public class KanbanPreparingFragment extends Fragment {
         List<PickingOrderItem> items = adapter.getFilteredItems();
         if (items != null) {
             for (PickingOrderItem item : items) {
-                if (item.getPickingOrder() != null) {
-                    String[] doArray = item.getPickingOrder().split(",");
+                if (item.getPickingNumber() != null) {
+                    String[] doArray = item.getPickingNumber().split(",");
                     for (String doNumber : doArray) {
                         uniqueDOs.add(doNumber.trim());
                     }
@@ -1455,8 +1511,8 @@ public class KanbanPreparingFragment extends Fragment {
         Map<String, KanbanPreparingFragment.DOStatistics> doStats = new HashMap<>();
 
         for (PickingOrderItem item : itemList) {
-            if (item.getPickingOrder() != null) {
-                String[] doArray = item.getPickingOrder().split(",");
+            if (item.getPickingNumber() != null) {
+                String[] doArray = item.getPickingNumber().split(",");
                 for (String doNumber : doArray) {
                     String trimmedDO = doNumber.trim();
                     KanbanPreparingFragment.DOStatistics stats = null;
@@ -1470,8 +1526,8 @@ public class KanbanPreparingFragment extends Fragment {
                     stats.totalSuccess += item.getQuantitySuccess();
 
                     // Track pallets
-                    if (item.getPallet() != null) {
-                        stats.pallets.add(item.getPallet());
+                    if (item.getPalletName() != null) {
+                        stats.pallets.add(item.getPalletName());
                     }
 
                     // Track customers
@@ -1566,7 +1622,7 @@ public class KanbanPreparingFragment extends Fragment {
         for (int i = 0; i < displayCount; i++) {
             ProductItem item = stockList.get(i);
             info.append("Item ").append(i + 1).append(":\n");
-            info.append("  TagId: ").append(item.getTagId()).append("\n");
+            info.append("  TagId: ").append(item.getTagNumber()).append("\n");
             info.append("  Product: ").append(item.getProductNumber()).append("\n");
             info.append("  Type: ").append(item.getItemType()).append("\n");
             info.append("  Qty: ").append(item.getQuantityInBox()).append("\n\n");
@@ -1587,22 +1643,22 @@ public class KanbanPreparingFragment extends Fragment {
     private PickingOrderItem createNewGroupedItem(PickingOrderItem trans) {
         PickingOrderItem newItem = new PickingOrderItem();
 
-        newItem.setPickingOrder(trans.getPickingOrder());
+        newItem.setPickingNumber(trans.getPickingNumber());
         newItem.setId(trans.getId());
         newItem.setPickingOrderItemId(trans.getPickingOrderItemId());
         newItem.setRowGuid(trans.getRowGuid());
         newItem.setCreatedAtUtc(trans.getCreatedAtUtc());
-        newItem.setPickingOrder(trans.getPickingOrder());
+        newItem.setPickingNumber(trans.getPickingNumber());
         newItem.setCustomer(trans.getCustomer());
         newItem.setOrderDate(trans.getOrderDate());
 
-        newItem.setPalletTagId(trans.getPalletTagId());
-        newItem.setPallet(trans.getPallet());
-        newItem.setPalletNo(trans.getPalletNo());
+        newItem.setPalletTagNumber(trans.getPalletTagNumber());
+        newItem.setPalletName(trans.getPalletName());
+        newItem.setPalletTagNumber(trans.getPalletTagNumber());
 
         newItem.setProductId(trans.getProductId());
         newItem.setProductNumber(trans.getProductNumber());
-        newItem.setProduct(trans.getProduct());
+        newItem.setProductName(trans.getProductName());
         newItem.setBarcode(trans.getBarcode());
         newItem.setSummary(trans.getSummary());
         newItem.setUnitPrice(trans.getUnitPrice());
@@ -1611,7 +1667,7 @@ public class KanbanPreparingFragment extends Fragment {
         newItem.setQuantity(1); // Start with 1
         newItem.setQtyBox(trans.getQtyBox());
         newItem.setAllocatedQty(trans.getAllocatedQty());
-        newItem.setTagId(trans.getTagId());
+        newItem.setTagNumber(trans.getTagNumber());
         newItem.setLocator(trans.getLocator());
         newItem.setLotSuggestion(trans.getLotSuggestion());
         newItem.setBoxType(trans.getBoxType());
@@ -1645,7 +1701,7 @@ public class KanbanPreparingFragment extends Fragment {
     private void updateUI(List<PickingOrderItem> items) {
         if (!items.isEmpty()) {
             //PickingOrderItem firstItem = items.get(0);
-            //tvOrderNo.setText("DO: " + firstItem.getPickingOrder());
+            //tvOrderNo.setText("DO: " + firstItem.getPickingNumber());
             //tvCustomer.setText("ลูกค้า: " + firstItem.getCustomer());
             //tvOrderDate.setText("Order Date: " + firstItem.getOrderDate());
         }
@@ -1666,8 +1722,8 @@ public class KanbanPreparingFragment extends Fragment {
         // Get unique pallets
         Set<String> uniquePallets = new HashSet<>();
         for (PickingOrderItem item : items) {
-            if (item.getPallet() != null && !item.getPallet().isEmpty()) {
-                uniquePallets.add(item.getPallet());
+            if (item.getPalletName() != null && !item.getPalletName().isEmpty()) {
+                uniquePallets.add(item.getPalletName());
             }
         }
 
@@ -1726,11 +1782,11 @@ public class KanbanPreparingFragment extends Fragment {
             return;
         }
 
-        try {
-            mContext.uhf.setTagFocus(true);
-        } catch (Exception ex) {
-            Log.e(TAG, "Error setting TagFocus: " + ex.getMessage());
-        }
+//        try {
+//            mContext.uhf.setTagFocus(true);
+//        } catch (Exception ex) {
+//            Log.e(TAG, "Error setting TagFocus: " + ex.getMessage());
+//        }
 
         //--
 
@@ -1904,20 +1960,20 @@ public class KanbanPreparingFragment extends Fragment {
         }
     }
     // *** ปรับปรุง findItemStockByTagId เพื่อให้แน่ใจว่าใช้ stockList ที่อัพเดทแล้ว ***
-    private ProductItem findItemStockByTagId(String tagId) {
-        if (stockList == null || stockList.isEmpty() || tagId == null) {
-            Log.d(TAG, "Stock list is empty or tagId is null");
+    private ProductItem findItemStockByTagNumber(String tagNumber) {
+        if (stockList == null || stockList.isEmpty() || tagNumber == null) {
+            Log.d(TAG, "Stock list is empty or tagNumber is null");
             return null;
         }
 
         for (ProductItem item : stockList) {
-            if (item.getTagId() != null && item.getTagId().equals(tagId)) {
-                Log.d(TAG, "Found item in stock list - TagId: " + tagId + ", Product: " + item.getProductNumber());
+            if (item.getTagNumber() != null && item.getTagNumber().equals(tagNumber)) {
+                Log.d(TAG, "Found item in stock list - TagNumber: " + tagNumber + ", Product: " + item.getProductNumber());
                 return item;
             }
         }
 
-        Log.d(TAG, "Item not found in stock list - TagId: " + tagId);
+        Log.d(TAG, "Item not found in stock list - TagNumber: " + tagNumber);
         return null;
     }
 
@@ -2000,12 +2056,12 @@ public class KanbanPreparingFragment extends Fragment {
             return;
         }
 
-        String xxTagID = qrCode;
-        ProductItem foundItem = findItemStockByTagId(xxTagID);
+        String xxTagNumber = qrCode;
+        ProductItem foundItem = findItemStockByTagNumber(xxTagNumber);
 
         if (foundItem == null) {
-            Log.d(TAG, "No item stock found with tagId: " + xxTagID);
-            String msg = qrCode + " ไม่มีอยู่ในสต็อก";
+            Log.d(TAG, "No item stock found with tagNumber: " + xxTagNumber);
+            String msg = "แท็ก " + qrCode + " ไม่ได้อยู่ในรายการพาเลทที่ต้องจัด!";
             notificationMessages.add(msg);
             hasNotifications = true;
             updateNotificationVisibility();
@@ -2030,7 +2086,7 @@ public class KanbanPreparingFragment extends Fragment {
             String temp_box_type = item.getBoxType();
             String temp_box_type2 = foundItem.getItemType();
 
-            if (item != null && item.getTagId() != null && item.getTagId().contains(foundItem.getTagId())) {
+            if (item != null && item.getTagNumber() != null && item.getTagNumber().contains(foundItem.getTagNumber())) {
                 found = true;
 
                 if (processItemScan(item, qrCode, foundItem, temp_box_type2)) {
@@ -2048,6 +2104,74 @@ public class KanbanPreparingFragment extends Fragment {
     }
 
     // *** ปรับปรุง processProductTag เพื่อใช้ stockList ที่อัพเดทแล้ว ***
+//    private void processProductTag(String qrCode) {
+//        // *** ตรวจสอบว่ามี Pallet แล้วหรือไม่ ***
+//        if (!isPalletScanned || stockList == null || stockList.isEmpty()) {
+//            Log.d(TAG, "No pallet scanned yet, adding to pending list: " + qrCode);
+//            String msg = "กรุณาสแกนพาเลทก่อน - จะจำไว้ให้: " + qrCode;
+//            notificationMessages.add(msg);
+//            hasNotifications = true;
+//            updateNotificationVisibility();
+//
+//            // Add to pending list if not already exists
+//            if (!pendingProductTags.contains(qrCode)) {
+//                pendingProductTags.add(qrCode);
+//            }
+//            return;
+//        }
+//
+//        String xxTagNumber = qrCode;
+//        ProductItem foundItem = findItemStockByTagNumber(xxTagNumber);
+//
+//        if (foundItem == null) {
+//            Log.d(TAG, "No item stock found with tagNumber: " + xxTagNumber);
+//            String msg = qrCode + " ไม่มีอยู่ในสต็อก";
+//            notificationMessages.add(msg);
+//            hasNotifications = true;
+//            updateNotificationVisibility();
+//            return;
+//        }
+//
+//        List<PickingOrderItem> items = adapter.getFilteredItems();
+//
+//        if (items == null || items.isEmpty()) {
+//            String msg = "No items available";
+//            notificationMessages.add(msg);
+//            hasNotifications = true;
+//            updateNotificationVisibility();
+//            return;
+//        }
+//
+//        boolean found = false;
+//
+//        for (PickingOrderItem item : items) {
+//            String temp_box_type = item.getBoxType();
+//            String temp_box_type2 = foundItem.getItemType();
+//
+//            if (item != null && item.getProductId() == foundItem.getProductId()) {
+//                if (temp_box_type != null && temp_box_type.equals(temp_box_type2)) {
+//                    found = true;
+//                    if (processItemScan(item, qrCode, foundItem, temp_box_type2)) {
+//                        break;
+//                    }
+//                } else {
+//                    String msg = qrCode + " สถานะเป็นกล่องเศษ! ";
+//                    notificationMessages.add(msg);
+//                    hasNotifications = true;
+//                    updateNotificationVisibility();
+//                    break;
+//                }
+//            }
+//        }
+//
+//        if (!found) {
+//            String msg = qrCode + " ไม่ตรงกับสินค้าที่ต้องจัด";
+//            notificationMessages.add(msg);
+//            hasNotifications = true;
+//            updateNotificationVisibility();
+//        }
+//    }
+
     private void processProductTag(String qrCode) {
         // *** ตรวจสอบว่ามี Pallet แล้วหรือไม่ ***
         if (!isPalletScanned || stockList == null || stockList.isEmpty()) {
@@ -2064,11 +2188,11 @@ public class KanbanPreparingFragment extends Fragment {
             return;
         }
 
-        String xxTagID = qrCode;
-        ProductItem foundItem = findItemStockByTagId(xxTagID);
+        String xxTagNumber = qrCode;
+        ProductItem foundItem = findItemStockByTagNumber(xxTagNumber);
 
         if (foundItem == null) {
-            Log.d(TAG, "No item stock found with tagId: " + xxTagID);
+            Log.d(TAG, "No item stock found with tagNumber: " + xxTagNumber);
             String msg = qrCode + " ไม่มีอยู่ในสต็อก";
             notificationMessages.add(msg);
             hasNotifications = true;
@@ -2088,11 +2212,14 @@ public class KanbanPreparingFragment extends Fragment {
 
         boolean found = false;
 
+        // *** แก้ไข: ค้นหาด้วย TagNumber ก่อน ***
         for (PickingOrderItem item : items) {
-            String temp_box_type = item.getBoxType();
-            String temp_box_type2 = foundItem.getItemType();
+            if (item != null && item.getTagNumber() != null &&
+                    item.getTagNumber().contains(xxTagNumber)) {
 
-            if (item != null && item.getProductId() == foundItem.getProductId()) {
+                String temp_box_type = item.getBoxType();
+                String temp_box_type2 = foundItem.getItemType();
+
                 if (temp_box_type != null && temp_box_type.equals(temp_box_type2)) {
                     found = true;
                     if (processItemScan(item, qrCode, foundItem, temp_box_type2)) {
@@ -2104,6 +2231,29 @@ public class KanbanPreparingFragment extends Fragment {
                     hasNotifications = true;
                     updateNotificationVisibility();
                     break;
+                }
+            }
+        }
+
+        // *** ถ้าไม่เจอด้วย TagNumber ให้ใช้ ProductId แทน ***
+        if (!found) {
+            for (PickingOrderItem item : items) {
+                String temp_box_type = item.getBoxType();
+                String temp_box_type2 = foundItem.getItemType();
+
+                if (item != null && item.getProductId() == foundItem.getProductId()) {
+                    if (temp_box_type != null && temp_box_type.equals(temp_box_type2)) {
+                        found = true;
+                        if (processItemScan(item, qrCode, foundItem, temp_box_type2)) {
+                            break;
+                        }
+                    } else {
+                        String msg = qrCode + " สถานะเป็นกล่องเศษ! ";
+                        notificationMessages.add(msg);
+                        hasNotifications = true;
+                        updateNotificationVisibility();
+                        break;
+                    }
                 }
             }
         }
@@ -2143,10 +2293,10 @@ public class KanbanPreparingFragment extends Fragment {
                 info.append("Product: ").append(firstItem.getProductNumber()).append("\n");
                 info.append("  Tags: ").append(productItems.size()).append(" pcs\n");
 
-                // Show first few TagIds
+                // Show first few tagNumbers
                 int showCount = Math.min(3, productItems.size());
                 for (int i = 0; i < showCount; i++) {
-                    info.append("    - ").append(productItems.get(i).getTagId()).append("\n");
+                    info.append("    - ").append(productItems.get(i).getTagNumber()).append("\n");
                 }
                 if (productItems.size() > 3) {
                     info.append("    ... and ").append(productItems.size() - 3).append(" more\n");
@@ -2177,7 +2327,7 @@ public class KanbanPreparingFragment extends Fragment {
         // Check if this tag was already scanned
         boolean tagAlreadyScanned = false;
         for (PickingOrderItem scannedItem : scannedTags) {
-            if (scannedItem.getTagId().equals(qrCode)) {
+            if (scannedItem.getTagNumber().equals(qrCode)) {
                 tagAlreadyScanned = true;
                 break;
             }
@@ -2199,14 +2349,14 @@ public class KanbanPreparingFragment extends Fragment {
             PickingOrderItem newScannedItem = new PickingOrderItem();
             newScannedItem.setProductId(item.getProductId());
             newScannedItem.setQuantity(1);
-            newScannedItem.setTagId(qrCode.trim());
+            newScannedItem.setTagNumber(qrCode.trim());
             newScannedItem.setLotNumber(foundItem.getLotNumber());
             newScannedItem.setLot(foundItem.getLot());
             newScannedItem.setId(item.getPickingOrderItemId());
             newScannedItem.setPickingOrderItemId(pickingItemId);
             newScannedItem.setItemType(itemType);
             newScannedItem.setAllocatedQty(foundItem.getQuantityInBox());
-            newScannedItem.setPalletTagId(item.getPalletTagId());
+            newScannedItem.setPalletTagNumber(item.getPalletTagNumber());
             scannedTags.add(newScannedItem);
 
             btnConfirm.setEnabled(true);
@@ -2281,7 +2431,7 @@ public class KanbanPreparingFragment extends Fragment {
             return false;
         }
 
-        if (item.getTagId() == null || item.getTagId().trim().isEmpty()) {
+        if (item.getTagNumber() == null || item.getTagNumber().trim().isEmpty()) {
             Log.w(TAG, "TagId is null or empty for product: " + item.getProductNumber());
             return false;
         }
@@ -2292,7 +2442,7 @@ public class KanbanPreparingFragment extends Fragment {
         }
 
         if (item.getProductNumber() == null || item.getProductNumber().trim().isEmpty()) {
-            Log.w(TAG, "ProductNumber is null or empty for TagId: " + item.getTagId());
+            Log.w(TAG, "ProductNumber is null or empty for TagId: " + item.getTagNumber());
             return false;
         }
 
@@ -2325,8 +2475,8 @@ public class KanbanPreparingFragment extends Fragment {
                 // Get picking orders for this pallet
                 Set<String> palletOrders = new HashSet<>();
                 for (PickingOrderItem item : palletItems) {
-                    if (item.getPickingOrder() != null) {
-                        String[] doArray = item.getPickingOrder().split(",");
+                    if (item.getPickingNumber() != null) {
+                        String[] doArray = item.getPickingNumber().split(",");
                         for (String doNumber : doArray) {
                             String trimmedDO = doNumber.trim();
                             palletOrders.add(trimmedDO);
@@ -2479,7 +2629,7 @@ public class KanbanPreparingFragment extends Fragment {
         // Check scanned tags
         debug.append("Scanned tags count: ").append(scannedTags.size()).append("\n");
         for (PickingOrderItem tag : scannedTags) {
-            debug.append("  - Tag: ").append(tag.getTagId()).append(", Product: ").append(tag.getProductId()).append("\n");
+            debug.append("  - Tag: ").append(tag.getTagNumber()).append(", Product: ").append(tag.getProductId()).append("\n");
         }
 
         // Current totals display
@@ -2539,12 +2689,27 @@ public class KanbanPreparingFragment extends Fragment {
             return;
         }
 
+
+        int totalScan = 0;
+
+        totalScan = Integer.parseInt(String.valueOf(tvTotalQty.getText()));
+//        if (itemList != null) {
+//            for (PickingOrderItem item : itemList) {
+//                totalScan += (int)item.getQuantity();
+//            }
+//        }
+
+        if (scannedTags.size() != totalScan)
+        {
+            Toast.makeText(mContext, "จำนวนที่สแกน (" + scannedTags.size() + ") ไม่ตรงกับจำนวนรวมในรายการ (" + totalScan + ")", Toast.LENGTH_SHORT).show();
+            return;
+        }
         // Group scanned tags by pallet
         Map<String, List<PickingOrderItem>> palletTransactions = new HashMap<>();
         for (PickingOrderItem tag : scannedTags) {
-            String palletId = tag.getPalletTagId();
-            if (palletId != null) {
-                palletTransactions.computeIfAbsent(palletId, k -> new ArrayList<>()).add(tag);
+            String palletNumber = tag.getPalletTagNumber();
+            if (palletNumber != null) {
+                palletTransactions.computeIfAbsent(palletNumber, k -> new ArrayList<>()).add(tag);
             }
         }
 
@@ -2577,19 +2742,19 @@ public class KanbanPreparingFragment extends Fragment {
 
 
         // Add PalletTagId from scannedPallets to itemTag
-        for (String palletTagId : scannedPallets) {
+        for (String palletTagNumber : scannedPallets) {
             PalletTag palletTag = new PalletTag();
-            palletTag.setPalletTagId(palletTagId); // Assuming PalletTag has setPalletTagId method
+            palletTag.setPalletTagNumber(palletTagNumber); // Assuming PalletTag has setPalletTagId method
 
             // Get additional data for this pallet if available
-            List<PickingOrderItem> palletItems = palletItemsMap.get(palletTagId);
+            List<PickingOrderItem> palletItems = palletItemsMap.get(palletTagNumber);
             if (palletItems != null && !palletItems.isEmpty()) {
 
             }
 
             itemTag.add(palletTag);
 
-            Log.d(TAG, "Added PalletTagId to transaction: " + palletTagId);
+            Log.d(TAG, "Added PalletTagNumber to transaction: " + palletTagNumber);
         }
 
         // Log the number of pallets being processed
@@ -2599,23 +2764,49 @@ public class KanbanPreparingFragment extends Fragment {
 
         Log.d(TAG, "Calling API with kanbanTagId: " + kanbanTagId + " and " + itemTag.size() + " pallets");
 
-        Call<List<PalletTag>> call = apiService.createKanbanPreparing(kanbanTagId, itemTag);
+        Call<List<ResponseDto>> call = apiService.createKanbanPreparing(kanbanTagId, itemTag);
 
-        call.enqueue(new Callback<List<PalletTag>>() {
+        call.enqueue(new Callback<List<ResponseDto>>() {
             @Override
-            public void onResponse(Call<List<PalletTag>> call, Response<List<PalletTag>> response) {
+            public void onResponse(Call<List<ResponseDto>> call, Response<List<ResponseDto>> response) {
                 if (response.isSuccessful()) {
-                    // Update success quantities
-                    updateSuccessQuantities();
 
-                    // Clear scanned tags
-                    scannedTags.clear();
+                    List<ResponseDto> results = response.body();
 
-                    // Reset scan quantities
-                    resetScanQuantities();
+                    // เช็คว่าทุกรายการ success หรือไม่
+                    boolean allSuccess = true;
+                    StringBuilder errorMessages = new StringBuilder();
 
-                    Toast.makeText(mContext, "จัด Kanban สินค้าเสร็จเรียบร้อย", Toast.LENGTH_LONG).show();
-                    btnConfirm.setEnabled(false);
+                    for (ResponseDto result : results) {
+                        if (!result.getIsSuccess()) {
+                            allSuccess = false;
+                            errorMessages.append("• ").append(result.getMessage()).append("\n");
+                        }
+                    }
+
+                    if (allSuccess) {
+                        // Update success quantities
+                        updateSuccessQuantities();
+                        // Clear scanned tags
+                        scannedTags.clear();
+                        // Reset scan quantities
+                        resetScanQuantities();
+
+                        Toast.makeText(mContext, "จัด Kanban สินค้าเสร็จเรียบร้อย", Toast.LENGTH_LONG).show();
+                        btnConfirm.setEnabled(false);
+                    } else {
+                        // มีรายการที่ไม่สำเร็จ
+                        String errorMsg = "Some transactions failed:\n\n" + errorMessages.toString();
+
+                        new AlertDialog.Builder(requireContext())
+                                .setTitle("Kanban Errors")
+                                .setMessage(errorMsg)
+                                .setPositiveButton("OK", null)
+                                .show();
+
+                        Toast.makeText(mContext, "Confirm Kaban failed ", Toast.LENGTH_SHORT).show();
+                    }
+
 
                 } else {
                     Toast.makeText(mContext, "Error: " + response.message(), Toast.LENGTH_SHORT).show();
@@ -2623,7 +2814,7 @@ public class KanbanPreparingFragment extends Fragment {
             }
 
             @Override
-            public void onFailure(Call<List<PalletTag>> call, Throwable t) {
+            public void onFailure(Call<List<ResponseDto>> call, Throwable t) {
                 Toast.makeText(mContext, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
@@ -2676,7 +2867,7 @@ public class KanbanPreparingFragment extends Fragment {
                 btClear.setEnabled(true);
                 btStop.setEnabled(false);
                 btScanRFID.setEnabled(false);
-
+                btnConfirm.setEnabled(true);
             }
         }
     }
@@ -2706,7 +2897,7 @@ public class KanbanPreparingFragment extends Fragment {
     // *** เพิ่ม method สำหรับสร้าง unique key สำหรับ item ***
     private String createItemKey(PickingOrderItem item) {
         return String.format("%s_%d_%s",
-                item.getPickingOrder() != null ? item.getPickingOrder() : "NULL",
+                item.getPickingNumber() != null ? item.getPickingNumber() : "NULL",
                 item.getProductId(),
                 item.getBoxType() != null ? item.getBoxType() : "NULL");
     }
@@ -2791,6 +2982,30 @@ public class KanbanPreparingFragment extends Fragment {
                     Integer.parseInt(cntStr));
         }
         tvKanbanTagId.setText(data);
+        if (data != null && data.length() > 0) {
+            if (data.contains("B"))
+            {
+                Toast.makeText(mContext, R.string.rfid_msg_read_succ, Toast.LENGTH_SHORT).show();
+            }
+            else
+            {
+                Toast.makeText(mContext, "ไม่ใช่ Tag Kanban !", Toast.LENGTH_SHORT).show();
+            }
+
+            Utils.playSound(1);
+
+        } else {
+            Toast.makeText(mContext, R.string.rfid_msg_read_fail, Toast.LENGTH_SHORT).show();
+            Utils.playSound(2);
+        }
+    }
+
+    private void read2() {
+
+        if ( tvKanbanTagId.getText() == null) return;
+
+        String data =tvKanbanTagId.getText().toString();
+
         if (data != null && data.length() > 0) {
             if (data.contains("B"))
             {

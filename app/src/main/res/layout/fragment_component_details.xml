@@ -20,7 +20,7 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:background="?attr/colorPrimary"
+                android:background="@color/pastel2"
                 app:contentInsetLeft="0dp"
                 app:contentInsetStart="0dp"
                 app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
@@ -238,15 +238,27 @@
                     android:id="@+id/tvSelectedQty"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Required QTY: "
+                    android:text="Quantity: "
                     android:textSize="14sp"/>
+
+                <TextView
+                    android:id="@+id/tvPickedQty"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Picked: "
+                    android:textSize="14sp"
+                    android:textColor="#4CAF50"
+                    android:textStyle="bold"
+                    android:layout_marginStart="16dp"/>
 
                 <TextView
                     android:id="@+id/tvScannedQty"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Scanned QTY: "
+                    android:text="Scan: "
                     android:textSize="14sp"
+                    android:textColor="#FF9800"
+                    android:textStyle="bold"
                     android:layout_marginStart="16dp"/>
             </LinearLayout>
         </LinearLayout>
@@ -269,7 +281,7 @@
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="2"
+                    android:layout_weight="1.5"
                     android:text="Tag ID"
                     android:textStyle="bold"/>
 
@@ -291,7 +303,21 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Pick Qty"
+                    android:text="Req"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Picked"
+                    android:textStyle="bold"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Scan"
                     android:textStyle="bold"/>
             </LinearLayout>
 
@@ -346,6 +372,18 @@
                     android:layout_weight="1"
                     android:padding="12dp"
                     android:text="@string/btRead"
+                    android:backgroundTint="@color/colorPrimary"
+                    android:textColor="@color/white"
+                    android:layout_marginEnd="4dp"/>
+
+                <Button
+                    android:id="@+id/BtRead2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0"
+                    android:padding="12dp"
+                    android:text="Read222"
+                    android:visibility="invisible"
                     android:backgroundTint="@color/colorPrimary"
                     android:textColor="@color/white"
                     android:layout_marginEnd="4dp"/>

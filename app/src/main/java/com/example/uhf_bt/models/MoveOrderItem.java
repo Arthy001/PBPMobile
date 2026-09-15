@@ -5,6 +5,7 @@ public class MoveOrderItem {
     private String rowGuid;
     private String createdAtUtc;
     private String moveOrder;
+    //private int moveOrderItemId;
     private String warehouseSourceName;
     private String warehouseDestinationName;
     private String orderDate;
@@ -22,7 +23,8 @@ public class MoveOrderItem {
     private double allocatedQty;
     private double total;
     private int quantityItem;
-    private String tagId;
+    private int tagId;
+    private String tagNumber;
     private String lotNumber;
     private String lot;
     private int moveTransStatus;
@@ -48,6 +50,8 @@ public class MoveOrderItem {
 
     public String getMoveOrder() { return moveOrder; }
     public void setMoveOrder(String moveOrder) { this.moveOrder = moveOrder; }
+    //public int getMoveOrderItemId() { return moveOrderItemId; }
+    //public void setMoveOrderItemId(int moveOrder) { this.moveOrderItemId = moveOrderItemId; }
 
     public String getWarehouseSourceName() { return warehouseSourceName; }
     public void setWarehouseSourceName(String warehouseSourceName) {
@@ -95,8 +99,10 @@ public class MoveOrderItem {
     public int getQuantityItem() { return quantityItem; }
     public void setQuantityItem(int quantityItem) { this.quantityItem = quantityItem; }
 
-    public String getTagId() { return tagId; }
-    public void setTagId(String tagId) { this.tagId = tagId; }
+    public int getTagId() { return tagId; }
+    public void setTagId(int tagId) { this.tagId = tagId; }
+    public String getTagNumber() { return tagNumber; }
+    public void setTagNumber(String tagNumber) { this.tagNumber = tagNumber; }
 
     public String getLotNumber() { return lotNumber; }
     public void setLotNumber(String lotNumber) { this.lotNumber = lotNumber; }

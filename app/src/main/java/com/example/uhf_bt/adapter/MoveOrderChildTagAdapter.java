@@ -31,16 +31,16 @@ public class MoveOrderChildTagAdapter extends BaseAdapter {
             @Override
             public int compare(MoveOrderItem item1, MoveOrderItem item2) {
                 // ตรวจสอบค่า null ก่อนเปรียบเทียบ
-                if (item1.getTagId() == null && item2.getTagId() == null) {
+                if (item1.getTagNumber() == null && item2.getTagNumber() == null) {
                     return 0;
-                } else if (item1.getTagId() == null) {
+                } else if (item1.getTagNumber() == null) {
                     return -1;
-                } else if (item2.getTagId() == null) {
+                } else if (item2.getTagNumber() == null) {
                     return 1;
                 }
 
                 // เรียงตามตัวอักษร (เรียงจากน้อยไปมาก)
-                return item1.getTagId().compareTo(item2.getTagId());
+                return item1.getTagNumber().compareTo(item2.getTagNumber());
 
             }
         });
@@ -80,7 +80,7 @@ public class MoveOrderChildTagAdapter extends BaseAdapter {
         MoveOrderItem item = getItem(position);
 
         // แสดงลำดับและ TagId
-        holder.tvTagId.setText((position + 1) + ". " + item.getTagId());
+        holder.tvTagId.setText((position + 1) + ". " + item.getTagNumber());
 
         // เปลี่ยนสีไอคอนตามประเภทของแท็ก
         if (item.getItemType() != null && item.getItemType().equals("Renant")) {
@@ -92,32 +92,7 @@ public class MoveOrderChildTagAdapter extends BaseAdapter {
         return convertView;
     }
 
-//    @Override
-//    public View getView(int position, View convertView, ViewGroup parent) {
-//        ViewHolder holder;
-//
-//        if (convertView == null) {
-//            convertView = inflater.inflate(R.layout.item_tag_move_order_child, parent, false);
-//            holder = new ViewHolder();
-//            holder.ivTagIcon = convertView.findViewById(R.id.ivTagIcon);
-//            holder.tvTagId = convertView.findViewById(R.id.tvTagId);
-//            convertView.setTag(holder);
-//        } else {
-//            holder = (ViewHolder) convertView.getTag();
-//        }
-//
-//        MoveOrderItem item = getItem(position);
-//        holder.tvTagId.setText(item.getTagId());
-//
-//        // เปลี่ยนสีไอคอนตามประเภทของแท็ก
-//        if (item.getItemType() != null && item.getItemType().equals("Renant")) {
-//            holder.ivTagIcon.setColorFilter(context.getResources().getColor(android.R.color.holo_orange_dark));
-//        } else {
-//            holder.ivTagIcon.setColorFilter(context.getResources().getColor(android.R.color.holo_blue_dark));
-//        }
-//
-//        return convertView;
-//    }
+
 
     private static class ViewHolder {
         ImageView ivTagIcon;

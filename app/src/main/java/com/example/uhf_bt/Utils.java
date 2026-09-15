@@ -143,5 +143,9 @@ public class Utils {
         return false;
     }
 
-
+    public static void showToast(Context context, String text) {
+        if (context != null) {
+            android.widget.Toast.makeText(context, text, android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
 }

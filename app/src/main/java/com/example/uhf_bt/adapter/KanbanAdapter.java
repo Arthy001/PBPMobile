@@ -80,7 +80,7 @@ public class KanbanAdapter  extends BaseAdapter implements Filterable {
                 if ( item.getNumber() != null) number    = item.getNumber();
                 holder.tvNumber.setText("Number: "  + number);
                 // Set status with color
-                setStatus(holder.tvStatus, item.getStatus());
+                setStatus(holder.tvStatus, item.getKanbanStatus());
 
             } catch (Exception e) {
                 Log.e(TAG, "Error binding data to view at position " + position, e);

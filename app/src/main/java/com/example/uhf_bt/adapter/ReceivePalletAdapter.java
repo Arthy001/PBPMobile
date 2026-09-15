@@ -78,14 +78,14 @@ public class ReceivePalletAdapter extends BaseAdapter implements Filterable {
         if (item != null) {
             // *** เปลี่ยนการแสดงผล Pallet และ DO ให้ชัดเจนขึ้น ***
             holder.tvPallet.setText(String.format("Pallet : %s",
-                    item.getPallet() != null ? item.getPallet() : ""));
+                    item.getPalletName() != null ? item.getPalletName() : ""));
 
             holder.tvQuantity.setText(String.format("%.0f", item.getQuantity()));
             holder.tvQuantitySuccess.setText(String.format("%.0f", item.getQuantitySuccess()));
             holder.tvQuantityScan.setText(String.format("%.0f", item.getQuantityScan()));
 
             // *** ปรับปรุงการแสดง DO ให้เด่นขึ้น ***
-            String doText = item.getPickingOrder();
+            String doText = item.getPickingNumber();
             if (doText != null && doText.contains(",")) {
                 // หากมีหลาย DO ให้แสดงจำนวน
                 String[] doArray = doText.split(",");
@@ -109,6 +109,11 @@ public class ReceivePalletAdapter extends BaseAdapter implements Filterable {
                     // สำหรับ full box แสดง product number และ box type
                     holder.tvItem.setText(String.format("Item : %s [%s]",
                             item.getProductNumber(), item.getBoxType()));
+                    holder.ivStatus.setVisibility(View.GONE);
+                } else if (boxType.equals("kanban")) {
+                    // สำหรับ Kanban แสดงหัวข้อให้ชัดเจน
+                    holder.tvItem.setText(String.format("Kanban : %s", item.getProductNumber()));
+                    holder.tvItem.setTextColor(Color.parseColor("#0277BD"));
                     holder.ivStatus.setVisibility(View.GONE);
                 } else if (boxType.equals("renant")) {
                     // สำหรับ renant แสดง product number, box type และ remark
@@ -143,7 +148,7 @@ public class ReceivePalletAdapter extends BaseAdapter implements Filterable {
             if (position > 0) {
                 PickingOrderItem previousItem = getItem(position - 1);
                 if (previousItem != null &&
-                        !Objects.equals(item.getPickingOrder(), previousItem.getPickingOrder())) {
+                        !Objects.equals(item.getPickingNumber(), previousItem.getPickingNumber())) {
                     // เพิ่ม divider สำหรับ DO ใหม่
                     convertView.setPadding(0, 8, 0, 0);
                 } else {
@@ -171,9 +176,9 @@ public class ReceivePalletAdapter extends BaseAdapter implements Filterable {
 
         Set<String> uniqueDOs = new HashSet<>();
         for (PickingOrderItem item : filteredItems) {
-            if (item.getPickingOrder() != null) {
+            if (item.getPickingNumber() != null) {
                 // Handle multiple DOs in single item
-                String[] doArray = item.getPickingOrder().split(",");
+                String[] doArray = item.getPickingNumber().split(",");
                 for (String doNumber : doArray) {
                     uniqueDOs.add(doNumber.trim());
                 }
@@ -192,8 +197,8 @@ public class ReceivePalletAdapter extends BaseAdapter implements Filterable {
         Map<String, Integer> doItemCount = new HashMap<>();
 
         for (PickingOrderItem item : filteredItems) {
-            if (item.getPickingOrder() != null) {
-                String[] doArray = item.getPickingOrder().split(",");
+            if (item.getPickingNumber() != null) {
+                String[] doArray = item.getPickingNumber().split(",");
                 for (String doNumber : doArray) {
                     String trimmedDO = doNumber.trim();
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -255,17 +260,17 @@ public class ReceivePalletAdapter extends BaseAdapter implements Filterable {
                     for (PickingOrderItem item : originalItems) {
                         if (item != null) {
                             if (isPalletLocked) {
-                                if (item.getPallet() != null &&
-                                        item.getPallet().equals(selectedPallet)) {
+                                if (item.getPalletName() != null &&
+                                        item.getPalletName().equals(selectedPallet)) {
                                     filteredList.add(item);
                                 }
                             } else {
-                                if ((item.getProduct() != null &&
-                                        item.getProduct().toLowerCase().contains(filterPattern)) ||
+                                if ((item.getProductName() != null &&
+                                        item.getProductName().toLowerCase().contains(filterPattern)) ||
                                         (item.getLotNumber() != null &&
                                                 item.getLotNumber().toLowerCase().contains(filterPattern)) ||
-                                        (item.getPallet() != null &&
-                                                item.getPallet().toLowerCase().contains(filterPattern))) {
+                                        (item.getPalletName() != null &&
+                                                item.getPalletName().toLowerCase().contains(filterPattern))) {
                                     filteredList.add(item);
                                 }
                             }

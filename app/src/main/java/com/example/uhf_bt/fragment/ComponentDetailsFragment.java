@@ -2,10 +2,13 @@ package com.example.uhf_bt.fragment;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.text.style.ReplacementSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,7 +25,9 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.uhf_bt.MainActivity;
@@ -33,7 +38,9 @@ import com.example.uhf_bt.adapter.ScannedTagAdapter;
 import com.example.uhf_bt.models.PickingComponentItem;
 import com.example.uhf_bt.models.PickingOrderItem;
 import com.example.uhf_bt.models.PickingOrderTransaction;
+import com.example.uhf_bt.models.PickingTagDto;
 import com.example.uhf_bt.models.ProductItem;
+import com.example.uhf_bt.models.ResponseDto;
 import com.example.uhf_bt.models.ScannedTagItem;
 import com.example.uhf_bt.services.ApiService;
 import com.example.uhf_bt.services.RetrofitClient;
@@ -77,8 +84,10 @@ public class ComponentDetailsFragment extends Fragment {
     private String pickingOrderId;
     private String productName;
     private String remarkString;
+    private String barcode = "";
     private MainActivity mContext;
     private ApiService apiService;
+    private List<PickingOrderTransaction> allTransactions = new ArrayList<>();
 
     // View Read section
     private LinearLayout viewRead;
@@ -86,9 +95,10 @@ public class ComponentDetailsFragment extends Fragment {
     //private EditText EtData_QTY;
     private TextView tvSelectedItem;
     private TextView tvSelectedQty;
+    private TextView tvPickedQty;
     private TextView tvScannedQty;
     private EditText EtData_Read;
-    private Button BtRead;
+    private Button BtRead, BtRead2;
     private Button BtSubmit;
     private ProgressBar progressBar;
 
@@ -143,10 +153,14 @@ public class ComponentDetailsFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && getActivity() != null) {
+            getActivity().getWindow().setStatusBarColor(ContextCompat.getColor(getActivity(), R.color.pastel2));
+        }
         if (getArguments() != null) {
             pickingOrderId = getArguments().getString("pickingOrderId");
             productName = getArguments().getString("productName");
             remarkString = getArguments().getString("remarkString");
+            //barcode = getArguments().getString("barcode");
         }
         apiService = RetrofitClient.getClient().create(ApiService.class);
         scannedTags = new ArrayList<>();
@@ -165,10 +179,10 @@ public class ComponentDetailsFragment extends Fragment {
             stockList = new ArrayList<>();
         }
 
-        // Parse components from remark
+        // Parse components from rema.rk
         parseComponents(remarkString);
 
-        loadProductItemStock();
+
         loadPickingOrderTransactions();
         return view;
     }
@@ -177,7 +191,7 @@ public class ComponentDetailsFragment extends Fragment {
     private void initViews(View view) {
         toolbar = view.findViewById(R.id.toolbar);
         tvTitle = view.findViewById(R.id.toolbar_title);
-        tvTitle.setText(productName + " - Components");
+        tvTitle.setText(productName + "");
         ivBack = view.findViewById(R.id.ivBack);
 
         componentListView = view.findViewById(R.id.componentListView);
@@ -194,6 +208,7 @@ public class ComponentDetailsFragment extends Fragment {
         EtData_Read = view.findViewById(R.id.EtData_Read);
         //EtData_QTY = view.findViewById(R.id.EtData_QTY);
         BtRead = view.findViewById(R.id.BtRead);
+        BtRead2 = view.findViewById(R.id.BtRead2);
         BtSubmit = view.findViewById(R.id.BtSubmit);
 
         // Add TextViews for Item, QTY, QTY Scan
@@ -208,6 +223,8 @@ public class ComponentDetailsFragment extends Fragment {
 
         // Create and add tvSelectedQty
         tvSelectedQty = view.findViewById(R.id.tvSelectedQty);
+        
+        tvPickedQty = view.findViewById(R.id.tvPickedQty);
 
         // Create and add tvScannedQty
         tvScannedQty = view.findViewById(R.id.tvScannedQty);
@@ -249,6 +266,7 @@ public class ComponentDetailsFragment extends Fragment {
         });
 
         BtRead.setOnClickListener(v -> read());
+        BtRead2.setOnClickListener(v -> read2());
         BtSubmit.setOnClickListener(v -> submitScan());
 
         // เพิ่ม listener สำหรับปุ่ม Close viewRead
@@ -279,11 +297,27 @@ public class ComponentDetailsFragment extends Fragment {
         });
     }
 
+    private ProgressDialog progressDialog;
+
     private void showLoading(boolean show) {
+        if (show) {
+            if (progressDialog == null) {
+                progressDialog = new ProgressDialog(requireContext());
+                progressDialog.setMessage("กำลังโหลดข้อมูล...");
+                progressDialog.setCancelable(false);
+            }
+            if (!progressDialog.isShowing()) {
+                progressDialog.show();
+            }
+        } else {
+            if (progressDialog != null && progressDialog.isShowing()) {
+                progressDialog.dismiss();
+            }
+        }
+        
         if (progressBar != null) {
             progressBar.setVisibility(show ? View.VISIBLE : View.GONE);
         }
-
     }
 
 
@@ -299,9 +333,11 @@ public class ComponentDetailsFragment extends Fragment {
             temp_product_number = component.getComponentCode();
             tvSelectedItem.setText("Item: " + component.getComponentCode());
             tvSelectedQty.setText("Quantity: " + component.getQuantityRequired());
-            tvScannedQty.setText("Scan: " + component.getQuantityPicked());
+            tvPickedQty.setText("Picked: " + component.getQuantityPicked());
+            tvScannedQty.setText("Scan: 0.0");
             // เพิ่มการตั้งค่าชื่อ component ใน title
             tvReadTitle.setText("Item: " + component.getComponentCode());
+            barcode = component.getBarcode();
 
 
             // Reset input fields
@@ -310,8 +346,27 @@ public class ComponentDetailsFragment extends Fragment {
 
             // ล้างข้อมูลใน ListView
             scannedTagItems.clear();
-            scannedTagAdapter.notifyDataSetChanged();
 
+            if (allTransactions != null) {
+                for (PickingOrderTransaction t : allTransactions) {
+                    if (t.getTagRemark() != null && t.getTagRemark().equals(component.getComponentCode())) {
+                        ScannedTagItem historyTag = new ScannedTagItem(
+                                t.getProductId(),
+                                t.getTagNumber(),
+                                t.getLot(),
+                                t.getLotNumber(),
+                                t.getQuantity(),
+                                t.getAllocatedQty(),
+                                0.0,
+                                ""
+                        );
+                        historyTag.setHistory(true);
+                        scannedTagItems.add(historyTag);
+                    }
+                }
+            }
+
+            scannedTagAdapter.notifyDataSetChanged();
             // แสดง viewRead เพื่อทับหน้าหลัก
             viewRead.setVisibility(View.VISIBLE);
 
@@ -331,28 +386,27 @@ public class ComponentDetailsFragment extends Fragment {
         showLoading(true);
 
         apiService.getPickingRenantTransaction(pickingOrderId).enqueue(new Callback<List<PickingOrderTransaction>>() {
+            @RequiresApi(api = Build.VERSION_CODES.N)
             @SuppressLint("LongLogTag")
             @Override
             public void onResponse(Call<List<PickingOrderTransaction>> call, Response<List<PickingOrderTransaction>> response) {
-                showLoading(false);
-
                 if (response.isSuccessful() && response.body() != null) {
                     List<PickingOrderTransaction> transactions = response.body();
+                    allTransactions = transactions;
 
                     if (!transactions.isEmpty()) {
-                        // สร้าง map เพื่อนับจำนวนธุรกรรมตาม TagRemark (ComponentCode)
-                        Map<String, List<PickingOrderTransaction>> transactionsByComponent = new HashMap<>();
+                        // สร้าง map เพื่อสะสม allocatedQty ตาม TagRemark (ComponentCode)
+                        Map<String, Double> allocatedQtyByComponent = new HashMap<>();
 
-                        // จัดกลุ่มธุรกรรมตาม TagRemark (ComponentCode)
+                        // จัดกลุ่มและสะสม allocatedQty ตาม TagRemark (ComponentCode)
                         for (PickingOrderTransaction transaction : transactions) {
-                            int componentProductId= transaction.getProductId(); // ฟิลด์ที่เก็บ component code
                             String componentCode = transaction.getTagRemark(); // ฟิลด์ที่เก็บ component code
 
                             if (componentCode != null && !componentCode.isEmpty()) {
-                                if (!transactionsByComponent.containsKey(componentCode)) {
-                                    transactionsByComponent.put(componentCode, new ArrayList<>());
-                                }
-                                transactionsByComponent.get(componentCode).add(transaction);
+                                // สะสม allocatedQty สำหรับ component นี้
+                                double currentAllocatedQty = allocatedQtyByComponent.getOrDefault(componentCode, 0.0);
+                                double transactionAllocatedQty = transaction.getAllocatedQty(); // ใช้ allocatedQty จาก API
+                                allocatedQtyByComponent.put(componentCode, currentAllocatedQty + transactionAllocatedQty);
                             }
                         }
 
@@ -363,33 +417,20 @@ public class ComponentDetailsFragment extends Fragment {
                             String componentCode = component.getComponentCode();
 
                             // ตรวจสอบว่ามีธุรกรรมสำหรับ component นี้หรือไม่
-                            if (transactionsByComponent.containsKey(componentCode)) {
-                                List<PickingOrderTransaction> componentTransactions = transactionsByComponent.get(componentCode);
-                                int apiPickedQty = componentTransactions.size();
-                                int currentPickedQty = component.getQuantityPicked();
+                            if (allocatedQtyByComponent.containsKey(componentCode)) {
+                                double totalAllocatedQty = allocatedQtyByComponent.get(componentCode);
 
-                                // อัพเดตเฉพาะเมื่อจำนวนจาก API มากกว่าจำนวนปัจจุบัน
-                                if (apiPickedQty > currentPickedQty) {
-                                    // เราจะเพิ่ม tagId จาก transaction จริง
-                                    for (int i = 0; i < (apiPickedQty - currentPickedQty); i++) {
-                                        // ดึง ProductID จากธุรกรรม
-                                        int transactionIndex = currentPickedQty + i;
+                                // ตั้งค่า quantityPicked ด้วย allocatedQty จาก API
+                                component.setQuantityPicked(totalAllocatedQty);
 
-                                        if (transactionIndex < componentTransactions.size()) {
-                                            PickingOrderTransaction transaction = componentTransactions.get(transactionIndex);
-                                            String tagId = transaction.getTagId(); // สมมติว่ามีฟิลด์ getTagId()
+                                listUpdated = true;
 
-                                            // ถ้าไม่มี tagId ในธุรกรรม ให้สร้าง dummy tagId
-                                            if (tagId == null || tagId.isEmpty()) {
-                                                tagId = "API_TAG_" + transaction.getProductId() + "_" + i;
-                                            }
-
-                                            component.addTagId(tagId);
-                                        }
-                                    }
-
-                                    listUpdated = true;
-                                }
+                                Log.d(TAG, "Updated component: " + componentCode +
+                                        " - AllocatedQty from API: " + totalAllocatedQty);
+                            } else {
+                                // ถ้าไม่มีธุรกรรม ให้ตั้งเป็น 0
+                                component.setQuantityPicked(0);
+                                listUpdated = true; // บังคับให้โหลด UI ใหม่แม้ค่าเป็น 0
                             }
                         }
 
@@ -398,10 +439,24 @@ public class ComponentDetailsFragment extends Fragment {
                             requireActivity().runOnUiThread(() -> {
                                 componentAdapter.notifyDataSetChanged();
                                 updateComponentSummary();
+
+                                // อัพเดต scanned qty ใน viewRead หากกำลังแสดงอยู่
+                                if (currentComponentPosition >= 0 && currentComponentPosition < componentsList.size()) {
+                                    PickingComponentItem currentComponent = componentsList.get(currentComponentPosition);
+                                    tvPickedQty.setText("Picked: " + currentComponent.getQuantityPicked());
+                                }
+                                
+                                // หน่วงเวลา 500ms ให้ผู้ใช้เห็น Loading อย่างชัดเจนและชัวร์ว่า UI วาดเสร็จ
+                                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> showLoading(false), 1000);
                             });
+                        } else {
+                            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> showLoading(false), 1000);
                         }
+                    } else {
+                        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> showLoading(false), 1000);
                     }
                 } else {
+                    new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> showLoading(false), 1000);
                     Log.e(TAG, "Error loading picking order transactions: " + response.code());
                     showError("Failed to load picking order transactions");
                 }
@@ -416,7 +471,6 @@ public class ComponentDetailsFragment extends Fragment {
             }
         });
     }
-
 
     private void submitScan() {
         if (currentComponentPosition < 0 || currentComponentPosition >= componentsList.size()) {
@@ -433,61 +487,75 @@ public class ComponentDetailsFragment extends Fragment {
         showLoading(true);
 
         // สร้างรายการ PickingOrderItem จาก scannedTagItems
-        List<PickingOrderItem> items = new ArrayList<>();
+        List<PickingTagDto> items = new ArrayList<>();
         PickingComponentItem component = componentsList.get(currentComponentPosition);
 
         for (ScannedTagItem tagItem : scannedTagAdapter.getItems()) {
-            PickingOrderItem pickingItem = new PickingOrderItem();
-            pickingItem.setProductNumber(component.getComponentCode());
-            pickingItem.setProductId((tagItem.getProductId()));
-            pickingItem.setTagId(tagItem.getTagId());
-            pickingItem.setQuantity(tagItem.getPickQty());
-            pickingItem.setLot(tagItem.getLot());
-            pickingItem.setLotNumber(tagItem.getLotNumber());
-            pickingItem.setBarcode(tagItem.getBarcode());
-            pickingItem.setAllocatedQty(tagItem.getPickQty());
+            if (tagItem.getScanQty() <= 0) continue; // ส่งเฉพาะรายการที่มียอดสแกนใหม่
+            
+            PickingTagDto pickingItem = new PickingTagDto();
+            pickingItem.setTagNumber(tagItem.getTagNumber());
+            pickingItem.setAllocatedQty(tagItem.getScanQty());
 
             items.add(pickingItem);
         }
 
+        if (items.isEmpty()) {
+            showLoading(false);
+            Toast.makeText(requireContext(), "ไม่มียอดสแกนใหม่เพื่อบันทึก", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String userID = MainActivity.globalUserId;
         // เรียก API createPickingRenant
         apiService.createPickingRenant(
                 pickingOrderId,  // ParentId
                 component.getComponentCode(),  // TagRemark
+                userID,
                 items
-        ).enqueue(new Callback<List<PickingOrderItem>>() {
+        ).enqueue(new Callback<List<ResponseDto>>() {
+            @SuppressLint("LongLogTag")
             @Override
-            public void onResponse(Call<List<PickingOrderItem>> call, Response<List<PickingOrderItem>> response) {
+            public void onResponse(Call<List<ResponseDto>> call, Response<List<ResponseDto>> response) {
                 showLoading(false);
 
                 if (response.isSuccessful() && response.body() != null) {
-                    // สำเร็จ - เพิ่ม tag ที่ส่งไปแล้วลงในคอมโพเนนต์
-                    for (ScannedTagItem tagItem : scannedTagAdapter.getItems()) {
-                        for (int i = 0; i < tagItem.getPickQty(); i++) {
-                            component.addTagId(tagItem.getTagId());
+
+                    List<ResponseDto> resultList = response.body();
+                    Log.d(TAG, "Response body: " + (resultList != null ? "Not null, size: " + resultList.size() : "Null"));
+
+                    if (resultList != null && !resultList.isEmpty()) {
+                        ResponseDto result = resultList.get(0);
+
+                        Log.d(TAG, "isSuccess: " + result.isSuccess);
+                        Log.d(TAG, "message: " + result.message);
+                        Log.d(TAG, "statusCode: " + result.statusCode);
+
+                        if (result.isSuccess) {
+                            // Handle successful response
+                            Toast.makeText(mContext, result.message, Toast.LENGTH_LONG).show();
+
+                            // ล้างข้อมูลใน ListView
+                            scannedTagItems.clear();
+                            scannedTagAdapter.notifyDataSetChanged();
+
+
+
+                            hideViewRead();
+                            // โหลดข้อมูลใหม่
+
+                            loadProductItemStock("");
+                            loadPickingOrderTransactions();
+
+                        } else {
+                            // Handle API error (isSuccess = false)
+                            String errorMessage = result.message != null ? result.message : "Unknown error";
+                            Toast.makeText(mContext, "Error: " + errorMessage, Toast.LENGTH_SHORT).show();
                         }
                     }
 
-                    // อัปเดต UI
-                    componentAdapter.updateComponent(currentComponentPosition);
-                    updateComponentSummary();
-
-                    // อัปเดตข้อมูลใน viewRead
-                    tvScannedQty.setText("Scanned QTY: " + component.getQuantityPicked());
-
-                    // ล้างข้อมูลใน ListView
-                    scannedTagItems.clear();
-                    scannedTagAdapter.notifyDataSetChanged();
-
-                    Toast.makeText(requireContext(), "บันทึกข้อมูลสำเร็จ!", Toast.LENGTH_SHORT).show();
-
-                    // ตรวจสอบว่าครบจำนวนแล้วหรือไม่
-                    if (component.isComplete()) {
-                        Toast.makeText(requireContext(), "สแกนครบจำนวนแล้ว!", Toast.LENGTH_SHORT).show();
-                        hideViewRead();
-                    }
                 } else {
-                    // ไม่สำเร็จ
+                    // ไม่สำเร็จ - error handling เดิม
                     String errorMessage = "เกิดข้อผิดพลาดในการบันทึกข้อมูล: ";
                     try {
                         if (response.errorBody() != null) {
@@ -503,74 +571,12 @@ public class ComponentDetailsFragment extends Fragment {
             }
 
             @Override
-            public void onFailure(Call<List<PickingOrderItem>> call, Throwable t) {
+            public void onFailure(Call<List<ResponseDto>> call, Throwable t) {
                 showLoading(false);
                 Toast.makeText(requireContext(), "การเชื่อมต่อล้มเหลว: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
-
-//    private void submitScan() {
-//        if (currentComponentPosition < 0 || currentComponentPosition >= componentsList.size()) {
-//            Toast.makeText(requireContext(), "No component selected", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//
-//        String scannedData = EtData_Read.getText().toString().trim();
-//        if (scannedData.isEmpty()) {
-//            Toast.makeText(requireContext(), "No data scanned", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//
-//        // Get quantity
-//        int quantity;
-//        try {
-//            quantity = Integer.parseInt(EtData_QTY.getText().toString().trim());
-//            if (quantity <= 0) {
-//                Toast.makeText(requireContext(), "Quantity must be greater than 0", Toast.LENGTH_SHORT).show();
-//                return;
-//            }
-//        } catch (NumberFormatException e) {
-//            Toast.makeText(requireContext(), "Invalid quantity", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//
-//        PickingComponentItem component = componentsList.get(currentComponentPosition);
-//
-//        // เพิ่มข้อมูลจาก ListView ทั้งหมด
-//        for (ScannedTagItem tagItem : scannedTagItems) {
-//            for (int i = 0; i < tagItem.getPickQty(); i++) {
-//                component.addTagId(tagItem.getTagId());
-//            }
-//        }
-//
-//        // Add the scanned tag multiple times based on quantity
-////        for (int i = 0; i < quantity; i++) {
-////            component.addTagId(scannedData);
-////        }
-//
-//        // Update UI
-//        componentAdapter.updateComponent(currentComponentPosition);
-//        updateComponentSummary();
-//
-//        // Update scanned QTY in viewRead section
-//        tvScannedQty.setText("Scanned QTY: " + component.getQuantityPicked());
-//
-//        // ล้างข้อมูลใน ListView
-//        scannedTagItems.clear();
-//        scannedTagAdapter.notifyDataSetChanged();
-//
-//        Toast.makeText(requireContext(), "Component scanned successfully!", Toast.LENGTH_SHORT).show();
-//
-//        // Clear scan data field
-//        EtData_Read.setText("");
-//
-//        // เพิ่มการตรวจสอบว่าครบจำนวนหรือไม่เพื่อปิด viewRead อัตโนมัติ
-//        if (component.isComplete()) {
-//            Toast.makeText(requireContext(), "Component completed!", Toast.LENGTH_SHORT).show();
-//            hideViewRead();
-//        }
-//    }
 
     private void parseComponents(String remark) {
         // Clear existing components
@@ -579,6 +585,8 @@ public class ComponentDetailsFragment extends Fragment {
         // Parse the remark string (format: "GFMC050B50=C1,GFSC050050=C2")
         String[] parts = remark.split(",");
 
+
+        String itemNumber = "";
         // Process each component
         for (String part : parts) {
             // Parse component (format: "GFMC050B50=C1")
@@ -586,6 +594,8 @@ public class ComponentDetailsFragment extends Fragment {
             if (keyValue.length < 2) continue;
 
             String itemCode = keyValue[0].trim();
+            if (itemNumber.length() > 0 ) itemNumber += ",";
+            itemNumber += itemCode;
             String typeQuantity = keyValue[1].trim();
 
             // Extract quantity (from C1, T4, etc.)
@@ -597,30 +607,61 @@ public class ComponentDetailsFragment extends Fragment {
             // Create and add component
             PickingComponentItem component = new PickingComponentItem(itemCode, quantity);
             componentsList.add(component);
+
+
         }
+
+        loadProductItemStock(itemNumber);
 
         // Update adapter and summary
         componentAdapter.notifyDataSetChanged();
         updateComponentSummary();
     }
 
-    private void loadProductItemStock() {
-        showLoading(true);
-        apiService.getProductItemsByStatus(1).enqueue(new Callback<List<ProductItem>>() {
+    private void loadProductItemStock(String productIds) {
+        //ProgressDialog progr// Show loading popup
+        //ProgressDialog progressDialog = new ProgressDialog(requireContext());
+        //progressDialog.setMessage("กำลังโหลดสต็อกสินค้า กรุณารอสักครู่..");
+       // progressDialog.setCancelable(false);
+       // progressDialog.show();
+       // showLoading(true);
+        //btScanRFID.setEnabled(false);
+        apiService.getProductItemsByProductNumber(productIds).enqueue(new Callback<List<ProductItem>>() {
             @SuppressLint("LongLogTag")
             @Override
             public void onResponse(Call<List<ProductItem>> call, Response<List<ProductItem>> response) {
-                showLoading(false);
+
 
                 if (response.isSuccessful() && response.body() != null) {
                     itemstock = response.body();
-
-                    if (!itemstock.isEmpty()) {
+                    
+                    // Populate barcode for each component from itemstock
+                    if (itemstock != null) {
+                        for (PickingComponentItem comp : componentsList) {
+                            for (ProductItem pItem : itemstock) {
+                                if (pItem.getProductNumber() != null && pItem.getProductNumber().equals(comp.getComponentCode())) {
+                                    if (pItem.getBarcode() != null && !pItem.getBarcode().isEmpty()) {
+                                        comp.setBarcode(pItem.getBarcode());
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                     }
+                    
+                    //showLoading(false);
+                    //btScanRFID.setEnabled(true);
+
                 } else {
                     Log.e(TAG, "Error loading product item stock: " + response.code());
                     showError("Failed to load product item stock");
+                    //showLoading(false);
                 }
+
+
+                //showLoading(false);
+                //showToastOnUiThread("Load Item Success.");
+                //progressDialog.dismiss();
             }
 
             @SuppressLint("LongLogTag")
@@ -629,6 +670,7 @@ public class ComponentDetailsFragment extends Fragment {
                 Log.e(TAG, "Network error loading product item stock", t);
                 showLoading(false);
                 showError("Network error: " + t.getMessage());
+                progressDialog.dismiss();
             }
         });
     }
@@ -746,36 +788,103 @@ public class ComponentDetailsFragment extends Fragment {
         if (data_tag_id == null) data_tag_id = "";
         if (data_tag_id.trim().length() >= 20 ) findProductFromTagId(data_tag_id);
     }
-    int existingTagIndex = -1;
-    private void findProductFromTagId(String tagId) {
-        if (itemstock != null) {
-            // ตรวจสอบแท็กที่ซ้ำกันในรายการแล้ว
-            boolean isTagAlreadyAdded = false;
+    private void read2() {
+        // 1. quantity = จำนวนที่ต้องการทั้งหมด (Required Qty)
+        // 2. scan = จำนวนที่สแกนและบันทึกไปแล้ว (Quantity Picked from server)
+        // 2.1 qty = ข้อ 1 - ข้อ 2 (Remaining quantity needed)
+        // 3. Pick listview = รายการที่สแกนในเซสชันนี้ (scannedTagItems)
+        
+        String data_tag_id = EtData_Read.getText().toString().trim();
+        
+        // ถ้าไม่มีข้อมูลในช่องสแกน ให้ลองอ่านจากเครื่องอ่าน UHF
+        if (TextUtils.isEmpty(data_tag_id)) {
+            read();
+            return;
+        }
 
+        // ตรวจสอบความถูกต้องเบื้องต้นของ Tag ID
+        if (data_tag_id.length() >= 20) {
+            findProductFromTagId(data_tag_id);
+        } else {
+            Toast.makeText(mContext, "ข้อมูล Tag ไม่สมบูรณ์", Toast.LENGTH_SHORT).show();
+            Utils.playSound(2);
+        }
+    }
+    
+    int existingTagIndex = -1;
+
+    @SuppressLint("LongLogTag")
+    private void findProductFromTagId(String tagNumber) {
+        if (itemstock != null && currentComponentPosition >= 0) {
+
+            String tempbarcode = tagNumber.substring(0,6);
+            if (barcode.contentEquals(tempbarcode))
+            {
+
+
+            }
+            else
+            {
+                //*** กรณีไม่พบข้อมูลในสต็อกเลย ***
+                Log.d(TAG, "TagNumber not match: " + tagNumber);
+
+                Utils.playSound(2); // เสียงผิดพลาด
+
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("แจ้งเตือน")
+                        .setMessage("สินค้าที่สแกนไม่ตรงกับสินค้าที่ต้องจัด!\n(แท็ก: " + tagNumber + ")")
+                        .setPositiveButton("ตกลง", (dialog, which) -> dialog.dismiss())
+                        .show();
+                return;
+            }
+
+
+            // *** ได้รับ component ที่กำลังเลือกอยู่ ***
+            PickingComponentItem currentComponent = componentsList.get(currentComponentPosition);
+            String expectedProductNumber = currentComponent.getComponentCode();
+
+            Log.d(TAG, "Scanning for component: " + expectedProductNumber + ", TagNumber: " + tagNumber);
+
+            // *** ตรวจสอบแท็กที่ซ้ำกันในรายการแล้ว ***
+            boolean isTagAlreadyAdded = false;
 
             for (int i = 0; i < scannedTagAdapter.getItems().size(); i++) {
                 ScannedTagItem existingTag = scannedTagAdapter.getItems().get(i);
-                if (existingTag.getTagId().equals(tagId)) {
+                if (existingTag.getTagNumber().equals(tagNumber)) {
                     isTagAlreadyAdded = true;
                     existingTagIndex = i;
                     break;
                 }
             }
 
-            // ค้นหาสินค้าจาก tagId
+
+            boolean matchFound = false;
+            // *** ค้นหาสินค้าจาก tagId หรือ Barcode ***
             for (ProductItem item : itemstock) {
-                if (item.getTagId() != null && item.getTagId().equals(tagId)) {
 
-                    // ตรวจสอบว่าเป็นสินค้าตัวเดียวกันหรือไม่
-                    if (item.getProductNumber().equals(temp_product_number)) {
+                matchFound = false;
+                if (item.getTagNumber() != null && item.getTagNumber().equals(tagNumber)) {
+                    matchFound = true;
+                }
 
-                        // ถ้าแท็กนี้มีในรายการแล้ว ให้ถามก่อนว่าต้องการแก้ไขหรือไม่
+                if (matchFound) {
+
+                    String scannedProductNumber = item.getProductNumber();
+                    Log.d(TAG, "Found product: " + scannedProductNumber + " for Scan/Tag: " + tagNumber);
+
+                    // *** ตรวจสอบว่าเป็นสินค้าตัวเดียวกันกับ component ที่เลือกหรือไม่ ***
+                    if (scannedProductNumber != null && expectedProductNumber != null && 
+                        scannedProductNumber.trim().equalsIgnoreCase(expectedProductNumber.trim())) {
+
+                        Log.d(TAG, "Product matches expected component: " + expectedProductNumber);
+
+                        // *** ถ้าแท็กนี้มีในรายการแล้ว ให้ถามก่อนว่าต้องการแก้ไขหรือไม่ ***
                         if (isTagAlreadyAdded) {
                             ScannedTagItem existingTag = scannedTagAdapter.getItems().get(existingTagIndex);
 
                             AlertDialog.Builder alertBuilder = new AlertDialog.Builder(requireContext());
                             alertBuilder.setTitle("แท็กซ้ำ");
-                            alertBuilder.setMessage("แท็กนี้มีในรายการแล้ว จำนวน: " + existingTag.getPickQty() +
+                            alertBuilder.setMessage("แท็กนี้มีในรายการแล้ว จำนวน: " + existingTag.getScanQty() +
                                     "\nต้องการแก้ไขจำนวนหรือไม่?");
 
                             alertBuilder.setPositiveButton("แก้ไข", (dialog, which) -> {
@@ -789,30 +898,97 @@ public class ComponentDetailsFragment extends Fragment {
                             return;
                         }
 
-                        // แสดง popup ข้อมูลสินค้า
+                        // *** แสดง popup ข้อมูลสินค้า ***
                         showProductConfirmationDialog(item, -1);
                         return;
+
                     } else {
-                        Toast.makeText(requireContext(), "สินค้าไม่ตรงกัน!", Toast.LENGTH_SHORT).show();
+                        // *** สินค้าไม่ตรงกัน ***
+                        Log.d(TAG, "Product mismatch - Expected: " + expectedProductNumber +
+                                ", Found: " + scannedProductNumber + " - Ignoring scan");
+                        
+                        Utils.playSound(2); // เสียงผิดพลาด
+                        new AlertDialog.Builder(requireContext())
+                            .setTitle("แจ้งเตือน")
+                            .setMessage("สินค้าไม่ตรงกัน!\n\nแท็ก: " + tagNumber + "\nรหัสที่ต้องการ: " + expectedProductNumber + "\nรหัสที่สแกนได้: " + scannedProductNumber)
+                            .setPositiveButton("ตกลง", (dialog, which) -> dialog.dismiss())
+                            .show();
                         return;
                     }
                 }
             }
 
-            // กรณีไม่พบข้อมูล
-            Toast.makeText(requireContext(), "ไม่พบ Tag ID ในสต็อก", Toast.LENGTH_SHORT).show();
+//            // *** กรณีไม่พบข้อมูลในสต็อกเลย ***
+//           Log.d(TAG, "TagNumber not found in stock: " + tagNumber);
+//
+//            Utils.playSound(2); // เสียงผิดพลาด
+//
+//            new AlertDialog.Builder(requireContext())
+//                   .setTitle("แจ้งเตือน")
+//                   .setMessage("ไม่พบข้อมูลแท็กนี้ในสต็อก!\n(แท็ก: " + tagNumber + ")")
+//                  .setPositiveButton("ตกลง", (dialog, which) -> dialog.dismiss())
+//                    .show();
+//
+//            boolean isBarcode = tagNumber != null && tagNumber.length() <= 15;
+//
+//            if (isBarcode) {
+//                new AlertDialog.Builder(requireContext())
+//                    .setTitle("แจ้งเตือน")
+//                    .setMessage("บาร์โค้ดไม่ตรงกับรายการที่ต้องหยิบ หรือไม่มีในระบบ!\n(บาร์โค้ด: " + tagNumber + ")")
+//                    .setPositiveButton("ตกลง", (dialog, which) -> dialog.dismiss())
+//                    .show();
+//            } else {
+//
+//            }
+
+        } else {
+            // *** ไม่ได้เลือก component หรือไม่มีข้อมูล stock ***
+            Log.w(TAG, "No component selected or itemstock is null");
+            Utils.playSound(2); // เสียงผิดพลาด
         }
     }
 
-    //int existingTagQty = 0;
 
+    @SuppressLint("LongLogTag")
     private void showProductConfirmationDialog(final ProductItem item, final int existingTagIndex) {
-        // กำหนดให้ existingTagIndex เป็น -1 เมื่อเป็นรายการใหม่, ค่าอื่นคือดัชนีของรายการที่มีอยู่แล้ว
         final boolean isTagAlreadyAdded = (existingTagIndex >= 0);
+        PickingComponentItem component = componentsList.get(currentComponentPosition);
 
+        // --- คำนวณตาม Logic ที่ระบุ ---
+        // 1. quantity = จำนวนที่ต้องการทั้งหมด
+        final double quantity_1 = component.getQuantityRequired();
+        
+        // 2. scan = จำนวนที่สแกนและบันทึกไปแล้ว (จาก API)
+        final double scan_2 = component.getQuantityPicked();
+        
+        // 2.1 qty = ข้อ 1 - ข้อ 2 (จำนวนที่ยังขาดอยู่จากเซิร์ฟเวอร์)
+        final double qty_2_1 = quantity_1 - scan_2;
+        
+        // 3. Pick listview (รายการที่สแกนอยู่ในตารางปัจจุบัน)
+        // 4. จำนวนในกล่อง = จำนวนที่ในกล่อง (จาก Stock)
+        double box_capacity_4 = item.getQuantityInBox();
+        
+        // 5. จำนวนปัจจุบัน = sum pick จากรายการที่กำลังสแกน (ข้อ 3)
+        double temp_session_sum = 0;
+        for (ScannedTagItem tag : scannedTagAdapter.getItems()) {
+            temp_session_sum += tag.getScanQty();
+        }
+        final double session_sum_5 = temp_session_sum;
+        
+        // จำนวนที่มีอยู่เดิมใน Tag นี้ (กรณีแก้ไข)
+        final double existingTagQty = isTagAlreadyAdded ? scannedTagAdapter.getItems().get(existingTagIndex).getScanQty() : 0;
+
+        // สูงสุดที่ Tag นี้รับได้รวม = min(ความจุกล่อง, จำนวนที่ยังขาดเป้าหมาย)
+        // จำนวนที่ยังขาดเป้าหมายในเซสชันนี้ = qty_2_1 - (session_sum - qty ที่มีอยู่แล้วในแท็กนี้)
+        final double absoluteMaxPickable = qty_2_1 - (session_sum_5 - existingTagQty);
+        final double maxTagTotal = Math.min(box_capacity_4, absoluteMaxPickable);
+
+        // 6. เพิ่มได้อีก = จำนวนที่ยังใส่แท็กนี้ได้จริงๆ (ไม่ติดลบ)
+        final double can_add_more_6 = Math.max(0, maxTagTotal - existingTagQty);
+        
         // สร้าง dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        builder.setTitle(isTagAlreadyAdded ? "แก้ไขจำนวนสินค้า" : "เพิ่มสินค้า");
+        builder.setTitle(isTagAlreadyAdded ? "แก้ไขจำนวนสินค้า (แท็กเดิม)" : "เพิ่มสินค้าใหม่");
 
         // สร้าง layout สำหรับ dialog
         View dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_product, null);
@@ -821,131 +997,121 @@ public class ComponentDetailsFragment extends Fragment {
         // ผูกข้อมูลกับ view ใน dialog
         TextView tvProductNumber = dialogView.findViewById(R.id.tvProductNumber);
         TextView tvBarcode = dialogView.findViewById(R.id.tvBarcode);
+        TextView tvTagNumber = dialogView.findViewById(R.id.tvTagNumber);
         TextView tvLot = dialogView.findViewById(R.id.tvLot);
         TextView tvLotNumber = dialogView.findViewById(R.id.tvLotNumber);
+        TextView tvQuantityInBox = dialogView.findViewById(R.id.tvQuantityInBox);
         TextView tvMaxQty = dialogView.findViewById(R.id.tvMaxQty);
         EditText etQuantity = dialogView.findViewById(R.id.etQuantity);
 
         // แสดงข้อมูลสินค้า
         tvProductNumber.setText("รหัสสินค้า: " + item.getProductNumber());
         tvBarcode.setText("บาร์โค้ด: " + (item.getBarcode() != null ? item.getBarcode() : "-"));
+        tvTagNumber.setText("แท็ก: " + (item.getTagNumber() != null ? item.getTagNumber() : "-"));
         tvLot.setText("Lot: " + (item.getLot() != null ? item.getLot() : "-"));
         tvLotNumber.setText("เลขที่ Lot: " + (item.getLotNumber() != null ? item.getLotNumber() : "-"));
+        
+        // ข้อ 4: จำนวนในกล่อง
+        tvQuantityInBox.setText("จำนวนในกล่อง: " + String.format("%.0f", box_capacity_4));
 
-        // คำนวณจำนวนทั้งหมดที่มีอยู่แล้วใน ListView
-        double existingTotal = 0;
-        for (ScannedTagItem existingTag : scannedTagAdapter.getItems()) {
-            existingTotal += existingTag.getPickQty();
-        }
-
-        // คำนวณจำนวนที่ต้องการทั้งหมด (Required) และจำนวนที่สแกนไปแล้ว (Scanned)
-        PickingComponentItem component = componentsList.get(currentComponentPosition);
-        int requiredQty = component.getQuantityRequired();
-        int scannedQty = component.getQuantityPicked();
-
-        // คำนวณจำนวนที่ยังสามารถเพิ่มได้
-        int remainingQty = requiredQty - scannedQty;
-
-        // จำนวนในกล่อง
-        double quantityInBox = item.getQuantityInBox();
-
-        // ถ้ามีแท็กนี้ในรายการแล้ว ให้ลบจำนวนที่มีอยู่แล้วออกจากการคำนวณ
-        double existingTagQty;
+        // ข้อ 5 & 6: แสดงข้อมูลการคำนวณตามโจทย์
         if (isTagAlreadyAdded) {
-            existingTagQty = scannedTagAdapter.getItems().get(existingTagIndex).getPickQty();
-            existingTotal -= existingTagQty;
+            // แสดงจำนวนปัจจุบันและจำนวนที่เพิ่มเติมได้อีก (แท็กเดิม)
+            tvMaxQty.setText("จำนวนปัจจุบันในลิสต์: " + String.format("%.0f", session_sum_5) +
+                            " | เพิ่มได้อีก: " + String.format("%.0f", can_add_more_6));
+            etQuantity.setText(String.format("%.0f", existingTagQty));
         } else {
-            existingTagQty = 0;
+            // แสดงจำนวนรวมในลิสต์และจำนวนที่ยังหยิบเพิ่มได้จริงๆ
+            tvMaxQty.setText("จำนวนรวมในลิสต์: " + String.format("%.0f", session_sum_5) +
+                            " | เพิ่มได้อีก: " + String.format("%.0f", can_add_more_6));
+            etQuantity.setText(String.format("%.0f", can_add_more_6));
         }
 
-        // คำนวณจำนวนสูงสุดที่สามารถเพิ่มได้
-        double maxAddableQty = Math.min((int)quantityInBox, remainingQty - existingTotal);
-
-        // กรณีสแกนซ้ำ แสดงข้อความให้ทราบ
-        if (isTagAlreadyAdded) {
-            tvMaxQty.setText("จำนวนปัจจุบัน: " + existingTagQty + " | เพิ่มได้อีก: " + maxAddableQty);
-            etQuantity.setText(String.valueOf(existingTagQty)); // ตั้งค่าเริ่มต้นเป็นจำนวนที่มีอยู่เดิม
-        } else {
-            tvMaxQty.setText("จำนวนสูงสุดที่เพิ่มได้: " + maxAddableQty);
-            etQuantity.setText("1"); // ตั้งค่าเริ่มต้นเป็น 1 สำหรับรายการใหม่
-        }
-
-        // สร้างปุ่มตกลงและยกเลิก
-        builder.setPositiveButton("ตกลง", null); // เราจะ override คลิกอีเวนต์ด้านล่าง
+        builder.setPositiveButton("ตกลง", null);
         builder.setNegativeButton("ยกเลิก", (dialog, which) -> dialog.dismiss());
 
-        // สร้าง dialog
         AlertDialog dialog = builder.create();
 
-        // เพิ่มการทำ Auto Focus ที่ EditText
         dialog.setOnShowListener(dialogInterface -> {
             etQuantity.requestFocus();
-
-            // เปิดคีย์บอร์ดสำหรับ EditText
             InputMethodManager imm = (InputMethodManager) requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.showSoftInput(etQuantity, InputMethodManager.SHOW_IMPLICIT);
-
-            // เลือกข้อความทั้งหมดใน EditText
+            if (imm != null) imm.showSoftInput(etQuantity, InputMethodManager.SHOW_IMPLICIT);
             etQuantity.selectAll();
 
-            // Override คลิกอีเวนต์ของปุ่มตกลง (เนื่องจากต้องทำใน OnShowListener)
             Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(v -> {
-                // ตรวจสอบจำนวนที่ใส่
-                int requestedQty;
+                double requestedQty;
                 try {
-                    requestedQty = Integer.parseInt(etQuantity.getText().toString().trim());
+                    requestedQty = Double.parseDouble(etQuantity.getText().toString().trim());
                 } catch (NumberFormatException e) {
                     Toast.makeText(requireContext(), "กรุณาระบุจำนวนที่ถูกต้อง", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // ตรวจสอบว่าจำนวนไม่เป็น 0 และไม่เกินจำนวนสูงสุด
                 if (requestedQty <= 0) {
                     Toast.makeText(requireContext(), "จำนวนต้องมากกว่า 0", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                if (requestedQty > maxAddableQty + (isTagAlreadyAdded ? existingTagQty : 0)) {
-                    Toast.makeText(requireContext(), "จำนวนเกินกว่าที่เพิ่มได้", Toast.LENGTH_SHORT).show();
+                // *** ตรวจสอบการป้องกันสแกนเกินจำนวน ข้อ 2.1 ***
+                // จำนวนทั้งหมดที่จะมีในระบบ = จำนวนที่บันทึกแล้ว (2) + จำนวนในลิสต์ที่ไม่ได้แก้ + จำนวนใหม่ที่กรอก
+                double newSessionTotal = (session_sum_5 - existingTagQty) + requestedQty;
+                
+                if (newSessionTotal + scan_2 > quantity_1) {
+                    double maxAllowedNow = quantity_1 - (scan_2 + (session_sum_5 - existingTagQty));
+                    Toast.makeText(requireContext(), "จำนวนรวมเกินความต้องการ! (เพิ่มได้สูงสุด " + String.format("%.0f", maxAllowedNow) + ")", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // เพิ่มหรือแก้ไขรายการใน ListView
+                // เพิ่มหรือแก้ไขรายการ
                 if (isTagAlreadyAdded) {
-                    // อัปเดตจำนวนสำหรับแท็กที่มีอยู่แล้ว
                     ScannedTagItem existingTag = scannedTagAdapter.getItems().get(existingTagIndex);
-                    existingTag.setPickQty(requestedQty);
+                    existingTag.setScanQty(requestedQty);
                     scannedTagAdapter.notifyDataSetChanged();
-                    Toast.makeText(requireContext(), "อัปเดตจำนวนสำเร็จ: " + item.getProductNumber(), Toast.LENGTH_SHORT).show();
+                    updateSessionScannedQuantity();
+                    Toast.makeText(requireContext(), "แก้ไขจำนวนสำเร็จ", Toast.LENGTH_SHORT).show();
                 } else {
-                    // เพิ่มรายการใหม่
                     ScannedTagItem newTag = new ScannedTagItem(
-                            item.getProductId(),
-                            item.getTagId(),
+                            item.getProductId() != null ? item.getProductId() : 0,
+                            item.getTagNumber() != null ? item.getTagNumber() : (item.getBarcode() != null ? item.getBarcode() : ""),
                             item.getLot() != null ? item.getLot() : "-",
                             item.getLotNumber() != null ? item.getLotNumber() : "-",
+                            item.getQuantityInBox(),
+                            0.0,
                             requestedQty,
-                            item.getBarcode()
+                            item.getBarcode() != null ? item.getBarcode() : ""
                     );
                     scannedTagAdapter.addItem(newTag);
-                    Toast.makeText(requireContext(), "เพิ่มรายการสำเร็จ: " + item.getProductNumber(), Toast.LENGTH_SHORT).show();
+                    updateSessionScannedQuantity();
+                    Toast.makeText(requireContext(), "เพิ่มรายการสำเร็จ", Toast.LENGTH_SHORT).show();
                 }
 
-                // ปิด dialog
                 dialog.dismiss();
             });
         });
 
-        // แสดง dialog
-        dialog.show();
+        // แสดง Dialog เฉพาะเมื่อยังไม่เกินจำนวนที่ต้องการ
+        if (scan_2 + session_sum_5 >= quantity_1 && !isTagAlreadyAdded) {
+            Toast.makeText(requireContext(), "สแกนสินค้าครบตามจำนวนที่ต้องการแล้ว", Toast.LENGTH_SHORT).show();
+            Utils.playSound(2);
+        } else {
+            dialog.show();
+        }
     }
 
-    private boolean isValidTagForComponent(String tagId, String componentCode) {
+    private void updateSessionScannedQuantity() {
+        double temp_session_sum = 0;
+        for (ScannedTagItem tag : scannedTagAdapter.getItems()) {
+            temp_session_sum += tag.getScanQty();
+        }
+        tvScannedQty.setText("Scan: " + temp_session_sum);
+    }
+
+    private boolean isValidTagForComponent(String tagNumber, String componentCode) {
         // Search stock list for a matching component
         if (stockList != null) {
             for (ProductItem item : stockList) {
-                if (item.getTagId() != null && item.getTagId().equals(tagId)) {
+                if (item.getTagNumber() != null && item.getTagNumber().equals(tagNumber)) {
                     // For this implementation, consider any tag from stock as valid
                     return true;
                 }
@@ -967,8 +1133,8 @@ public class ComponentDetailsFragment extends Fragment {
 
             summary.append(component.getComponentCode())
                     .append(": ")
-                    .append(component.getQuantityPicked())
-                    .append("/").append(component.getQuantityRequired())
+                    .append(String.format("%.0f", component.getQuantityPicked()))
+                    .append("/").append(String.format("%.0f", component.getQuantityRequired()))
                     .append("\n");
         }
 
@@ -990,12 +1156,13 @@ public class ComponentDetailsFragment extends Fragment {
                 hasScannedComponents = true;
 
                 // For each tag, create a PickingOrderItem
-                for (String tagId : component.getTagIds()) {
+                for (String tagNumber : component.getTagIds()) {
                     PickingOrderItem componentItem = new PickingOrderItem();
                     componentItem.setProductId(0); // You might need to determine appropriate ID
                     componentItem.setQuantity(1);
-                    componentItem.setTagId(tagId);
+                    componentItem.setTagNumber(tagNumber);
                     componentItem.setProductNumber(component.getComponentCode());
+                    componentItem.setBarcode(component.getBarcode());
 
                     // Add to scanned tags and to return list
                     componentItems.add(componentItem);

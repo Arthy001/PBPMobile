@@ -1,7 +1,10 @@
 package com.example.uhf_bt.fragment;
 
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.util.Log;
@@ -22,10 +25,15 @@ import com.example.uhf_bt.adapter.MoveOrderAdapter;
 import com.example.uhf_bt.models.MoveOrder;
 import com.example.uhf_bt.services.ApiService;
 import com.example.uhf_bt.services.RetrofitClient;
+import android.app.DatePickerDialog;
+import android.widget.DatePicker;
 import com.google.android.material.tabs.TabLayout;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -46,6 +54,9 @@ public class MoveOrderFragment extends Fragment {
     private TabLayout statusTabLayout;
     private List<MoveOrder> allMoveOrders; // เก็บรายการทั้งหมดไว้สำหรับการกรอง
 
+    private TextView datePickerTextView;
+    String currentDate;
+
     public static MoveOrderFragment newInstance(String param1, String param2) {
         MoveOrderFragment fragment = new MoveOrderFragment();
         Bundle args = new Bundle();
@@ -60,6 +71,9 @@ public class MoveOrderFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && getActivity() != null) {
+            getActivity().getWindow().setStatusBarColor(ContextCompat.getColor(getActivity(), R.color.pastel1));
+        }
     }
 
     @Override
@@ -76,6 +90,16 @@ public class MoveOrderFragment extends Fragment {
         apiService = RetrofitClient.getClient().create(ApiService.class);
         allMoveOrders = new ArrayList<>();
 
+        // 1. รับวันที่ปัจจุบัน ถ้ายังไม่มีการเลือก
+        if (currentDate == null) {
+            Calendar calendar = Calendar.getInstance();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+            currentDate = dateFormat.format(calendar.getTime());
+        }
+
+        // 2. ตั้งค่า TextView ให้แสดงวันที่ปัจจุบันหรือที่เลือก
+        datePickerTextView.setText(currentDate);
+
         return view;
     }
 
@@ -87,6 +111,7 @@ public class MoveOrderFragment extends Fragment {
         emptyView = view.findViewById(R.id.emptyView);
         toolbar_title = view.findViewById(R.id.toolbar_title);
         statusTabLayout = view.findViewById(R.id.statusTabLayout);
+        datePickerTextView = view.findViewById(R.id.datePickerTextView);
     }
 
     private void setupStatusTabs() {
@@ -116,8 +141,8 @@ public class MoveOrderFragment extends Fragment {
     }
 
     private void filterOrdersByStatus(int tabPosition) {
-        if (allMoveOrders == null || allMoveOrders.isEmpty()) {
-            return;
+        if (allMoveOrders == null) {
+            allMoveOrders = new ArrayList<>();
         }
 
         List<MoveOrder> filteredList = new ArrayList<>();
@@ -180,6 +205,39 @@ public class MoveOrderFragment extends Fragment {
                 getActivity().onBackPressed();
             }
         });
+
+        datePickerTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showDatePickerDialog();
+            }
+        });
+    }
+
+    private void showDatePickerDialog() {
+        int year, month, day;
+        if (currentDate != null && currentDate.length() == 10) {
+            String[] parts = currentDate.split("-");
+            year = Integer.parseInt(parts[0]);
+            month = Integer.parseInt(parts[1]) - 1;
+            day = Integer.parseInt(parts[2]);
+        } else {
+            final Calendar c = Calendar.getInstance();
+            year = c.get(Calendar.YEAR);
+            month = c.get(Calendar.MONTH);
+            day = c.get(Calendar.DAY_OF_MONTH);
+        }
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(),
+                new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
+                        currentDate = String.format(Locale.US, "%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay);
+                        datePickerTextView.setText(currentDate);
+                        loadMoveOrders(currentDate);
+                    }
+                }, year, month, day);
+        datePickerDialog.show();
     }
 
     private void setupSearchView() {
@@ -229,7 +287,7 @@ public class MoveOrderFragment extends Fragment {
             searchIcon.setLayoutParams(params);
         }
 
-        EditText searchEditText = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
+        EditText searchEditText = searchView.findViewById(com.example.uhf_bt.R.id.search_src_text);
         if (searchEditText != null) {
             searchEditText.setTextColor(Color.WHITE);
             searchEditText.setHintTextColor(Color.parseColor("#80FFFFFF"));
@@ -284,9 +342,9 @@ public class MoveOrderFragment extends Fragment {
         }
     }
 
-    private void loadMoveOrders() {
+    private void loadMoveOrders(String date) {
         showLoading(true);
-        apiService.getMoveOrders().enqueue(new Callback<List<MoveOrder>>() {
+        apiService.getMoveOrdersbyDate(date).enqueue(new Callback<List<MoveOrder>>() {
             @Override
             public void onResponse(Call<List<MoveOrder>> call, Response<List<MoveOrder>> response) {
                 showLoading(false);
@@ -302,6 +360,8 @@ public class MoveOrderFragment extends Fragment {
                     }
                 } else {
                     Log.e(TAG, "Error loading move orders: " + response.code());
+                    allMoveOrders = new ArrayList<>();
+                    filterOrdersByStatus(statusTabLayout.getSelectedTabPosition());
                     showError("Failed to load move orders");
                 }
             }
@@ -310,6 +370,8 @@ public class MoveOrderFragment extends Fragment {
             public void onFailure(Call<List<MoveOrder>> call, Throwable t) {
                 Log.e(TAG, "Network error loading move orders", t);
                 showLoading(false);
+                allMoveOrders = new ArrayList<>();
+                filterOrdersByStatus(statusTabLayout.getSelectedTabPosition());
                 showError("Network error: " + t.getMessage());
             }
         });
@@ -339,7 +401,7 @@ public class MoveOrderFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadMoveOrders();
+        loadMoveOrders(currentDate);
     }
 
     public void refreshData() {
@@ -347,7 +409,7 @@ public class MoveOrderFragment extends Fragment {
             searchView.setQuery("", false);
             searchView.clearFocus();
         }
-        loadMoveOrders();
+        loadMoveOrders(currentDate);
     }
 }
 

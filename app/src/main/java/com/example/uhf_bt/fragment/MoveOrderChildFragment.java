@@ -1,8 +1,12 @@
 package com.example.uhf_bt.fragment;
 
+import static com.example.uhf_bt.services.Settings.appMode;
+
 import android.app.AlertDialog;
+import android.app.appsearch.ReportSystemUsageRequest;
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -16,6 +20,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -24,9 +29,11 @@ import android.window.OnBackAnimationCallback;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.uhf_bt.MainActivity;
@@ -34,7 +41,13 @@ import com.example.uhf_bt.R;
 import com.example.uhf_bt.Utils;
 import com.example.uhf_bt.adapter.MoveOrderChildAdapter;
 import com.example.uhf_bt.adapter.MoveOrderChildTagAdapter;
+import com.example.uhf_bt.adapter.MoveOrderChildTagWithStatusAdapter;
 import com.example.uhf_bt.models.MoveOrderItem;
+import com.example.uhf_bt.models.MoveTagDto;
+import com.example.uhf_bt.models.PickingComponentItem;
+import com.example.uhf_bt.models.ResponseDto;
+import com.example.uhf_bt.models.TagDto;
+import com.example.uhf_bt.models.TagWithStatus;
 import com.example.uhf_bt.services.ApiService;
 import com.example.uhf_bt.services.RetrofitClient;
 import com.example.uhf_bt.tool.CheckUtils;
@@ -45,11 +58,15 @@ import com.rscja.deviceapi.interfaces.IUHFInventoryCallback;
 import com.rscja.deviceapi.interfaces.KeyEventCallback;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import okhttp3.internal.connection.Exchange;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -58,16 +75,23 @@ public class MoveOrderChildFragment extends Fragment {
 
     private static final String TAG = "MoveOrderChildFragment";
 
+    private EditText tvBarcode;
+    private Button btnScanBarocde;
+    private LinearLayout view_barcode;
+
     private TextView tvTotalQty, tvTotalScan, tvTotalSuccess;
     private ImageView ivNotification;
     private TextView tvNotificationCount;
     private List<MoveOrderItem> scannedTags = new ArrayList<>();
+
+
     private TextView tvOrderNo,tvSourceWarehouse, tvDestinationWarehouse;
     private ListView listView;
 
     private ProgressBar progressBar;
     private View emptyView;
     private MoveOrderChildAdapter adapter;
+    private List<TagDto> stockTags = new ArrayList<>();
     private List<MoveOrderItem> tempList = new ArrayList<>();
     private List<MoveOrderItem> itemList = new ArrayList<>();
     private String moveOrderId;
@@ -95,6 +119,9 @@ public class MoveOrderChildFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && getActivity() != null) {
+            getActivity().getWindow().setStatusBarColor(ContextCompat.getColor(getActivity(), R.color.pastel1));
+        }
         if (getArguments() != null) {
             moveOrderId = getArguments().getString("MoveOrderId");
         }
@@ -103,6 +130,7 @@ public class MoveOrderChildFragment extends Fragment {
         scannedTags = new ArrayList<>();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_move_order_child, container, false);
@@ -111,7 +139,6 @@ public class MoveOrderChildFragment extends Fragment {
         setupSearchView();
         setupListView();
         loadMoveOrderItems();
-
         setupButtonListeners();
         return view;
     }
@@ -147,6 +174,17 @@ public class MoveOrderChildFragment extends Fragment {
         tvTotalQty = view.findViewById(R.id.tvTotalQty);
         tvTotalScan = view.findViewById(R.id.tvTotalScan);
         tvTotalSuccess = view.findViewById(R.id.tvTotalSuccess);
+
+        tvBarcode = view.findViewById(R.id.tvBarcode);
+        btnScanBarocde = view.findViewById(R.id.btnScanBarcode);
+
+        view_barcode = view.findViewById(R.id.view_barcode);
+
+        if (appMode == "RFID" )
+        {
+            view_barcode.setVisibility(View.GONE);
+        }
+
     }
 
     private void setupToolbar() {
@@ -169,7 +207,7 @@ public class MoveOrderChildFragment extends Fragment {
         btStop.setOnClickListener(v -> stopRFID());
         btnConfirm.setOnClickListener(v -> confirmMoveOrderTransaction());
         //btnQRCode.setOnClickListener(v -> scanQRCode());
-
+        btnScanBarocde.setOnClickListener(v -> scanBarcode());
         tagList = new ArrayList<>();
         //mContext.tagList=tagList;
         //adapter=new UHFReadTagFragment.MyAdapter(mContext);
@@ -318,7 +356,7 @@ public class MoveOrderChildFragment extends Fragment {
         });
 
         // Customize SearchView appearance
-        EditText searchEditText = searchView.findViewById(androidx.appcompat.R.id.search_src_text);
+        EditText searchEditText = searchView.findViewById(com.example.uhf_bt.R.id.search_src_text);
         if (searchEditText != null) {
             searchEditText.setTextColor(Color.WHITE);
             searchEditText.setHintTextColor(Color.parseColor("#80FFFFFF"));
@@ -340,6 +378,7 @@ public class MoveOrderChildFragment extends Fragment {
         searchView.setQueryHint("Search item...");
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void setupListView() {
         adapter = new MoveOrderChildAdapter(requireContext(), itemList);
         listView.setAdapter(adapter);
@@ -382,7 +421,14 @@ public class MoveOrderChildFragment extends Fragment {
 
                     updateUI(items);
                     updateTotalQuantities(); // Add this line
-                    loadMoveOrderTransactions();
+                    if (items.size() > 0) {
+                        loadMoveOrderTransactions();
+
+
+                        // เรียก loadStockTag() ด้วย ProductIds ที่ไม่ซ้ำกัน
+                        String uniqueProductIds = getUniqueProductIds();
+                        loadStockTag(uniqueProductIds); // ส่ง null ได้
+                    }
                     if (items.isEmpty()) {
                         showEmptyState();
                     }
@@ -401,6 +447,117 @@ public class MoveOrderChildFragment extends Fragment {
         });
     }
 
+    private void loadStockTag(String productIds) {
+        showLoading(true);
+
+        Log.d(TAG, "Loading stock tags with productIds: " + (productIds != null ? productIds : "null (all products)"));
+
+        // เรียก API ด้วย productIds parameter (ส่ง null ได้)
+        apiService.getAllTags(productIds).enqueue(new Callback<List<TagDto>>() {
+            @Override
+            public void onResponse(Call<List<TagDto>> call, Response<List<TagDto>> response) {
+                showLoading(false);
+
+                if (response.isSuccessful() && response.body() != null) {
+                    stockTags = response.body();
+
+                    if (productIds != null && !productIds.trim().isEmpty()) {
+                        Log.d(TAG, "Successfully loaded " + stockTags.size() + " tags for products: " + productIds);
+                    } else {
+                        Log.d(TAG, "Successfully loaded all " + stockTags.size() + " tags");
+                    }
+
+                    // Optional: ทำอะไรกับ stockTags ที่ได้หลังจากโหลดเสร็จ
+                    //onStockTagsLoaded();
+
+                } else {
+                    Log.e(TAG, "Error loading tags: " + response.code() + " - " + response.message());
+                    showError("Failed to load tags");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<TagDto>> call, Throwable t) {
+                Log.e(TAG, "Network error loading tags", t);
+                showLoading(false);
+                showError("Network error: " + t.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Method สำหรับดึง ProductId ที่ไม่ซ้ำกันจาก itemList
+     * @return String ของ ProductIds ที่คั่นด้วย comma หรือ null ถ้าไม่มีข้อมูล
+     */
+    private String getUniqueProductIds() {
+        if (itemList == null || itemList.isEmpty()) {
+            Log.d(TAG, "itemList is null or empty, returning null for productIds");
+            return null;
+        }
+
+        // ใช้ Set เพื่อเก็บ ProductId ที่ไม่ซ้ำกัน
+        Set<Integer> uniqueProductIds = new HashSet<>();
+
+        Log.d(TAG, "Processing " + itemList.size() + " items to extract unique ProductIds");
+
+        for (MoveOrderItem item : itemList) {
+            if (item != null && item.getProductId() > 0) { // ตรวจสอบว่า ProductId ถูกต้อง
+                uniqueProductIds.add(item.getProductId());
+                Log.d(TAG, "Added ProductId: " + item.getProductId());
+            } else {
+                Log.w(TAG, "Skipped invalid item or ProductId: " +
+                        (item != null ? item.getProductId() : "null item"));
+            }
+        }
+
+        // ตรวจสอบว่ามี ProductId หรือไม่
+        if (uniqueProductIds.isEmpty()) {
+            Log.w(TAG, "No valid ProductIds found, returning null");
+            return null;
+        }
+
+        // แปลง Set เป็น List และเรียงลำดับ
+        List<Integer> sortedIds = new ArrayList<>(uniqueProductIds);
+        Collections.sort(sortedIds); // เรียงลำดับเพื่อความสม่ำเสมอ
+
+        // สร้าง String ที่คั่นด้วย comma
+        StringBuilder productIdsBuilder = new StringBuilder();
+        for (int i = 0; i < sortedIds.size(); i++) {
+            if (i > 0) {
+                productIdsBuilder.append(",");
+            }
+            productIdsBuilder.append(sortedIds.get(i));
+        }
+
+        String result = productIdsBuilder.toString();
+        Log.d(TAG, "Unique ProductIds generated: " + result + " (Total: " + uniqueProductIds.size() + " unique products)");
+
+        return result;
+    }
+
+//    private void loadStockTag() {
+//        showLoading(true);
+//        apiService.getAllTags().enqueue(new Callback<List<TagDto>>() {
+//            @Override
+//            public void onResponse(Call<List<TagDto>> call, Response<List<TagDto>> response) {
+//                showLoading(false);
+//
+//                if (response.isSuccessful() && response.body() != null) {
+//                    stockTags = response.body();
+//                } else {
+//                    Log.e(TAG, "Error loading all Tag: " + response.code());
+//                    showError("Failed to load all Tag");
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(Call<List<TagDto>> call, Throwable t) {
+//                Log.e(TAG, "Network error loading all Tags", t);
+//                showLoading(false);
+//                showError("Network error: " + t.getMessage());
+//            }
+//        });
+//    }
     private void loadMoveOrderTransactions() {
         showLoading(true);
 
@@ -510,7 +667,15 @@ public class MoveOrderChildFragment extends Fragment {
         //btnScanRfid.setEnabled(hasUnfinishedItems);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void handleItemClick(MoveOrderItem item) {
+        Log.d(TAG, "=== handleItemClick Debug ===");
+        Log.d(TAG, "Selected item - ProductId: " + item.getProductId() +
+                ", Lot: " + item.getLot() +
+                ", ItemType: " + item.getItemType() +
+                ", ProductNumber: " + item.getProductNumber() +
+                ", Product: " + item.getProduct());
+
         // สร้าง dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         View dialogView = getLayoutInflater().inflate(R.layout.layout_scanned_tags_move_order_child, null);
@@ -525,60 +690,403 @@ public class MoveOrderChildFragment extends Fragment {
         Button btnClose = dialogView.findViewById(R.id.btnClose);
 
         // กำหนดชื่อ Dialog
-        tvDialogTitle.setText("Scanned Tags for " + item.getProductNumber());
+        String productNumber = item.getProductNumber() != null ? item.getProductNumber() : "Unknown Product";
+        tvDialogTitle.setText("All Tags for " + productNumber);
 
         // แสดงข้อมูลสินค้า
         String itemType = item.getItemType() != null ? item.getItemType() : "Unknown";
+        String product = item.getProduct() != null ? item.getProduct() : "N/A";
+        String barcode = item.getBarcode() != null ? item.getBarcode() : "N/A";
+        String lot = item.getLot() != null ? item.getLot() : "N/A";
+
         String itemInfo = String.format("Product: %s\nBarcode: %s\nLot: %s\nType: %s",
-                item.getProduct(),
-                item.getBarcode() != null ? item.getBarcode() : "N/A",
-                item.getLot(),
-                itemType);
+                product, barcode, lot, itemType);
         tvItemInfo.setText(itemInfo);
 
-        // กรองแท็กตามเงื่อนไขทั้งสาม (ProductId, Lot, ItemType)
-        List<MoveOrderItem> filteredTags = new ArrayList<>();
+        // รวมข้อมูลจาก 2 sources ใช้ Wrapper
+        List<TagWithStatus> allTagsWithStatus = new ArrayList<>();
 
-        for (MoveOrderItem tag : scannedTags) {
-            // ต้องตรงกันทั้ง ProductId, Lot และ ItemType
-            if (tag.getProductId() == item.getProductId() &&
-                    (tag.getLot() != null && tag.getLot().equals(item.getLot())) &&
-                    (tag.getItemType() != null && tag.getItemType().equals(item.getItemType()))) {
-                filteredTags.add(tag);
+        Log.d(TAG, "=== BEFORE FILTERING ===");
+        Log.d(TAG, "tempList total size: " + (tempList != null ? tempList.size() : 0));
+        Log.d(TAG, "scannedTags total size: " + (scannedTags != null ? scannedTags.size() : 0));
+
+        // 1. เพิ่มข้อมูลจาก tempList (ที่ Success แล้ว)
+        int successCount = 0;
+        if (tempList != null) {
+            Log.d(TAG, "tempList size: " + tempList.size());
+            for (int i = 0; i < tempList.size(); i++) {
+                MoveOrderItem tempTag = tempList.get(i);
+                Log.d(TAG, "tempList[" + i + "] - ProductId: " + tempTag.getProductId() +
+                        ", Lot: '" + tempTag.getLot() + "'" +
+                        ", ItemType: '" + tempTag.getItemType() + "'" +
+                        ", TagNumber: '" + tempTag.getTagNumber() + "'");
+
+                // ผ่อนเงื่อนไข - ตรวจสอบแค่ ProductId อย่างเดียวก่อน
+                boolean productIdMatch = (tempTag.getProductId() == item.getProductId());
+
+                // ตรวจสอบ Lot (แบบ flexible)
+                boolean lotMatch = true; // เริ่มด้วย true
+                if (tempTag.getLot() != null && item.getLot() != null) {
+                    lotMatch = tempTag.getLot().trim().equalsIgnoreCase(item.getLot().trim());
+                }
+
+                // ตรวจสอบ ItemType (แบบ flexible)
+                boolean itemTypeMatch = true; // เริ่มด้วย true
+                if (tempTag.getItemType() != null && item.getItemType() != null) {
+                    itemTypeMatch = tempTag.getItemType().trim().equalsIgnoreCase(item.getItemType().trim());
+                }
+
+                Log.d(TAG, "tempList[" + i + "] Match check - ProductId: " + productIdMatch +
+                        ", Lot: " + lotMatch + ", ItemType: " + itemTypeMatch);
+
+                // เงื่อนไขใหม่ - ต้องตรง ProductId และ (Lot หรือ ItemType)
+                if (productIdMatch && (lotMatch || itemTypeMatch)) {
+                    // ใช้ Wrapper Class
+                    TagWithStatus successTag = new TagWithStatus(tempTag, "SUCCESS");
+                    allTagsWithStatus.add(successTag);
+                    successCount++;
+
+                    Log.d(TAG, "Added SUCCESS tag: '" + tempTag.getTagNumber() + "'");
+                } else {
+                    Log.d(TAG, "tempList[" + i + "] - NOT MATCHED");
+                }
             }
+        } else {
+            Log.d(TAG, "tempList is NULL");
         }
 
-        // แสดงจำนวนแท็ก
-        tvTagCount.setText("Total Tags: " + filteredTags.size());
+        // 2. เพิ่มข้อมูลจาก scannedTags (ที่กำลังสแกน)
+        int scanningCount = 0;
+        if (scannedTags != null) {
+            Log.d(TAG, "scannedTags size: " + scannedTags.size());
+            for (int i = 0; i < scannedTags.size(); i++) {
+                MoveOrderItem scannedTag = scannedTags.get(i);
+                Log.d(TAG, "scannedTags[" + i + "] - ProductId: " + scannedTag.getProductId() +
+                        ", Lot: '" + scannedTag.getLot() + "'" +
+                        ", ItemType: '" + scannedTag.getItemType() + "'" +
+                        ", TagNumber: '" + scannedTag.getTagNumber() + "'");
+
+                // ผ่อนเงื่อนไข - ตรวจสอบแค่ ProductId อย่างเดียวก่อน
+                boolean productIdMatch = (scannedTag.getProductId() == item.getProductId());
+
+                // ตรวจสอบ Lot (แบบ flexible)
+                boolean lotMatch = true; // เริ่มด้วย true
+                if (scannedTag.getLot() != null && item.getLot() != null) {
+                    lotMatch = scannedTag.getLot().trim().equalsIgnoreCase(item.getLot().trim());
+                }
+
+                // ตรวจสอบ ItemType (แบบ flexible)
+                boolean itemTypeMatch = true; // เริ่มด้วย true
+                if (scannedTag.getItemType() != null && item.getItemType() != null) {
+                    itemTypeMatch = scannedTag.getItemType().trim().equalsIgnoreCase(item.getItemType().trim());
+                }
+
+                Log.d(TAG, "scannedTags[" + i + "] Match check - ProductId: " + productIdMatch +
+                        ", Lot: " + lotMatch + ", ItemType: " + itemTypeMatch);
+
+                // เงื่อนไขใหม่ - ต้องตรง ProductId และ (Lot หรือ ItemType)
+                if (productIdMatch && (lotMatch || itemTypeMatch)) {
+                    // ใช้ Wrapper Class
+                    TagWithStatus scanningTag = new TagWithStatus(scannedTag, "SCANNING");
+                    allTagsWithStatus.add(scanningTag);
+                    scanningCount++;
+
+                    Log.d(TAG, "Added SCANNING tag: '" + scannedTag.getTagNumber() + "'");
+                } else {
+                    Log.d(TAG, "scannedTags[" + i + "] - NOT MATCHED");
+                }
+            }
+        } else {
+            Log.d(TAG, "scannedTags is NULL");
+        }
+
+        Log.d(TAG, "=== FILTERING RESULTS ===");
+        Log.d(TAG, "Total tags found: " + allTagsWithStatus.size() + " (Success: " + successCount + ", Scanning: " + scanningCount + ")");
+
+        // เรียงลำดับตาม TagNumber
+        allTagsWithStatus.sort((tag1, tag2) -> {
+            String tagNumber1 = tag1.getTagNumber() != null ? tag1.getTagNumber() : "";
+            String tagNumber2 = tag2.getTagNumber() != null ? tag2.getTagNumber() : "";
+            return tagNumber1.compareToIgnoreCase(tagNumber2);
+        });
+
+        Log.d(TAG, "Tags sorted by TagNumber");
+
+        // แสดงจำนวนแท็กแบบแยกประเภท
+        String tagCountText = String.format("Total Tags: %d (Success: %d, Scanning: %d)",
+                allTagsWithStatus.size(), successCount, scanningCount);
+        tvTagCount.setText(tagCountText);
 
         // แสดงรายการแท็กหรือข้อความว่าไม่มีแท็ก
-        if (filteredTags.isEmpty()) {
+        if (allTagsWithStatus.isEmpty()) {
             lvTags.setVisibility(View.GONE);
             tvNoTags.setVisibility(View.VISIBLE);
-            tvNoTags.setText("No tags scanned for this item with type: " + itemType);
+            tvNoTags.setText("No tags found for this item with type: " + itemType +
+                    "\n\nDebugging info:" +
+                    "\n- tempList size: " + (tempList != null ? tempList.size() : 0) +
+                    "\n- scannedTags size: " + (scannedTags != null ? scannedTags.size() : 0));
+            Log.d(TAG, "No tags found - showing empty message");
         } else {
             lvTags.setVisibility(View.VISIBLE);
             tvNoTags.setVisibility(View.GONE);
 
-            // ตั้งค่า adapter (การเรียงลำดับจะถูกจัดการภายใน SimpleTagAdapter)
-            MoveOrderChildTagAdapter adapter = new MoveOrderChildTagAdapter(requireContext(), filteredTags);
+            Log.d(TAG, "=== CREATING ADAPTER ===");
+            Log.d(TAG, "About to create adapter with " + allTagsWithStatus.size() + " items");
+
+            // Debug: แสดงข้อมูลที่จะส่งให้ adapter
+            for (int i = 0; i < allTagsWithStatus.size(); i++) {
+                TagWithStatus tagWithStatus = allTagsWithStatus.get(i);
+                Log.d(TAG, "allTagsWithStatus[" + i + "] - TagNumber: '" + tagWithStatus.getTagNumber() +
+                        "', Status: '" + tagWithStatus.getStatus() + "'");
+            }
+
+            // ตั้งค่า adapter กับข้อมูลรวม (ใช้ Wrapper)
+            MoveOrderChildTagWithStatusAdapter adapter = new MoveOrderChildTagWithStatusAdapter(requireContext(), allTagsWithStatus);
             lvTags.setAdapter(adapter);
 
             // ปรับขนาดความสูงของ ListView
-            int maxHeight = getResources().getDisplayMetrics().heightPixels * 2 / 3; // 2/3 ของความสูงหน้าจอ
-            int totalHeight = filteredTags.size() * (int) (56 * getResources().getDisplayMetrics().density);
+            int maxHeight = getResources().getDisplayMetrics().heightPixels * 2 / 3;
+            int totalHeight = allTagsWithStatus.size() * (int) (56 * getResources().getDisplayMetrics().density);
             ViewGroup.LayoutParams params = lvTags.getLayoutParams();
             params.height = Math.min(totalHeight, maxHeight);
             lvTags.setLayoutParams(params);
+
+            Log.d(TAG, "Showing " + allTagsWithStatus.size() + " tags in ListView");
+            Log.d(TAG, "ListView height set to: " + params.height);
         }
 
         // สร้างและแสดง dialog
         AlertDialog dialog = builder.create();
+
+        // ตั้งค่าขนาด dialog
+        dialog.setOnShowListener(dialogInterface -> {
+            // ปรับขนาด dialog ให้เหมาะสม
+            if (dialog.getWindow() != null) {
+                int width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
+                int height = (int) (getResources().getDisplayMetrics().heightPixels * 0.8);
+                dialog.getWindow().setLayout(width, height);
+                Log.d(TAG, "Dialog size set to: " + width + "x" + height);
+            }
+        });
+
         dialog.show();
+        Log.d(TAG, "Dialog shown");
 
         // ตั้งค่าปุ่มปิด
-        btnClose.setOnClickListener(v -> dialog.dismiss());
+        btnClose.setOnClickListener(v -> {
+            Log.d(TAG, "Close button clicked");
+            dialog.dismiss();
+        });
+
+        Log.d(TAG, "=== handleItemClick Complete ===");
     }
+
+//    private void handleItemClick(MoveOrderItem item) {
+//        Log.d(TAG, "=== handleItemClick Debug ===");
+//        Log.d(TAG, "Selected item - ProductId: " + item.getProductId() +
+//                ", Lot: " + item.getLot() +
+//                ", ItemType: " + item.getItemType() +
+//                ", ProductNumber: " + item.getProductNumber() +
+//                ", Product: " + item.getProduct());
+//
+//        // สร้าง dialog
+//        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+//        View dialogView = getLayoutInflater().inflate(R.layout.layout_scanned_tags_move_order_child, null);
+//        builder.setView(dialogView);
+//
+//        // หา views ใน dialog
+//        TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
+//        TextView tvItemInfo = dialogView.findViewById(R.id.tvItemInfo);
+//        TextView tvTagCount = dialogView.findViewById(R.id.tvTagCount);
+//        ListView lvTags = dialogView.findViewById(R.id.lvTags);
+//        TextView tvNoTags = dialogView.findViewById(R.id.tvNoTags);
+//        Button btnClose = dialogView.findViewById(R.id.btnClose);
+//
+//        // กำหนดชื่อ Dialog
+//        String productNumber = item.getProductNumber() != null ? item.getProductNumber() : "Unknown Product";
+//        tvDialogTitle.setText("All Tags for " + productNumber);
+//
+//        // แสดงข้อมูลสินค้า
+//        String itemType = item.getItemType() != null ? item.getItemType() : "Unknown";
+//        String product = item.getProduct() != null ? item.getProduct() : "N/A";
+//        String barcode = item.getBarcode() != null ? item.getBarcode() : "N/A";
+//        String lot = item.getLot() != null ? item.getLot() : "N/A";
+//
+//        String itemInfo = String.format("Product: %s\nBarcode: %s\nLot: %s\nType: %s",
+//                product, barcode, lot, itemType);
+//        tvItemInfo.setText(itemInfo);
+//
+//        // รวมข้อมูลจาก 2 sources ใช้ Wrapper
+//        List<TagWithStatus> allTagsWithStatus = new ArrayList<>();
+//
+//        Log.d(TAG, "=== BEFORE FILTERING ===");
+//        Log.d(TAG, "tempList total size: " + (tempList != null ? tempList.size() : 0));
+//        Log.d(TAG, "scannedTags total size: " + (scannedTags != null ? scannedTags.size() : 0));
+//
+//        // 1. เพิ่มข้อมูลจาก tempList (ที่ Success แล้ว)
+//        int successCount = 0;
+//        if (tempList != null) {
+//            Log.d(TAG, "tempList size: " + tempList.size());
+//            for (int i = 0; i < tempList.size(); i++) {
+//                MoveOrderItem tempTag = tempList.get(i);
+//                Log.d(TAG, "tempList[" + i + "] - ProductId: " + tempTag.getProductId() +
+//                        ", Lot: '" + tempTag.getLot() + "'" +
+//                        ", ItemType: '" + tempTag.getItemType() + "'" +
+//                        ", TagNumber: '" + tempTag.getTagNumber() + "'");
+//
+//                // ผ่อนเงื่อนไข - ตรวจสอบแค่ ProductId อย่างเดียวก่อน
+//                boolean productIdMatch = (tempTag.getProductId() == item.getProductId());
+//
+//                // ตรวจสอบ Lot (แบบ flexible)
+//                boolean lotMatch = true; // เริ่มด้วย true
+//                if (tempTag.getLot() != null && item.getLot() != null) {
+//                    lotMatch = tempTag.getLot().trim().equalsIgnoreCase(item.getLot().trim());
+//                }
+//
+//                // ตรวจสอบ ItemType (แบบ flexible)
+//                boolean itemTypeMatch = true; // เริ่มด้วย true
+//                if (tempTag.getItemType() != null && item.getItemType() != null) {
+//                    itemTypeMatch = tempTag.getItemType().trim().equalsIgnoreCase(item.getItemType().trim());
+//                }
+//
+//                Log.d(TAG, "tempList[" + i + "] Match check - ProductId: " + productIdMatch +
+//                        ", Lot: " + lotMatch + ", ItemType: " + itemTypeMatch);
+//
+//                // เงื่อนไขใหม่ - ต้องตรง ProductId และ (Lot หรือ ItemType)
+//                if (productIdMatch && (lotMatch || itemTypeMatch)) {
+//                    // ใช้ Wrapper Class
+//                    TagWithStatus successTag = new TagWithStatus(tempTag, "SUCCESS");
+//                    allTagsWithStatus.add(successTag);
+//                    successCount++;
+//
+//                    Log.d(TAG, "Added SUCCESS tag: '" + tempTag.getTagNumber() + "'");
+//                } else {
+//                    Log.d(TAG, "tempList[" + i + "] - NOT MATCHED");
+//                }
+//            }
+//        } else {
+//            Log.d(TAG, "tempList is NULL");
+//        }
+//
+//        // 2. เพิ่มข้อมูลจาก scannedTags (ที่กำลังสแกน)
+//        int scanningCount = 0;
+//        if (scannedTags != null) {
+//            Log.d(TAG, "scannedTags size: " + scannedTags.size());
+//            for (int i = 0; i < scannedTags.size(); i++) {
+//                MoveOrderItem scannedTag = scannedTags.get(i);
+//                Log.d(TAG, "scannedTags[" + i + "] - ProductId: " + scannedTag.getProductId() +
+//                        ", Lot: '" + scannedTag.getLot() + "'" +
+//                        ", ItemType: '" + scannedTag.getItemType() + "'" +
+//                        ", TagNumber: '" + scannedTag.getTagNumber() + "'");
+//
+//                // ผ่อนเงื่อนไข - ตรวจสอบแค่ ProductId อย่างเดียวก่อน
+//                boolean productIdMatch = (scannedTag.getProductId() == item.getProductId());
+//
+//                // ตรวจสอบ Lot (แบบ flexible)
+//                boolean lotMatch = true; // เริ่มด้วย true
+//                if (scannedTag.getLot() != null && item.getLot() != null) {
+//                    lotMatch = scannedTag.getLot().trim().equalsIgnoreCase(item.getLot().trim());
+//                }
+//
+//                // ตรวจสอบ ItemType (แบบ flexible)
+//                boolean itemTypeMatch = true; // เริ่มด้วย true
+//                if (scannedTag.getItemType() != null && item.getItemType() != null) {
+//                    itemTypeMatch = scannedTag.getItemType().trim().equalsIgnoreCase(item.getItemType().trim());
+//                }
+//
+//                Log.d(TAG, "scannedTags[" + i + "] Match check - ProductId: " + productIdMatch +
+//                        ", Lot: " + lotMatch + ", ItemType: " + itemTypeMatch);
+//
+//                // เงื่อนไขใหม่ - ต้องตรง ProductId และ (Lot หรือ ItemType)
+//                if (productIdMatch && (lotMatch || itemTypeMatch)) {
+//                    // ใช้ Wrapper Class
+//                    TagWithStatus scanningTag = new TagWithStatus(scannedTag, "SCANNING");
+//                    allTagsWithStatus.add(scanningTag);
+//                    scanningCount++;
+//
+//                    Log.d(TAG, "Added SCANNING tag: '" + scannedTag.getTagNumber() + "'");
+//                } else {
+//                    Log.d(TAG, "scannedTags[" + i + "] - NOT MATCHED");
+//                }
+//            }
+//        } else {
+//            Log.d(TAG, "scannedTags is NULL");
+//        }
+//
+//        Log.d(TAG, "=== FILTERING RESULTS ===");
+//        Log.d(TAG, "Total tags found: " + allTagsWithStatus.size() + " (Success: " + successCount + ", Scanning: " + scanningCount + ")");
+//
+//        // แสดงจำนวนแท็กแบบแยกประเภท
+//        String tagCountText = String.format("Total Tags: %d (Success: %d, Scanning: %d)",
+//                allTagsWithStatus.size(), successCount, scanningCount);
+//        tvTagCount.setText(tagCountText);
+//
+//        // แสดงรายการแท็กหรือข้อความว่าไม่มีแท็ก
+//        if (allTagsWithStatus.isEmpty()) {
+//            lvTags.setVisibility(View.GONE);
+//            tvNoTags.setVisibility(View.VISIBLE);
+//            tvNoTags.setText("No tags found for this item with type: " + itemType +
+//                    "\n\nDebugging info:" +
+//                    "\n- tempList size: " + (tempList != null ? tempList.size() : 0) +
+//                    "\n- scannedTags size: " + (scannedTags != null ? scannedTags.size() : 0));
+//            Log.d(TAG, "No tags found - showing empty message");
+//        } else {
+//            lvTags.setVisibility(View.VISIBLE);
+//            tvNoTags.setVisibility(View.GONE);
+//
+//            Log.d(TAG, "=== CREATING ADAPTER ===");
+//            Log.d(TAG, "About to create adapter with " + allTagsWithStatus.size() + " items");
+//
+//            // Debug: แสดงข้อมูลที่จะส่งให้ adapter
+//            for (int i = 0; i < allTagsWithStatus.size(); i++) {
+//                TagWithStatus tagWithStatus = allTagsWithStatus.get(i);
+//                Log.d(TAG, "allTagsWithStatus[" + i + "] - TagNumber: '" + tagWithStatus.getTagNumber() +
+//                        "', Status: '" + tagWithStatus.getStatus() + "'");
+//            }
+//
+//            // ตั้งค่า adapter กับข้อมูลรวม (ใช้ Wrapper)
+//            MoveOrderChildTagWithStatusAdapter adapter = new MoveOrderChildTagWithStatusAdapter(requireContext(), allTagsWithStatus);
+//            lvTags.setAdapter(adapter);
+//
+//            // ปรับขนาดความสูงของ ListView
+//            int maxHeight = getResources().getDisplayMetrics().heightPixels * 2 / 3;
+//            int totalHeight = allTagsWithStatus.size() * (int) (56 * getResources().getDisplayMetrics().density);
+//            ViewGroup.LayoutParams params = lvTags.getLayoutParams();
+//            params.height = Math.min(totalHeight, maxHeight);
+//            lvTags.setLayoutParams(params);
+//
+//            Log.d(TAG, "Showing " + allTagsWithStatus.size() + " tags in ListView");
+//            Log.d(TAG, "ListView height set to: " + params.height);
+//        }
+//
+//        // สร้างและแสดง dialog
+//        AlertDialog dialog = builder.create();
+//
+//        // ตั้งค่าขนาด dialog
+//        dialog.setOnShowListener(dialogInterface -> {
+//            // ปรับขนาด dialog ให้เหมาะสม
+//            if (dialog.getWindow() != null) {
+//                int width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
+//                int height = (int) (getResources().getDisplayMetrics().heightPixels * 0.8);
+//                dialog.getWindow().setLayout(width, height);
+//                Log.d(TAG, "Dialog size set to: " + width + "x" + height);
+//            }
+//        });
+//
+//        dialog.show();
+//        Log.d(TAG, "Dialog shown");
+//
+//        // ตั้งค่าปุ่มปิด
+//        btnClose.setOnClickListener(v -> {
+//            Log.d(TAG, "Close button clicked");
+//            dialog.dismiss();
+//        });
+//
+//        Log.d(TAG, "=== handleItemClick Complete ===");
+//    }
+
+
+
 
 
     private void startScanningForItem(MoveOrderItem item) {
@@ -748,13 +1256,13 @@ public class MoveOrderChildFragment extends Fragment {
             mContext.addConnectStatusNotice(mConnectStatus);
 
             // Try to set TagFocus
-            if (uhf != null && uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
-                try {
-                    uhf.setTagFocus(true);
-                } catch (Exception e) {
-                    Log.e(TAG, "Error setting TagFocus in onAttach: " + e.getMessage());
-                }
-            }
+//            if (uhf != null && uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
+//                try {
+//                    uhf.setTagFocus(true);
+//                } catch (Exception e) {
+//                    Log.e(TAG, "Error setting TagFocus in onAttach: " + e.getMessage());
+//                }
+//            }
         }
     }
 
@@ -814,13 +1322,13 @@ public class MoveOrderChildFragment extends Fragment {
         }
     }
 
-    private MoveOrderItem findItemInTempListByTagId(String tagId) {
-        if (tempList == null || tempList.isEmpty() || tagId == null) {
+    private MoveOrderItem findItemInTempListByTagId(String tagNumber) {
+        if (tempList == null || tempList.isEmpty() || tagNumber == null) {
             return null;
         }
 
         for (MoveOrderItem item : tempList) {
-            if (item.getTagId() != null && item.getTagId().equals(tagId)) {
+            if (item.getTagNumber() != null && item.getTagNumber().equals(tagNumber)) {
                 return item;
             }
         }
@@ -828,73 +1336,70 @@ public class MoveOrderChildFragment extends Fragment {
         return null;
     }
 
+    private void scanBarcode()
+    {
+        String barcode= String.valueOf(tvBarcode.getText());
+        if (barcode != null) processQrCode(barcode);
+    }
+
     private void processQrCode(String qrCode) {
         try {
             // Basic input validation
             if (qrCode == null || qrCode.length() < 11) {
-                //Toast.makeText(mContext, "Invalid QR code format", Toast.LENGTH_SHORT).show();
                 String msg = qrCode + " Invalid format";
                 notificationMessages.add(msg);
-                showToastOnUiThread(msg);
-                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
-                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
+                //showToastOnUiThread(msg);
+                hasNotifications = true;
+                updateNotificationVisibility();
                 return;
             }
 
             String barcode = qrCode.substring(0, 6);
             String lot = qrCode.substring(6, 14);
-            String mc  = qrCode.substring(12, 14);
+            String mc = qrCode.substring(12, 14);
             String box_type = qrCode.substring(14, 15);
             String box_size = qrCode.substring(15, 19);
-            String running =  qrCode.substring(19, 24);
+            String running = qrCode.substring(19, 24);
             String itemType = "Full Box";
-            if (box_type.equals("C"))
-            {
-                itemType ="Renant";
-            }
-            else if (box_type.equals("F"))
-            {
+            if (box_type.equals("C")) {
+                itemType = "Renant";
+            } else if (box_type.equals("F")) {
                 itemType = "Full Box";
             }
-            else
-            {
-
-            }
-
 
             boolean found = false;
 
-
+            // **เพิ่มการตรวจสอบ: ตรวจสอบว่า tag นี้เคย confirm ไปแล้วหรือยัง (ใน tempList)**
             String xxTagID = qrCode;
+
+            boolean isStock = isTagInStock(xxTagID);
+            if (isStock) {
+                String msg = qrCode + " มีในระบบแล้ว!";
+                notificationMessages.add(msg);
+                //showToastOnUiThread(msg);
+                hasNotifications = true;
+                updateNotificationVisibility();
+                return;
+            }
+
             MoveOrderItem foundItem = findItemInTempListByTagId(xxTagID);
             if (foundItem != null) {
-                // Item found - do something with it
-                Log.d(TAG, "Found item with tagId: " + foundItem.getTagId());
-                Log.d(TAG, "Product ID: " + foundItem.getProductId());
-                Log.d(TAG, "Lot: " + foundItem.getLot());
-                Log.d(TAG, "Item Type: " + foundItem.getItemType());
+                String msg = qrCode + " has already been confirmed in previous transaction!";
+                notificationMessages.add(msg);
+                //showToastOnUiThread(msg);
+                hasNotifications = true;
+                updateNotificationVisibility();
                 return;
-            } else {
-                // Item not found
-                //Log.d(TAG, "No item found with tagId: " + xxTagID);
-//                String msg = qrCode + " ไม่พบข้อมูลแท็กนี้";
-//                notificationMessages.add(msg);
-//                //showToastOnUiThread(msg);
-//                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
-//                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
             }
 
             // Get all items from adapter
             List<MoveOrderItem> items = adapter.getFilteredItems();
 
             if (items == null) {
-                //Toast.makeText(mContext, "No items available", Toast.LENGTH_SHORT).show();
-
                 String msg = "No items available";
                 notificationMessages.add(msg);
-                //showToastOnUiThread(msg);
-                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
-                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
+                hasNotifications = true;
+                updateNotificationVisibility();
                 return;
             }
 
@@ -904,35 +1409,58 @@ public class MoveOrderChildFragment extends Fragment {
                 String templot = item.getLot();
                 String tempitemtype = item.getItemType();
                 double allocatedQty = 0;
-                if (itemType.equals("Full Box"))
-                {
+                if (itemType.equals("Full Box")) {
                     allocatedQty = item.getQuantityPerBox();
-                }
-                else if(itemType.equals("Renant"))
-                {
+                } else if (itemType.equals("Renant")) {
                     allocatedQty = item.getAllocatedQty();
                 }
-                else
-                {}
+
                 if (item != null &&
                         item.getBarcode() != null &&
                         item.getLot() != null &&
                         item.getBarcode().equals(barcode) &&
                         item.getLot().equals(lot) &&
-                        item.getItemType().equals(itemType) ) {
+                        item.getItemType().equals(itemType)) {
 
                     found = true;
 
-                    // Check if this tag was already scanned
-                    if (!scannedTags.contains(qrCode)) {
-                        // Update quantity scanned
+                    // **ตรวจสอบว่าแท็กนี้สแกนในรอบปัจจุบันแล้วหรือยัง (ใน scannedTags)**
+                    boolean isAlreadyScannedInCurrentSession = false;
+                    for (MoveOrderItem scannedTag : scannedTags) {
+                        if (scannedTag.getTagNumber() != null &&
+                                scannedTag.getTagNumber().equals(qrCode.trim())) {
+                            isAlreadyScannedInCurrentSession = true;
+                            break;
+                        }
+                    }
 
+                    if (!isAlreadyScannedInCurrentSession) {
+                        // **เพิ่มการตรวจสอบปริมาณ: qty success + qty scan + 1 ต้องไม่เกิน qty**
+                        double currentTotal = item.getQuantitySuccess() + item.getQuantityScan();
+                        double newTotal = currentTotal + 1; // +1 สำหรับแท็กที่กำลังจะสแกน
+                        double maxQty = item.getQuantity();
+
+                        if (newTotal > maxQty) {
+                            String msg = String.format("Item: %s, Lot: %s - Cannot scan more! Would exceed limit (Success: %.0f + Scan: %.0f + 1 = %.0f > %.0f)",
+                                    barcode, lot,
+                                    item.getQuantitySuccess(),
+                                    item.getQuantityScan(),
+                                    newTotal,
+                                    maxQty);
+                            if (!notificationMessages.contains(msg)) {
+                                notificationMessages.add(msg);
+                                hasNotifications = true;
+                                updateNotificationVisibility();
+                            }
+                            // ไม่ return แล้ว ยอมให้สแกนเกินได้
+                        }
 
                         // Add tag to scanned list
                         MoveOrderItem xitem = new MoveOrderItem();
+                        xitem.setId(item.getId());
                         xitem.setProductId(item.getProductId());
                         xitem.setQuantity(1);
-                        xitem.setTagId(qrCode.trim());
+                        xitem.setTagNumber(qrCode.trim());
                         xitem.setLotNumber(item.getLotNumber());
                         xitem.setLot(lot);
                         xitem.setItemType(itemType);
@@ -940,48 +1468,73 @@ public class MoveOrderChildFragment extends Fragment {
                         scannedTags.add(xitem);
 
                         item.setQuantityScan(item.getQuantityScan() + 1);
-                        // Show success message with runOnUiThread
+
+                        // Show success message with remaining quantity
+                        double remaining = maxQty - newTotal;
+                        String successMsg = String.format("Scanned successfully! Remaining: %.0f/%.0f", remaining, maxQty);
+                        //showToastOnUiThread(successMsg);
+
+                        // Update UI
                         if (getActivity() != null) {
                             getActivity().runOnUiThread(() -> {
-
-                                // Notify adapter that data has changed
                                 adapter.notifyDataSetChanged();
-                                updateTotalQuantities(); // Add this line
+                                updateTotalQuantities();
                             });
                         }
                     } else {
-
-                        String msg = qrCode + "  has already been scanned!";
-                        notificationMessages.add(msg);
-                        //showToastOnUiThread(msg);
-                        hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
-                        updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
+                        String msg = qrCode + " has already been scanned in current session!";
+                        if (!notificationMessages.contains(msg)) {
+                            notificationMessages.add(msg);
+                            hasNotifications = true;
+                            updateNotificationVisibility();
+                        }
                     }
                     break;
                 }
             }
 
             if (!found) {
-                // Item not found in list
-//                showToastOnUiThread(String.format("No matching item found for Item: %s, Lot: %s",
-//                        barcode, lot));
                 String msg = "Item: " + barcode + " , Lot: " + lot + " No matching in Order ";
                 notificationMessages.add(msg);
-                //showToastOnUiThread(msg);
-                hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
-                updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
+                hasNotifications = true;
+                updateNotificationVisibility();
             }
 
         } catch (Exception e) {
             Log.e("MoveOrderChildFragment", "Error processing QR code: " + e.getMessage());
-            //showToastOnUiThread("Error processing scan: " + e.getMessage());
             String msg = "Error processing QR code: " + e.getMessage();
             notificationMessages.add(msg);
-            //showToastOnUiThread(msg);
-            hasNotifications = true;  // ตั้งค่าให้มีการแจ้งเตือน
-            updateNotificationVisibility();  // อัพเดทการแสดงผลไอคอนแจ้งเตือน
+            hasNotifications = true;
+            updateNotificationVisibility();
+        }
+    }
+
+    private boolean isTagInStock(String tagNumber) {
+        if (stockTags == null || stockTags.isEmpty() || tagNumber == null) {
+            Log.d(TAG, "stockTags is null/empty or tagNumber is null");
+            return false;
         }
 
+        Log.d(TAG, "Checking if tagNumber '" + tagNumber + "' exists in " + stockTags.size() + " stockTags");
+
+        for (TagDto stockTag : stockTags) {
+            if (stockTag != null && stockTag.getTagNumber() != null) {
+                // ตรวจสอบแบบ exact match
+                if (stockTag.getTagNumber().equals(tagNumber)) {
+                    Log.d(TAG, "Found exact match for tagNumber: " + tagNumber);
+                    return true;
+                }
+
+                // ตรวจสอบแบบ case-insensitive (optional)
+                if (stockTag.getTagNumber().equalsIgnoreCase(tagNumber.trim())) {
+                    Log.d(TAG, "Found case-insensitive match for tagNumber: " + tagNumber);
+                    return true;
+                }
+            }
+        }
+
+        Log.d(TAG, "TagNumber '" + tagNumber + "' not found in stockTags");
+        return false;
     }
 
     // Helper method to show Toast on UI thread
@@ -1027,11 +1580,11 @@ public class MoveOrderChildFragment extends Fragment {
             return;
         }
 
-        try {
-            mContext.uhf.setTagFocus(true);
-        } catch (Exception ex) {
-            Log.e(TAG, "Error setting TagFocus: " + ex.getMessage());
-        }
+//        try {
+//            mContext.uhf.setTagFocus(true);
+//        } catch (Exception ex) {
+//            Log.e(TAG, "Error setting TagFocus: " + ex.getMessage());
+//        }
 
         //--
 
@@ -1101,25 +1654,42 @@ public class MoveOrderChildFragment extends Fragment {
     }
     private int  selectIndex=-1;
     private void clearData() {
+        // Reset selection
+        mContext.selectEPC = null;
+        selectIndex = -1;
 
-        //adapter.notifyDataSetChanged();
-
-        mContext.selectEPC=null;
-        selectIndex=-1;
-
+        // ล้าง scannedTags
         if (scannedTags != null) {
             scannedTags.clear();
         }
+
+        // Reset quantityScan ของทุกรายการเป็น 0 (แต่เก็บ quantitySuccess ไว้)
+        if (itemList != null) {
+            for (MoveOrderItem item : itemList) {
+                item.setQuantityScan(0);
+            }
+        }
+
+        // ล้าง tagList
+        if (tagList == null) {
+            tagList = new ArrayList<>();
+        } else {
+            tagList.clear();
+        }
+
+        // ล้าง tempDatas
+        if (tempDatas != null) {
+            tempDatas.clear();
+        }
+
+        // อัพเดท UI
         if (adapter != null) {
             adapter.notifyDataSetChanged();
         }
 
-        // Create new tagList if it's null
-        if (tagList == null) {
-            tagList = new ArrayList<>();
-        }
+        updateTotalQuantities();
 
-        loadMoveOrderItems();
+        // **ไม่เรียก loadMoveOrderItems() เพื่อไม่ให้ข้อมูル quantitySuccess หายไป**
     }
 
     @Override
@@ -1162,38 +1732,158 @@ public class MoveOrderChildFragment extends Fragment {
     private void clearRFID() {
         // TODO: Implement RFID scanning logic
         //  Toast.makeText(mContext, "RFID scanning not implemented yet", Toast.LENGTH_SHORT).show();
+        String userId = MainActivity.globalUserId;
         clearData();
         //fetchCountingDetails(journal);
     }
 
     private void confirmMoveOrderTransaction() {
-        // Create Retrofit service or similar HTTP client
-        Call<List<MoveOrderItem>> call = apiService.createMoveOrderTransaction(
-                moveOrderId, // Replace with actual parent ID
-                scannedTags
-        );
+        // ตรวจสอบว่ามี scannedTags หรือไม่ก่อนเริ่ม loading
+        if (scannedTags == null || scannedTags.isEmpty()) {
+            Toast.makeText(mContext, "No scanned tags to confirm", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        call.enqueue(new Callback<List<MoveOrderItem>>() {
-            @Override
-            public void onResponse(Call<List<MoveOrderItem>> call, Response<List<MoveOrderItem>> response) {
-                if (response.isSuccessful()) {
-                    // Handle success
-                    Toast.makeText(mContext, "Data sent successfully", Toast.LENGTH_SHORT).show();
-
-                    loadMoveOrderItems();
-
-                } else {
-                    // Handle error
-                    Toast.makeText(mContext, "Error: " + response.message(), Toast.LENGTH_SHORT).show();
+        // ตรวจสอบว่ามียอด scan เกิน quantity หรือไม่
+        if (itemList != null) {
+            for (MoveOrderItem item : itemList) {
+                if (item.getQuantitySuccess() + item.getQuantityScan() > item.getQuantity()) {
+                    new AlertDialog.Builder(requireContext())
+                            .setTitle("แจ้งเตือน")
+                            .setMessage("ไม่สามารถบันทึกได้: รหัสสินค้า " + item.getProductNumber() + " มียอดสแกนเกินกำหนด")
+                            .setPositiveButton("ตกลง", null)
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .show();
+                    return;
                 }
             }
+        }
+
+        // แสดง loading indicator
+        showLoading(true);
+
+        // Create Retrofit service or similar HTTP client
+        List<MoveTagDto> sendTags = new ArrayList<>();
+
+        // **แก้ไข: สร้าง MoveTagDto object ใหม่ในแต่ละรอบของลูป**
+        for (MoveOrderItem scannedTag : scannedTags) {
+            MoveTagDto item = new MoveTagDto(); // สร้างใหม่ในทุกรอบ
+            item.setMoveOrderItemId(scannedTag.getId());
+            item.setTagNumber(scannedTag.getTagNumber());
+            sendTags.add(item);
+        }
+
+        Log.d(TAG, "Confirming " + sendTags.size() + " scanned tags...");
+
+        String userId = MainActivity.globalUserId;
+
+        Call<List<ResponseDto>> call = apiService.createMoveOrderTransaction(
+                moveOrderId,
+                userId,
+                sendTags
+        );
+
+        call.enqueue(new Callback<List<ResponseDto>>() {
+            @Override
+            public void onResponse(Call<List<ResponseDto>> call, Response<List<ResponseDto>> response) {
+                showLoading(false);
+
+                if (response.isSuccessful()) {
+
+                    List<ResponseDto> results = response.body();
+
+                    // เช็คว่าทุกรายการ success หรือไม่
+                    boolean allSuccess = true;
+                    StringBuilder errorMessages = new StringBuilder();
+
+                    for (ResponseDto result : results) {
+                        if (!result.getIsSuccess()) {
+                            allSuccess = false;
+                            errorMessages.append("• ").append(result.getMessage()).append("\n");
+                        }
+                    }
+
+                    if (allSuccess) {
+
+
+                        // **แก้ไข: ล้างข้อมูลสแกนและ reset quantityScan**
+                        clearScanDataAfterConfirm();
+
+                        checkNotifications();
+                        // โหลดข้อมูลใหม่
+                        loadMoveOrderItems();
+
+                        Toast.makeText(mContext, "จัดเก็บสินค้าเสร็จเรียบร้อย", Toast.LENGTH_LONG).show();
+
+                    } else {
+                        // มีรายการที่ไม่สำเร็จ
+                        String errorMsg = "Some transactions failed:\n\n" + errorMessages.toString();
+
+                        new AlertDialog.Builder(requireContext())
+                                .setTitle("Move Errors")
+                                .setMessage(errorMsg)
+                                .setPositiveButton("OK", null)
+                                .show();
+
+                        Toast.makeText(mContext, "Confirm Move failed ", Toast.LENGTH_SHORT).show();
+                    }
+
+
+
+
+
+                } else {
+                    Toast.makeText(mContext, "Error: " + response.message(), Toast.LENGTH_SHORT).show();
+                }
+
+
+            }
 
             @Override
-            public void onFailure(Call<List<MoveOrderItem>> call, Throwable t) {
-                // Handle failure
-                Toast.makeText(mContext, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            public void onFailure(Call<List<ResponseDto>> call, Throwable t) {
+                showLoading(false);
+
+                String networkError = "Network error: " + t.getMessage();
+                Toast.makeText(mContext, networkError, Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Network failure: ", t);
+                //Toast.makeText(mContext, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    // เพิ่มเมธอดใหม่สำหรับล้างข้อมูลสแกนหลัง confirm
+    private void clearScanDataAfterConfirm() {
+        // ล้าง scannedTags
+        if (scannedTags != null) {
+            scannedTags.clear();
+        }
+
+        // Reset quantityScan ของทุกรายการเป็น 0
+        if (itemList != null) {
+            for (MoveOrderItem item : itemList) {
+                item.setQuantityScan(0);
+            }
+        }
+
+        // ล้าง tagList สำหรับ RFID
+        if (tagList != null) {
+            tagList.clear();
+        }
+
+        // ล้าง tempDatas
+        if (tempDatas != null) {
+            tempDatas.clear();
+        }
+
+        // Reset selection
+        mContext.selectEPC = null;
+
+        // อัพเดท UI
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
+
+        updateTotalQuantities();
     }
 
 
