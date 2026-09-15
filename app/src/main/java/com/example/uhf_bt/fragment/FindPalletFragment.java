@@ -19,6 +19,7 @@ import android.widget.Toast;
 
 import com.example.uhf_bt.R;
 import com.example.uhf_bt.adapter.PalletTagAdapter;
+import com.example.uhf_bt.models.PalletGroupSummary;
 import com.example.uhf_bt.models.PalletTag;
 import com.example.uhf_bt.services.ApiService;
 import com.example.uhf_bt.services.RetrofitClient;
@@ -30,8 +31,10 @@ import android.widget.DatePicker;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -157,85 +160,107 @@ public class FindPalletFragment extends Fragment {
         }
     }
 
+    private List<PalletGroupSummary> groupPalletTags(List<PalletTag> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        Map<String, PalletGroupSummary> groupMap = new LinkedHashMap<>();
+        for (PalletTag tag : tags) {
+            if (tag == null) continue;
+            String pickingNumber = tag.getPickingNumber() != null ? tag.getPickingNumber() : "";
+            String groupKey = !pickingNumber.isEmpty() ? pickingNumber : String.valueOf(tag.getPickingOrderId());
+
+            if (!groupMap.containsKey(groupKey)) {
+                PalletGroupSummary group = new PalletGroupSummary(tag);
+                groupMap.put(groupKey, group);
+            } else {
+                groupMap.get(groupKey).addPalletTag(tag);
+            }
+        }
+        return new ArrayList<>(groupMap.values());
+    }
+
     private void filterPalletsByStatus(int tabPosition) {
         if (allPalletTags == null) {
             allPalletTags = new ArrayList<>();
         }
 
-        List<PalletTag> filteredList = new ArrayList<>();
+        List<PalletGroupSummary> allGroups = groupPalletTags(allPalletTags);
+        List<PalletGroupSummary> filteredList = new ArrayList<>();
 
         // กรองตามสถานะที่เลือก
         switch (tabPosition) {
             case 0: // All
-                filteredList = new ArrayList<>(allPalletTags);
+                filteredList = new ArrayList<>(allGroups);
                 break;
             case 1: // New (Register = 0)
-                for (PalletTag pallet : allPalletTags) {
-                    if (pallet.getPalletStatus() == 0) {
-                        filteredList.add(pallet);
+                for (PalletGroupSummary group : allGroups) {
+                    if (group.hasStatus(0)) {
+                        filteredList.add(group);
                     }
                 }
                 break;
             case 2: // Pick (1)
-                for (PalletTag pallet : allPalletTags) {
-                    if (pallet.getPalletStatus() == 1) {
-                        filteredList.add(pallet);
+                for (PalletGroupSummary group : allGroups) {
+                    if (group.hasStatus(1)) {
+                        filteredList.add(group);
                     }
                 }
                 break;
             case 3: // Pack (2)
-                for (PalletTag pallet : allPalletTags) {
-                    if (pallet.getPalletStatus() == 2) {
-                        filteredList.add(pallet);
+                for (PalletGroupSummary group : allGroups) {
+                    if (group.hasStatus(2)) {
+                        filteredList.add(group);
                     }
                 }
                 break;
             case 4: // ReceiveShipping (3)
-                for (PalletTag pallet : allPalletTags) {
-                    if (pallet.getPalletStatus() == 3) {
-                        filteredList.add(pallet);
+                for (PalletGroupSummary group : allGroups) {
+                    if (group.hasStatus(3)) {
+                        filteredList.add(group);
                     }
                 }
                 break;
             case 5: // RFIDLoading (4)
-                for (PalletTag pallet : allPalletTags) {
-                    if (pallet.getPalletStatus() == 4) {
-                        filteredList.add(pallet);
+                for (PalletGroupSummary group : allGroups) {
+                    if (group.hasStatus(4)) {
+                        filteredList.add(group);
                     }
                 }
                 break;
             case 6: // RFIDLoadingSuccess (5)
-                for (PalletTag pallet : allPalletTags) {
-                    if (pallet.getPalletStatus() == 5) {
-                        filteredList.add(pallet);
+                for (PalletGroupSummary group : allGroups) {
+                    if (group.hasStatus(5)) {
+                        filteredList.add(group);
                     }
                 }
                 break;
             case 7: // Loading (6)
-                for (PalletTag pallet : allPalletTags) {
-                    if (pallet.getPalletStatus() == 6) {
-                        filteredList.add(pallet);
+                for (PalletGroupSummary group : allGroups) {
+                    if (group.hasStatus(6)) {
+                        filteredList.add(group);
                     }
                 }
                 break;
             case 8: // Shipped (7)
-                for (PalletTag pallet : allPalletTags) {
-                    if (pallet.getPalletStatus() == 7) {
-                        filteredList.add(pallet);
+                for (PalletGroupSummary group : allGroups) {
+                    if (group.hasStatus(7)) {
+                        filteredList.add(group);
                     }
                 }
                 break;
             case 9: // Cancelled (-1)
-                for (PalletTag pallet : allPalletTags) {
-                    if (pallet.getPalletStatus() == -1) {
-                        filteredList.add(pallet);
+                for (PalletGroupSummary group : allGroups) {
+                    if (group.hasStatus(-1)) {
+                        filteredList.add(group);
                     }
                 }
                 break;
         }
 
         // อัพเดทรายการที่แสดงใน ListView
-        adapter.setPalletTags(filteredList);
+        adapter.setGroupList(filteredList);
 
         // แสดงข้อความเมื่อไม่มีรายการ
         if (filteredList.isEmpty()) {
@@ -361,12 +386,14 @@ public class FindPalletFragment extends Fragment {
         listView.setAdapter(adapter);
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
-            PalletTag palletTag = adapter.getItem(position);
-            openPalletChild(
-                    String.valueOf(palletTag.getPalletTagNumber()),
-                    String.valueOf(palletTag.getPickingNumber()),
-                    String.valueOf(palletTag.getPickingOrderId())
-            );
+            PalletGroupSummary group = adapter.getItem(position);
+            if (group != null) {
+                openPalletChild(
+                        group.getFirstPalletTagNumber(),
+                        group.getPickingNumber(),
+                        String.valueOf(group.getPickingOrderId())
+                );
+            }
         });
     }
 
