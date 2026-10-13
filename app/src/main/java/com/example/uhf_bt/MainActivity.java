@@ -104,6 +104,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     private com.example.uhf_bt.utils.PermissionManager permissionManager;
     private static final int PERMISSION_REQUEST_CODE = 1;
     public boolean isScanning = false;
+    public int lastKnownPower = -1;
     public String remoteBTName = "";
     public String remoteBTAdd = "";
     private final static String TAG = "MainActivity";
@@ -272,8 +273,19 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
                 String username = sharedPreferences.getString("username", "Unknown");
                 tvGlobalUser.setText(username);
                 if (uhf != null && uhf.getConnectStatus() == ConnectionStatus.CONNECTED) {
-                    tvGlobalPower.setText(uhf.getPower() + " dBm");
+                    if (!isScanning) {
+                        int currentPower = uhf.getPower();
+                        if (currentPower >= 0) {
+                            lastKnownPower = currentPower;
+                        }
+                    }
+                    if (lastKnownPower >= 0) {
+                        tvGlobalPower.setText(lastKnownPower + " dBm");
+                    } else {
+                        tvGlobalPower.setText("N/A");
+                    }
                 } else {
+                    lastKnownPower = -1;
                     tvGlobalPower.setText("N/A");
                 }
             } else {

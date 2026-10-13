@@ -446,6 +446,7 @@ public class UHFSetFragment extends Fragment implements View.OnClickListener {
     private void setPower() {
         int iPower = Integer.valueOf(spPower.getSelectedItem().toString());
         if (context.uhf.setPower(iPower)) {
+            context.lastKnownPower = iPower;
             Toast.makeText(context, R.string.uhf_msg_set_power_succ, Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(context, R.string.uhf_msg_set_power_fail, Toast.LENGTH_SHORT).show();

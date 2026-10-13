@@ -10,7 +10,7 @@ android {
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 29
         versionCode 1
-        versionName "1.4.5"
+        versionName "1.4.6"
         //1.8增加R2数据提取和导出
         //1.8.1修改Session设置获取BUG
         //1.8.2 更改API（修改盘点标签bug）
