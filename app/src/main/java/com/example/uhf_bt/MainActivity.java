@@ -417,6 +417,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
     private void setupMenuButtons() {
         MaterialButton btnMoveOrder = findViewById(R.id.btnMoveOrder);
         MaterialButton btnPickingOrder = findViewById(R.id.btnPickingOrder);
+        MaterialButton btnPickAndPack = findViewById(R.id.btnPickAndPack);
         MaterialButton btnFindProduct = findViewById(R.id.btnFindProduct);
         MaterialButton btnStockCount = findViewById(R.id.btnStockCount);
         MaterialButton btnCheckStock = findViewById(R.id.btnCheckStock);
@@ -458,6 +459,18 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
                     .addToBackStack(null)
                     .commit();
         });
+
+        if (btnPickAndPack != null) {
+            btnPickAndPack.setOnClickListener(v -> {
+                viewMenu.setVisibility(View.GONE);
+                mainContent.setVisibility(View.GONE);
+                hideNavigationBar();
+                getSupportFragmentManager().beginTransaction()
+                        .replace(android.R.id.content, new com.example.uhf_bt.fragment.PickPackFragment())
+                        .addToBackStack(null)
+                        .commit();
+            });
+        }
 
         btnFindProduct.setOnClickListener(v -> {
             viewMenu.setVisibility(View.GONE);
@@ -532,6 +545,9 @@ public class MainActivity extends BaseActivity implements View.OnClickListener {
         // Actually, let's just make it always visible for now, or use PERM_CHECK_STOCK.
         // permissionManager.applyToButton(btnCheckStock, com.example.uhf_bt.utils.PermissionManager.PERM_CHECK_STOCK);
         btnCheckStock.setVisibility(View.VISIBLE);
+        if (btnPickAndPack != null) {
+            btnPickAndPack.setVisibility(View.VISIBLE);
+        }
 
         getSupportFragmentManager().addOnBackStackChangedListener(() -> {
             if (getSupportFragmentManager().getBackStackEntryCount() == 0) {

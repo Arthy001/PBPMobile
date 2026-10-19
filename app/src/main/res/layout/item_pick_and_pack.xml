@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rowLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="54dp"
+    android:orientation="horizontal"
+    android:paddingLeft="8dp"
+    android:paddingTop="6dp"
+    android:paddingRight="8dp"
+    android:paddingBottom="6dp">
+
+    <!-- Column 1: Product Name & Item # / Barcode -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.8"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvProductName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text="Product Name"
+            android:textColor="#212121"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvItemAndBarcode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Item: - | Barcode: -"
+            android:textColor="#757575"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- Column 2: DO / Customer -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.2"
+        android:orientation="vertical"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp">
+
+        <TextView
+            android:id="@+id/tvOrderNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="DO-XXXXXX"
+            android:textColor="#1976D2"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvCustomer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Customer Name"
+            android:textColor="#616161"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- Column 3: Target Qty (Boxes/Qty) -->
+    <TextView
+        android:id="@+id/tvTargetQty"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.6"
+        android:gravity="center"
+        android:text="0"
+        android:textColor="#37474F"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <!-- Column 4: Scanned Count -->
+    <TextView
+        android:id="@+id/tvScannedCount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.6"
+        android:gravity="center"
+        android:text="0"
+        android:textColor="#757575"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+</LinearLayout>

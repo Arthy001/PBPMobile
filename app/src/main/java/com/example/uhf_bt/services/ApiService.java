@@ -12,6 +12,8 @@ import com.example.uhf_bt.models.MoveOrderItem;
 import com.example.uhf_bt.models.MoveTagDto;
 import com.example.uhf_bt.models.PalletTag;
 import com.example.uhf_bt.models.PalletTransaction;
+import com.example.uhf_bt.models.PickAndPackTagDto;
+import com.example.uhf_bt.models.PickPackItem;
 import com.example.uhf_bt.models.PickingOrder;
 import com.example.uhf_bt.models.PickingOrderItem;
 import com.example.uhf_bt.models.PickingOrderTransaction;
@@ -224,5 +226,15 @@ public interface ApiService {
 
     @POST("api/locations/{locationId}/assign-kanbans")
     Call<List<ResponseDto>> assignKanbansToLocation(@Path("locationId") String locationId, @Body List<String> kanbanIds);
+
+    // Pick and Pack APIs (Dedicated for PickPackFragment)
+    @GET("api/mobile/MobileGate/picking-order/{palletTagId}")
+    Call<List<PickPackItem>> getPickPackOrderByPalletTagId(@Path("palletTagId") String palletTagId);
+
+    @GET("api/mobile/MobileProductItem/in-stock")
+    Call<List<ProductItem>> getPickPackProductInStock();
+
+    @POST("api/mobile/MobileGate/pick-and-pack")
+    Call<List<ResponseDto>> savePickAndPack(@Body List<PickAndPackTagDto> tags);
 
 }

@@ -60,6 +60,26 @@
                 app:rippleColor="@color/white"
                 android:layout_marginBottom="12dp"/>
 
+            <!-- Pick and Pack Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPickAndPack"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:text="Pick &amp; Pack (งานจัดแพ็ค)"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/white"
+                app:backgroundTint="#FF9800"
+                app:cornerRadius="16dp"
+                app:elevation="8dp"
+                app:icon="@drawable/ic_shopping_cart"
+                app:iconGravity="textStart"
+                app:iconPadding="12dp"
+                app:iconSize="24dp"
+                app:iconTint="@color/white"
+                app:rippleColor="@color/white"
+                android:layout_marginBottom="12dp"/>
+
             <!-- Receive to Shipping Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnReceiveShipping"
