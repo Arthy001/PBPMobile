@@ -98,6 +98,8 @@ public class PickingOrderChildFragment extends Fragment {
     private List<PickingOrderItem> tempList = new ArrayList<>();
     private List<ProductItem> stockList = new ArrayList<>();
     private List<PickingOrderItem> scannedTags = new ArrayList<>();
+    private boolean isConfirming = false;
+    private ProgressDialog confirmProgressDialog;
     private String pickingOrderId;
     private ApiService apiService;
 
@@ -1030,9 +1032,19 @@ public class PickingOrderChildFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        dismissConfirmProgress();
         // ป้องกันอีกชั้นเมื่อ View ถูกทำลาย
         if (mContext != null && mContext.isScanning) {
             stop();
+        }
+    }
+
+    private void dismissConfirmProgress() {
+        try {
+            if (confirmProgressDialog != null && confirmProgressDialog.isShowing()) {
+                confirmProgressDialog.dismiss();
+            }
+        } catch (Exception ignored) {
         }
     }
 
@@ -1594,6 +1606,9 @@ public class PickingOrderChildFragment extends Fragment {
 
 
     private void confirmPickingOrderTransaction() {
+        if (isConfirming) {
+            return;
+        }
 
         try
         {
@@ -1630,6 +1645,16 @@ public class PickingOrderChildFragment extends Fragment {
             return;
         }
 
+        isConfirming = true;
+        btnConfirm.setEnabled(false);
+
+        if (getContext() != null) {
+            confirmProgressDialog = new ProgressDialog(requireContext());
+            confirmProgressDialog.setMessage("กำลังบันทึกข้อมูล กรุณารอสักครู่...");
+            confirmProgressDialog.setCancelable(false);
+            confirmProgressDialog.show();
+        }
+
         String userId = MainActivity.globalUserId;
         Call<List<ResponseDto>> call = apiService.createPickingOrderTransaction(
                 pickingOrderId,
@@ -1640,20 +1665,26 @@ public class PickingOrderChildFragment extends Fragment {
         call.enqueue(new Callback<List<ResponseDto>>() {
             @Override
             public void onResponse(Call<List<ResponseDto>> call, Response<List<ResponseDto>> response) {
+                dismissConfirmProgress();
+                isConfirming = false;
+
                 if (response.isSuccessful()) {
-
-
                     List<ResponseDto> results = response.body();
 
                     // เช็คว่าทุกรายการ success หรือไม่
                     boolean allSuccess = true;
                     StringBuilder errorMessages = new StringBuilder();
 
-                    for (ResponseDto result : results) {
-                        if (!result.getIsSuccess()) {
-                            allSuccess = false;
-                            errorMessages.append("• ").append(result.getMessage()).append("\n");
+                    if (results != null) {
+                        for (ResponseDto result : results) {
+                            if (!result.getIsSuccess()) {
+                                allSuccess = false;
+                                errorMessages.append("• ").append(result.getMessage()).append("\n");
+                            }
                         }
+                    } else {
+                        allSuccess = false;
+                        errorMessages.append("No response data from server");
                     }
 
                     if (allSuccess) {
@@ -1664,28 +1695,34 @@ public class PickingOrderChildFragment extends Fragment {
 
                         Toast.makeText(mContext, "Pick successfully", Toast.LENGTH_LONG).show();
 
-
                     } else {
-                        // มีรายการที่ไม่สำเร็จ
+                        // มีรายการที่ไม่สำเร็จ - คืนสถานะปุ่มให้สามารถกดใหม่ได้
+                        btnConfirm.setEnabled(true);
                         String errorMsg = "Save failed:\n\n" + errorMessages.toString();
 
-                        new AlertDialog.Builder(requireContext())
-                                .setTitle("Pick Errors")
-                                .setMessage(errorMsg)
-                                .setPositiveButton("OK", null)
-                                .show();
+                        if (getContext() != null) {
+                            new AlertDialog.Builder(requireContext())
+                                    .setTitle("Pick Errors")
+                                    .setMessage(errorMsg)
+                                    .setPositiveButton("OK", null)
+                                    .show();
+                        }
 
                         Toast.makeText(mContext, "Confirm Pick failed ", Toast.LENGTH_SHORT).show();
                     }
 
                 } else {
-                    // Handle error
+                    // Handle error - คืนสถานะปุ่ม
+                    btnConfirm.setEnabled(true);
                     Toast.makeText(mContext, "Error: " + response.message(), Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(Call<List<ResponseDto>> call, Throwable t) {
+                dismissConfirmProgress();
+                isConfirming = false;
+                btnConfirm.setEnabled(true);
                 // Handle failure
                 Toast.makeText(mContext, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }

@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -55,6 +56,7 @@ public class PickingOrderFragment extends Fragment {
 
     String currentDate;
     private int selectedTabPosition = 0;
+    private long lastClickTime = 0;
 
     public static PickingOrderFragment newInstance(String param1, String param2) {
         PickingOrderFragment fragment = new PickingOrderFragment();
@@ -345,8 +347,14 @@ public class PickingOrderFragment extends Fragment {
         listView.setAdapter(adapter);
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
+            if (SystemClock.elapsedRealtime() - lastClickTime < 1000) {
+                return;
+            }
+            lastClickTime = SystemClock.elapsedRealtime();
             PickingOrder pickingOrder = adapter.getItem(position);
-            openPickingOrderChild(String.valueOf(pickingOrder.getId()));
+            if (pickingOrder != null) {
+                openPickingOrderChild(String.valueOf(pickingOrder.getId()));
+            }
         });
     }
 
